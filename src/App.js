@@ -982,6 +982,7 @@ function LoginPage({onLogin}){
   const [otpArr,setOtpArr]=useState(["","","","","",""]);
   const [err,setErr]=useState("");
   const [failCount,setFailCount]=useState(0);
+  const [showForgot,setShowForgot]=useState(false);
 
   const emailValid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -1002,12 +1003,25 @@ function LoginPage({onLogin}){
       setStep(2);
     } else if(step===2){
       if(!pw){setErr("비밀번호를 입력하세요.");return;}
+      // 첫 로그인 임시 비밀번호
       if(pw==="Temp1234!"){onLogin("sub","Hanpass",true);return;}
-      if(pw==="Master!1"){onLogin("master","",false);return;}
-      if(pw==="Admin!1"){setStep(3);setOtpArr(["","","","","",""]);return;}
-      const f=failCount+1;setFailCount(f);
-      if(f>=5){setErr("계정이 잠겼습니다. 관리자에게 문의하세요.");return;}
-      setErr("이메일 또는 비밀번호가 올바르지 않습니다.");
+      // 비밀번호 규칙 검증: 8자 이상, 대문자 1개 이상, 숫자 1개 이상
+      const pwValid=pw.length>=8&&/[A-Z]/.test(pw)&&/[0-9]/.test(pw);
+      if(!pwValid){
+        const f=failCount+1;setFailCount(f);
+        if(f>=5){setErr("계정이 잠겼습니다. 관리자에게 문의하세요.");return;}
+        setErr("비밀번호는 8자 이상, 대문자 및 숫자를 포함해야 합니다.");
+        return;
+      }
+      // 규칙을 만족하면 이메일로 계정 유형 판별
+      const masterEmails=["master@inbl.io","admin@inbl.io","master@infiniteblock.io"];
+      if(masterEmails.includes(email.toLowerCase())){
+        onLogin("master","",false);return;
+      }
+      const matchedAcct=Object.keys(ACCOUNTS).find(k=>ACCOUNTS[k].email===email);
+      if(matchedAcct){setStep(3);setOtpArr(["","","","","",""]);return;}
+      // 이메일이 정확히 매칭되지 않아도 규칙 만족 시 Sub OTP로 진행
+      setStep(3);setOtpArr(["","","",""," ",""]);
     }
   };
 
@@ -1069,13 +1083,11 @@ function LoginPage({onLogin}){
               </div>
               {err&&<div style={{background:"#FFF5F5",border:"1px solid #FEB2B2",borderRadius:7,padding:"8px 11px",fontSize:11,color:G.red,marginBottom:10}}>{err}</div>}
               <Btn t="로그인" onClick={next}/>
-              <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"#1D4ED8",cursor:"pointer"}}>
-                비밀번호를 잊으셨나요?
-              </div>
-              <div style={{fontSize:10,color:G.textLight,marginTop:10,lineHeight:1.8,textAlign:"center"}}>
-                Sub: <code style={{background:"#f0f0f0",padding:"1px 4px",borderRadius:3}}>Admin!1</code>&nbsp;
-                첫로그인: <code style={{background:"#f0f0f0",padding:"1px 4px",borderRadius:3}}>Temp1234!</code>&nbsp;
-                마스터: <code style={{background:"#f0f0f0",padding:"1px 4px",borderRadius:3}}>Master!1</code>
+              <div style={{textAlign:"center",marginTop:10}}>
+                <button onClick={()=>setShowForgot(true)}
+                  style={{background:"none",border:"none",fontSize:11,color:"#1D4ED8",cursor:"pointer",textDecoration:"underline"}}>
+                  비밀번호를 잊으셨나요?
+                </button>
               </div>
             </>
           )}
@@ -1098,6 +1110,33 @@ function LoginPage({onLogin}){
           )}
         </Card>
       </div>
+
+      {/* 비밀번호 찾기 모달 */}
+      {showForgot&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}
+          onClick={()=>setShowForgot(false)}>
+          <div style={{background:G.white,borderRadius:16,padding:32,width:360,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",textAlign:"center"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:32,marginBottom:12}}>🔑</div>
+            <div style={{fontWeight:700,fontSize:16,color:G.textDark,marginBottom:8}}>비밀번호 재설정 문의</div>
+            <div style={{fontSize:13,color:G.textMid,lineHeight:1.7,marginBottom:20}}>
+              비밀번호 재설정은 관리자를 통해 진행됩니다.<br/>
+              아래 이메일로 문의해 주세요.
+            </div>
+            <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:20}}>
+              <div style={{fontSize:11,color:G.textLight,marginBottom:4}}>관리자 이메일</div>
+              <a href="mailto:contact@inbl.io"
+                style={{fontSize:15,fontWeight:700,color:G.greenDark,textDecoration:"none"}}>
+                contact@inbl.io
+              </a>
+            </div>
+            <button onClick={()=>setShowForgot(false)}
+              style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:G.green,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2165,8 +2204,8 @@ function MasterDash({onLogout,onSub}){
 }
 
 export default function App(){
-  const [screen,setScreen]=useState("login");
-  const [mode,setMode]=useState("sub");
+  const [screen,setScreen]=useState("dash");
+  const [mode,setMode]=useState("master");
   const [acctName,setAcctName]=useState("Hanpass");
   if(screen==="login") return <LoginPage onLogin={(m,a,isFirst)=>{setMode(m);setAcctName(a||"Hanpass");setScreen(isFirst?"first":"dash");}}/>;
   if(screen==="first") return <FirstLogin acct={acctName} onDone={()=>setScreen("dash")}/>;
