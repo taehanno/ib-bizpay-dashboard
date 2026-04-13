@@ -129,6 +129,45 @@ const TX_DATA = [
   },
 ];
 
+const MASTER_CV_DATA = [
+  {
+    id:"MCV-001", date:"2026-03-28 09:15", type:"Convert", acct:"Master",
+    recipientName:"—", recipientAccount:null, recipientBank:null,
+    amt:"+4,999", cur:"USDC", network:"ERC-20", st:"Completed",
+    txid:"0xEF01...5678",
+    fromName:null, fromAccount:null, fromBank:null,
+    fromAmt:"5,000", fromCur:"USD", fromNet:"",
+    fxRate:"1 USD = 0.9998 USDC", fxFee:"0.00% (총 0.00 USD)",
+  },
+  {
+    id:"MCV-002", date:"2026-03-25 14:02", type:"Convert", acct:"Master",
+    recipientName:"—", recipientAccount:null, recipientBank:null,
+    amt:"+9,978", cur:"USD", network:"", st:"Completed",
+    txid:"0xAA22...BB33",
+    fromName:null, fromAccount:null, fromBank:null,
+    fromAmt:"10,000", fromCur:"USDC", fromNet:"ERC-20",
+    fxRate:"1 USDC = 0.9998 USD", fxFee:"0.20% (총 20.00 USDC)",
+  },
+  {
+    id:"MCV-003", date:"2026-03-22 11:40", type:"Convert", acct:"Master",
+    recipientName:"—", recipientAccount:null, recipientBank:null,
+    amt:"+2,999", cur:"USDT", network:"TRC-20", st:"Completed",
+    txid:"0xCC33...DD44",
+    fromName:null, fromAccount:null, fromBank:null,
+    fromAmt:"3,000", fromCur:"USD", fromNet:"",
+    fxRate:"1 USD = 0.9998 USDT", fxFee:"0.00% (총 0.00 USD)",
+  },
+  {
+    id:"MCV-004", date:"2026-03-20 16:25", type:"Convert", acct:"Master",
+    recipientName:"—", recipientAccount:null, recipientBank:null,
+    amt:"+1,996", cur:"USDC", network:"Base", st:"Pending",
+    txid:"Pending...",
+    fromName:null, fromAccount:null, fromBank:null,
+    fromAmt:"2,000", fromCur:"USDT", fromNet:"ERC-20",
+    fxRate:"1 USDT = 0.9998 USDC", fxFee:"0.20% (총 4.00 USDT)",
+  },
+];
+
 const TR = [
   {id:"TR-012",date:"2026-03-29",from:"Hanpass",to:"Master", amt:"500",  cur:"USDC",network:"ERC-20",st:"Completed",note:"Fee settlement"},
   {id:"TR-011",date:"2026-03-28",from:"Master", to:"Sentbe", amt:"2,000",cur:"USD", network:"",      st:"Completed",note:"Liquidity top-up"},
@@ -374,7 +413,7 @@ function SidePanelRow({label,value,sub,mono}){
   );
 }
 
-function OrderSidePanel({tx,onClose}){
+function OrderSidePanel({tx,onClose,isMaster=false}){
   if(!tx) return null;
   const isConvert = tx.type==="Convert";
   const isPayout  = tx.type==="Payout";
@@ -427,9 +466,11 @@ function OrderSidePanel({tx,onClose}){
                   <div style={{textAlign:"right"}}>
                     {tx.fxFee&&tx.fxFee.includes("총")?(()=>{
                       const [rate,total]=tx.fxFee.split("(총");
+                      const isOnRamp=["USD","HKD"].includes(tx.fromCur)&&["USDC","USDT"].includes(tx.cur);
                       return(<>
                         <div style={{fontSize:11,fontWeight:700,color:G.orange}}>{rate.trim()}</div>
                         <div style={{fontSize:10,color:G.textMid}}>(총 {total?.replace(")","").trim()})</div>
+                        {isMaster&&<div style={{fontSize:9,color:G.textLight,marginTop:2}}>OSL 도매가 {isOnRamp?"On-ramp":"Off-ramp"} 기준</div>}
                       </>);
                     })():<span style={{fontSize:11,fontWeight:700,color:G.orange}}>{tx.fxFee||"—"}</span>}
                   </div>
@@ -1837,6 +1878,10 @@ function MasterDash({onLogout,onSub}){
   const [mcvTo,setMcvTo]=useState("USDC");
   const [mcvToNet,setMcvToNet]=useState("ERC-20");
   const [mcvAmt,setMcvAmt]=useState("");
+  const [mcvLoading,setMcvLoading]=useState(false);
+  const [mcvRateError,setMcvRateError]=useState(false);
+  const [mcvFilter,setMcvFilter]=useState("All");
+  const [mcvHistory,setMcvHistory]=useState(MASTER_CV_DATA);
   const [mpoType,setMpoType]=useState("Fiat");
   const [mpoCur,setMpoCur]=useState("USD");
   const [mpoNet,setMpoNet]=useState("");
@@ -1866,9 +1911,16 @@ function MasterDash({onLogout,onSub}){
     const t=setTimeout(()=>{setMpoGasFee(GAS_FEE[mpoNet]||"0.05");setMpoFeeLoading(false);},500);
     return()=>clearTimeout(t);
   },[mpoType,mpoAmt,mpoNet]);
+  useEffect(()=>{
+    if(!mcvAmt||isNaN(parseFloat(mcvAmt))){setMcvLoading(false);setMcvRateError(false);return;}
+    setMcvLoading(true);setMcvRateError(false);
+    const t=setTimeout(()=>setMcvLoading(false),500);
+    return()=>clearTimeout(t);
+  },[mcvAmt,mcvFrom,mcvTo]);
   const allTr=trF==="All"?TR:TR.filter(t=>t.st===trF);
-  const nav=[{g:"Overview",items:["Overview"]},{g:"Operations",items:["Transfer","Deposit","Payout"]},{g:"Management",items:["Clients","All Transfers","All Orders","Fee Settings"]}];
-  const menuLabel={Overview:"Master Overview",Transfer:"Master Transfer",Deposit:"Deposit Instructions",Payout:"Create Payout",Clients:"Sub Accounts",["All Transfers"]:"All Transfers",["All Orders"]:"All Orders",["Fee Settings"]:"Fee Settings"};
+  const mcvFiltered=mcvFilter==="All"?mcvHistory:mcvHistory.filter(t=>t.st===mcvFilter);
+  const nav=[{g:"Overview",items:["Overview"]},{g:"Operations",items:["Transfer","Deposit","Convert","Payout"]},{g:"Management",items:["Clients","All Transfers","All Orders","Fee Settings"]}];
+  const menuLabel={Overview:"Master Overview",Transfer:"Master Transfer",Deposit:"Deposit Instructions",Convert:"Convert",Payout:"Create Payout",Clients:"Sub Accounts",["All Transfers"]:"All Transfers",["All Orders"]:"All Orders",["Fee Settings"]:"Fee Settings"};
 
   const mpoRecObj=masterRecs.find(r=>String(r.id)===String(mpoRec));
   const mpoRecName=mpoRecObj?.name||"—";
@@ -1969,51 +2021,194 @@ function MasterDash({onLogout,onSub}){
             <DepositInstruction isMaster={true}/>
           )}
 
-          {menu==="Convert"&&(
-            <div style={{maxWidth:440}}>
-              <Card>
-                <div style={{fontWeight:700,fontSize:13,marginBottom:14}}>Convert Currency</div>
-                <Lbl t="From"/>
-                <Sel v={mcvFrom} set={v=>{setMcvFrom(v);setMcvFromNet(NETWORKS[v]?.[0]||"");setMcvTo((v==="USD"||v==="HKD")?"USDC":"USD");setMcvToNet("");}} opts={["USD","HKD","USDC","USDT"]}/>
-                {NETWORKS[mcvFrom]?.length>0&&(
-                  <>
-                    <Lbl t="From 네트워크"/>
+          {menu==="Convert"&&(()=>{
+            const mcvAmtNum=parseFloat((mcvAmt||"").replace(/,/g,""))||0;
+            const mcvFromBal=mcvFrom==="USD"?MASTER_BAL.USD.total:mcvFrom==="USDC"?totalBal(MASTER_BAL.USDC):mcvFrom==="USDT"?totalBal(MASTER_BAL.USDT):0;
+            const mcvOverBal=mcvAmtNum>0&&mcvAmtNum>mcvFromBal;
+            const isOnRamp=["USD","HKD"].includes(mcvFrom)&&["USDC","USDT"].includes(mcvTo);
+            const feeRate=isOnRamp?0:0.002;
+            const feePct=(feeRate*100).toFixed(2);
+            const feeDir=isOnRamp?"On-ramp · OSL 0%":"Off-ramp · OSL 0.2%";
+            const received=(mcvAmtNum*(1-feeRate)*0.9998).toFixed(2);
+            const totalFeeAmt=(mcvAmtNum*feeRate).toFixed(2);
+            const canSubmit=!!mcvAmt&&!mcvOverBal&&!mcvLoading&&!mcvRateError;
+            return(
+            <div>
+              {/* 잔액 요약 */}
+              <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",gap:28,flexWrap:"wrap"}}>
+                {[{c:"USD",v:MASTER_BAL.USD.total},{c:"USDC",v:totalBal(MASTER_BAL.USDC)},{c:"USDT",v:totalBal(MASTER_BAL.USDT)}].map(({c,v})=>(
+                  <div key={c} style={{display:"flex",alignItems:"center",gap:8}}>
+                    <CIcon c={c} size={20}/>
+                    <div>
+                      <div style={{fontSize:9,color:G.textLight,fontWeight:600,textTransform:"uppercase"}}>{c}</div>
+                      <div style={{fontSize:14,fontWeight:700,color:G.textDark}}>{v.toLocaleString("en-US",{minimumFractionDigits:2})}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 환전 폼 */}
+              <div style={{maxWidth:440,marginBottom:24}}>
+                <Card>
+                  <div style={{fontWeight:700,fontSize:13,marginBottom:14}}>Convert</div>
+                  {/* FROM */}
+                  <Lbl t="FROM — 통화"/>
+                  <Sel v={mcvFrom} set={v=>{setMcvFrom(v);setMcvFromNet(NETWORKS[v]?.[0]||"");setMcvTo((v==="USD"||v==="HKD")?"USDC":"USD");setMcvToNet(NETWORKS[(v==="USD"||v==="HKD")?"USDC":"USD"]?.[0]||"");setMcvAmt("");}} opts={["USD","HKD","USDC","USDT"]}/>
+                  {NETWORKS[mcvFrom]?.length>0&&(
                     <div style={{display:"flex",gap:7,marginBottom:10}}>
                       {NETWORKS[mcvFrom].map(n=>{const {bg,text}=NET_COLOR[n];return(
                         <button key={n} onClick={()=>setMcvFromNet(n)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${mcvFromNet===n?text:G.border}`,background:mcvFromNet===n?bg:G.white,color:mcvFromNet===n?text:G.textMid,fontWeight:mcvFromNet===n?700:400,fontSize:12,cursor:"pointer"}}>{n}</button>
                       );})}
                     </div>
-                  </>
-                )}
-                <Lbl t="To"/>
-                <Sel v={mcvTo} set={v=>{setMcvTo(v);setMcvToNet(NETWORKS[v]?.[0]||"");}} opts={["USD","HKD","USDC","USDT"].filter(c=>c!==mcvFrom)}/>
-                {NETWORKS[mcvTo]?.length>0&&(
-                  <>
-                    <Lbl t="To 네트워크"/>
+                  )}
+                  {/* ↕ 방향 전환 */}
+                  <div style={{textAlign:"center",margin:"2px 0 6px"}}>
+                    <button onClick={()=>{const[f,fn,t,tn]=[mcvFrom,mcvFromNet,mcvTo,mcvToNet];setMcvFrom(t);setMcvFromNet(tn);setMcvTo(f);setMcvToNet(fn);setMcvAmt("");}} style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:20,padding:"4px 14px",cursor:"pointer",fontSize:15,color:G.greenDark,fontWeight:700}}>↕</button>
+                  </div>
+                  {/* TO */}
+                  <Lbl t="TO — 통화"/>
+                  <Sel v={mcvTo} set={v=>{setMcvTo(v);setMcvToNet(NETWORKS[v]?.[0]||"");setMcvAmt("");}} opts={["USD","HKD","USDC","USDT"].filter(c=>c!==mcvFrom)}/>
+                  {NETWORKS[mcvTo]?.length>0&&(
                     <div style={{display:"flex",gap:7,marginBottom:10}}>
                       {NETWORKS[mcvTo].map(n=>{const {bg,text}=NET_COLOR[n];return(
                         <button key={n} onClick={()=>setMcvToNet(n)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${mcvToNet===n?text:G.border}`,background:mcvToNet===n?bg:G.white,color:mcvToNet===n?text:G.textMid,fontWeight:mcvToNet===n?700:400,fontSize:12,cursor:"pointer"}}>{n}</button>
                       );})}
                     </div>
-                  </>
-                )}
-                <Lbl t="Amount"/><Inp v={mcvAmt} set={setMcvAmt} ph="Enter amount"/>
-                {mcvAmt&&(()=>{
-                  const isOnRamp=["USD","HKD"].includes(mcvFrom)&&["USDC","USDT"].includes(mcvTo);
-                  const feeRate=isOnRamp?0:0.002;
-                  const feePct=(feeRate*100).toFixed(2);
-                  return(
-                  <div style={{background:G.greenLight,borderRadius:8,padding:"10px 13px",marginBottom:10}}>
-                    <div style={{fontSize:11,color:G.textMid}}>받게 될 금액 (예상)</div>
-                    <div style={{fontSize:18,fontWeight:700,color:G.greenDark}}>≈ {(parseFloat(mcvAmt||0)*(1-feeRate)*0.9970).toFixed(2)} {mcvTo}{mcvToNet?<NetBadge net={mcvToNet}/>:""}</div>
-                    <div style={{fontSize:10,color:G.textLight,marginTop:2}}>Fee: {feePct}%</div>
+                  )}
+                  <Lbl t="금액"/><Inp v={mcvAmt} set={setMcvAmt} ph="숫자 입력"/>
+                  {mcvOverBal&&<div style={{color:G.red,fontSize:11,marginBottom:8}}>⚠️ 가용 잔액을 초과했습니다.</div>}
+                  {mcvRateError&&<div style={{color:G.red,fontSize:11,marginBottom:8}}>⚠️ 환율을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.</div>}
+                  {/* 수수료 미리보기 */}
+                  {mcvAmt&&!mcvOverBal&&(
+                    <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                        <span style={{fontSize:11,color:G.textMid}}>환율 미리보기</span>
+                        {mcvLoading
+                          ?<span style={{fontSize:11,color:G.textLight}}>계산 중...</span>
+                          :<span style={{fontSize:11,fontWeight:600}}>1 {mcvFrom} = 0.9998 {mcvTo}</span>
+                        }
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                        <span style={{fontSize:11,color:G.textMid}}>수수료</span>
+                        <div style={{textAlign:"right"}}>
+                          {mcvLoading?<span style={{fontSize:11,color:G.textLight}}>계산 중...</span>:<>
+                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feePct}% (총 {totalFeeAmt} {mcvFrom})</span>
+                            <div style={{fontSize:9,color:G.textLight,marginTop:1}}>{feeDir}</div>
+                          </>}
+                        </div>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:8,borderTop:`1px solid ${G.border}`}}>
+                        <span style={{fontSize:12,fontWeight:700}}>예상 수령액</span>
+                        <div style={{display:"flex",alignItems:"center",gap:4}}>
+                          {mcvLoading?<span style={{fontSize:14,color:G.textLight}}>계산 중...</span>:<>
+                            <span style={{fontSize:16,fontWeight:700,color:G.greenDark}}>{received}</span>
+                            <CIcon c={mcvTo} size={16}/><span style={{fontSize:12,fontWeight:600,color:G.greenDark}}>{mcvTo}</span>
+                            {mcvToNet&&<NetBadge net={mcvToNet}/>}
+                          </>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    disabled={!canSubmit}
+                    onClick={()=>{
+                      if(!canSubmit)return;
+                      const msg=`${mcvAmtNum.toLocaleString()} ${mcvFrom}${mcvFromNet?" ("+mcvFromNet+")":""} → ${received} ${mcvTo}${mcvToNet?" ("+mcvToNet+")":""} 으로 환전하시겠습니까?`;
+                      if(!window.confirm(msg))return;
+                      const newTx={
+                        id:`MCV-${String(mcvHistory.length+1).padStart(3,"0")}`,
+                        date:new Date().toISOString().replace("T"," ").slice(0,16),
+                        type:"Convert",acct:"Master",
+                        recipientName:"—",recipientAccount:null,recipientBank:null,
+                        amt:`+${received}`,cur:mcvTo,network:mcvToNet||"",st:"Pending",
+                        txid:"Pending...",
+                        fromName:null,fromAccount:null,fromBank:null,
+                        fromAmt:mcvAmtNum.toLocaleString(),fromCur:mcvFrom,fromNet:mcvFromNet||"",
+                        fxRate:`1 ${mcvFrom} = 0.9998 ${mcvTo}`,
+                        fxFee:`${feePct}% (총 ${totalFeeAmt} ${mcvFrom})`,
+                      };
+                      setMcvHistory(h=>[newTx,...h]);
+                      setMcvAmt("");
+                      T("✅ 환전 요청이 완료되었습니다.");
+                    }}
+                    style={{
+                      width:"100%",padding:"11px",borderRadius:8,border:"none",
+                      background:canSubmit?G.green:"#ccc",color:"#fff",fontWeight:700,
+                      fontSize:13,cursor:canSubmit?"pointer":"not-allowed",
+                    }}
+                  >환전 실행</button>
+                </Card>
+              </div>
+
+              {/* Convert 내역 */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div>
+                  <div style={{fontWeight:700,fontSize:13,marginBottom:6}}>Convert 내역</div>
+                  <div style={{display:"flex",gap:5}}>
+                    {["All","Completed","Pending","Failed"].map(f=>(
+                      <button key={f} onClick={()=>setMcvFilter(f)} style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${mcvFilter===f?G.green:G.border}`,background:mcvFilter===f?G.greenLight:G.white,color:mcvFilter===f?G.greenDark:G.textMid,fontWeight:mcvFilter===f?700:400,cursor:"pointer",fontSize:11}}>{f}</button>
+                    ))}
                   </div>
-                  );
-                })()}
-                <Btn t="Convert Now" onClick={()=>{T(`✅ ${mcvAmt} ${mcvFrom}${mcvFromNet?" ("+mcvFromNet+")":""}→${mcvTo}${mcvToNet?" ("+mcvToNet+")":""} 완료!`);setMcvAmt("");}}/>
-              </Card>
+                </div>
+                <Btn t="📥 Export CSV" sm onClick={()=>exportCSV(mcvFiltered,[
+                  {l:"TX ID",k:"id"},{l:"Date",k:"date"},
+                  {l:"From Cur",k:"fromCur"},{l:"From Amt",k:"fromAmt"},{l:"From Net",k:"fromNet"},
+                  {l:"To Cur",k:"cur"},{l:"To Amt",k:"amt"},{l:"To Net",k:"network"},
+                  {l:"FX Rate",k:"fxRate"},{l:"Fee",k:"fxFee"},{l:"Chain TXID",k:"txid"},{l:"Status",k:"st"},
+                ],"master_convert.csv")}/>
+              </div>
+              <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,overflow:"hidden"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                  <thead><tr style={{background:G.sidebar}}>
+                    {["TX ID","Date","From → To","방향","수수료","Status"].map(h=>(
+                      <th key={h} style={{padding:"9px 12px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`}}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>
+                    {mcvFiltered.length===0&&(
+                      <tr><td colSpan={6} style={{padding:"20px",textAlign:"center",color:G.textLight}}>내역이 없습니다.</td></tr>
+                    )}
+                    {mcvFiltered.map((r,i)=>{
+                      const rowIsOnRamp=["USD","HKD"].includes(r.fromCur)&&["USDC","USDT"].includes(r.cur);
+                      const feeStr=r.fxFee||"—";
+                      const [feePctPart,feeTotalPart]=feeStr.includes("(총")?feeStr.split("(총"):["—",""];
+                      const stC=stColor(r.st);
+                      return(
+                        <tr key={r.id}
+                          onClick={()=>setSelectedTx(r)}
+                          style={{background:i%2===0?G.white:"#FAFBF8",cursor:"pointer",transition:"background 0.1s"}}
+                          onMouseEnter={e=>e.currentTarget.style.background=G.greenLight}
+                          onMouseLeave={e=>e.currentTarget.style.background=i%2===0?G.white:"#FAFBF8"}
+                        >
+                          <td style={{padding:"10px 12px",fontWeight:600,color:G.textLight,fontSize:10}}>{r.id}</td>
+                          <td style={{padding:"10px 12px",color:G.textMid,whiteSpace:"nowrap"}}>{r.date}</td>
+                          <td style={{padding:"10px 12px"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:6}}>
+                              <AmtChip amt={`-${r.fromAmt}`} cur={r.fromCur} net={r.fromNet||undefined} color={G.red}/>
+                              <span style={{color:G.textLight}}>→</span>
+                              <AmtChip amt={r.amt} cur={r.cur} net={r.network||undefined} color={G.greenDark}/>
+                            </div>
+                          </td>
+                          <td style={{padding:"10px 12px",whiteSpace:"nowrap"}}>
+                            {rowIsOnRamp
+                              ?<span style={{background:"#DCFCE7",color:"#166534",borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>🟢 On-ramp</span>
+                              :<span style={{background:"#DBEAFE",color:"#1D4ED8",borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>🔵 Off-ramp</span>
+                            }
+                          </td>
+                          <td style={{padding:"10px 12px",color:G.orange,fontWeight:700,whiteSpace:"nowrap"}}>
+                            {feePctPart.trim()}
+                            {feeTotalPart&&<div style={{fontSize:9,color:G.textLight,fontWeight:400}}>(총 {feeTotalPart.replace(")","").trim()})</div>}
+                          </td>
+                          <td style={{padding:"10px 12px"}}><Badge t={r.st} color={stC}/></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
+            );
+          })()}
 
           {menu==="Payout"&&(
             <div style={{maxWidth:440}}>
@@ -2275,7 +2470,7 @@ function MasterDash({onLogout,onSub}){
       </div>
 
       {/* 사이드 패널 */}
-      {selectedTx&&<OrderSidePanel tx={selectedTx} onClose={()=>setSelectedTx(null)}/>}
+      {selectedTx&&<OrderSidePanel tx={selectedTx} onClose={()=>setSelectedTx(null)} isMaster={selectedTx.acct==="Master"}/>}
 
       {toast&&<div style={{position:"fixed",bottom:20,right:20,background:"#1A1A1A",color:"#fff",borderRadius:8,padding:"10px 18px",fontSize:12,fontWeight:600,boxShadow:"0 4px 16px rgba(0,0,0,0.15)",zIndex:9999}}>{toast}</div>}
     </div>
