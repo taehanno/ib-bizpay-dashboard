@@ -53,7 +53,7 @@ const TX_DATA = [
     txid:"0xEF01...5678",
     fromName:null, fromAccount:null, fromBank:null,
     fromAmt:"5,001", fromCur:"USD", fromNet:"",
-    fxRate:"1 USD = 0.9970 USDC", fxFee:"OSL 0.2% + IB 0.10% = 0.30% (총 15.00 USD)",
+    fxRate:"1 USD = 0.9970 USDC", fxFee:"0.30% (총 15.00 USD)",
   },
   {
     id:"TX-039", date:"2026-03-27 17:50", type:"Payout", acct:"MOIN",
@@ -98,7 +98,7 @@ const TX_DATA = [
     txid:"0xCCDD...9900",
     fromName:null, fromAccount:null, fromBank:null,
     fromAmt:"2,001", fromCur:"USD", fromNet:"",
-    fxRate:"1 USD = 0.9970 USDT", fxFee:"OSL 0.2% + IB 0.10% = 0.30% (총 6.00 USD)",
+    fxRate:"1 USD = 0.9970 USDT", fxFee:"0.30% (총 6.00 USD)",
   },
   {
     id:"TX-034", date:"2026-03-22 16:10", type:"Deposit", acct:"Sentbe",
@@ -125,7 +125,7 @@ const TX_DATA = [
     txid:"0x8899...CCEE",
     fromName:null, fromAccount:null, fromBank:null,
     fromAmt:"1,500", fromCur:"USDT", fromNet:"ERC-20",
-    fxRate:"1 USDT = 0.9970 USDC", fxFee:"OSL 0.2% + IB 0.10% = 0.30% (총 4.50 USDT)",
+    fxRate:"1 USDT = 0.9970 USDC", fxFee:"0.30% (총 4.50 USDT)",
   },
 ];
 
@@ -137,10 +137,10 @@ const TR = [
 ];
 
 const INIT_CLIENTS = [
-  {id:"SUB-001",name:"Hanpass",  email:"admin@hanpass.com",st:"Active",   created:"2026-01-10",mu:0.10,otpReq:false,locked:false},
-  {id:"SUB-002",name:"Sentbe",   email:"admin@sentbe.com", st:"Active",   created:"2026-02-03",mu:0.15,otpReq:true, locked:false},
-  {id:"SUB-003",name:"MOIN",     email:"admin@moin.money", st:"Active",   created:"2026-02-20",mu:0.10,otpReq:false,locked:true},
-  {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",mu:0.20,otpReq:false,locked:false},
+  {id:"SUB-001",name:"Hanpass",  email:"admin@hanpass.com",st:"Active",   created:"2026-01-10",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:false},
+  {id:"SUB-002",name:"Sentbe",   email:"admin@sentbe.com", st:"Active",   created:"2026-02-03",mu:0.15,muOn:0.15,muOff:0.15,otpReq:true, locked:false},
+  {id:"SUB-003",name:"MOIN",     email:"admin@moin.money", st:"Active",   created:"2026-02-20",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:true},
+  {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",mu:0.20,muOn:0.20,muOff:0.20,otpReq:false,locked:false},
 ];
 
 const INIT_RECIP = [
@@ -974,6 +974,56 @@ function FeeRow({c,isLast,isEditing,onEdit,onSave}){
   );
 }
 
+function ConvertFeeRow({c,isLast,editState,onEdit,onSave}){
+  const [valOn,setValOn]=useState((c.muOn*100).toFixed(2));
+  const [valOff,setValOff]=useState((c.muOff*100).toFixed(2));
+  const isEditOn=editState==='on';
+  const isEditOff=editState==='off';
+  return(
+    <tr style={{borderBottom:isLast?"none":`1px solid ${G.border}`}}>
+      <td style={{padding:"10px 14px",fontWeight:700,fontSize:12}}>{c.name}</td>
+      <td style={{padding:"8px 14px",textAlign:"center"}}>
+        {isEditOn?(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+            <input type="number" value={valOn} onChange={e=>setValOn(e.target.value)} step="0.01"
+              style={{width:56,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
+            <span style={{fontSize:10,color:G.textMid}}>%</span>
+            <Btn t="저장" sm color={G.green} onClick={()=>onSave('on',valOn)}/>
+            <Btn t="취소" sm color={G.textLight} onClick={()=>onEdit(null)}/>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <span style={{background:G.greenLight,color:G.greenDark,borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}>+{(c.muOn*100).toFixed(2)}%</span>
+              <button onClick={()=>onEdit('on')} style={{fontSize:10,padding:"4px 8px",borderRadius:6,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>편집</button>
+            </div>
+            <span style={{fontSize:9,color:G.textLight}}>최종 {(c.muOn*100).toFixed(2)}%</span>
+          </div>
+        )}
+      </td>
+      <td style={{padding:"8px 14px",textAlign:"center"}}>
+        {isEditOff?(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+            <input type="number" value={valOff} onChange={e=>setValOff(e.target.value)} step="0.01"
+              style={{width:56,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
+            <span style={{fontSize:10,color:G.textMid}}>%</span>
+            <Btn t="저장" sm color={G.green} onClick={()=>onSave('off',valOff)}/>
+            <Btn t="취소" sm color={G.textLight} onClick={()=>onEdit(null)}/>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <span style={{background:G.greenLight,color:G.greenDark,borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}>+{(c.muOff*100).toFixed(2)}%</span>
+              <button onClick={()=>onEdit('off')} style={{fontSize:10,padding:"4px 8px",borderRadius:6,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>편집</button>
+            </div>
+            <span style={{fontSize:9,color:G.textLight}}>최종 {(0.20+c.muOff*100).toFixed(2)}%</span>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+}
+
 function LoginPage({onLogin}){
   const [step,setStep]=useState(1);
   const [email,setEmail]=useState("");
@@ -1453,30 +1503,37 @@ function SubDash({acctName,onLogout,onMaster}){
                 )}
                 <Lbl t="금액"/><Inp v={cvAmt} set={setCvAmt} ph="숫자 입력"/>
                 {/* 수수료 미리보기 */}
-                {cvAmt&&(
+                {cvAmt&&(()=>{
+                  const clientData=INIT_CLIENTS.find(c=>c.name===acct)||INIT_CLIENTS[0];
+                  const isOnRamp=["USD","HKD"].includes(cvFrom)&&["USDC","USDT"].includes(cvTo);
+                  const oslBase=isOnRamp?0:0.002;
+                  const mu=isOnRamp?(clientData.muOn||0):(clientData.muOff||0);
+                  const feeRate=oslBase+mu;
+                  const feePct=(feeRate*100).toFixed(2);
+                  const amtNum=parseFloat(cvAmt||0);
+                  const totalFee=(amtNum*feeRate).toFixed(2);
+                  const received=(amtNum*(1-feeRate)*0.9970).toFixed(2);
+                  return(
                   <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
                       <span style={{fontSize:11,color:G.textMid}}>환율 미리보기</span>
                       <span style={{fontSize:11,fontWeight:600}}>1 {cvFrom} = 0.9970 {cvTo}</span>
                     </div>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                      <span style={{fontSize:11,color:G.textMid}}>수수료</span>
-                      <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% + IB 0.10%</span>
-                    </div>
                     <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:`1px solid ${G.border}`,marginBottom:8}}>
-                      <span style={{fontSize:11,color:G.textMid}}>최종 수수료</span>
-                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>0.30% (총 {(parseFloat(cvAmt||0)*0.003).toFixed(2)} {cvFrom})</span>
+                      <span style={{fontSize:11,color:G.textMid}}>수수료</span>
+                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feePct}% (총 {totalFee} {cvFrom})</span>
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <span style={{fontSize:12,fontWeight:700}}>예상 수령액</span>
                       <div style={{display:"flex",alignItems:"center",gap:4}}>
-                        <span style={{fontSize:16,fontWeight:700,color:G.greenDark}}>{(parseFloat(cvAmt||0)*0.9970).toFixed(2)}</span>
+                        <span style={{fontSize:16,fontWeight:700,color:G.greenDark}}>{received}</span>
                         <CIcon c={cvTo} size={16}/><span style={{fontSize:12,fontWeight:600,color:G.greenDark}}>{cvTo}</span>
                         {cvToNet&&<NetBadge net={cvToNet}/>}
                       </div>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
                 <Btn t="환전 실행" onClick={()=>{if(!cvAmt){T("⚠️ 금액 입력");return;}T(`✅ ${cvAmt} ${cvFrom}${cvFromNet?" ("+cvFromNet+")":""}→${cvTo}${cvToNet?" ("+cvToNet+")":""} 완료!`);setCvAmt("");}}/>
               </Card>
             </div>
@@ -1766,6 +1823,7 @@ function MasterDash({onLogout,onSub}){
   const [selectedTx,setSelectedTx]=useState(null);
   const [clients,setClients]=useState(INIT_CLIENTS);
   const [editMu,setEditMu]=useState(null);
+  const [editFee,setEditFee]=useState(null);
   const [showCreate,setShowCreate]=useState(false);
   const [nc,setNc]=useState({name:"",email:"",mu:0.10});
   const [mtrFrom,setMtrFrom]=useState("Master");
@@ -1940,11 +1998,18 @@ function MasterDash({onLogout,onSub}){
                   </>
                 )}
                 <Lbl t="Amount"/><Inp v={mcvAmt} set={setMcvAmt} ph="Enter amount"/>
-                {mcvAmt&&<div style={{background:G.greenLight,borderRadius:8,padding:"10px 13px",marginBottom:10}}>
-                  <div style={{fontSize:11,color:G.textMid}}>받게 될 금액 (예상)</div>
-                  <div style={{fontSize:18,fontWeight:700,color:G.greenDark}}>≈ {(parseFloat(mcvAmt||0)*0.9970).toFixed(2)} {mcvTo}{mcvToNet?<NetBadge net={mcvToNet}/>:""}</div>
-                  <div style={{fontSize:10,color:G.textLight,marginTop:2}}>Fee: OSL 0.2% + IB 0.10% = 0.30%</div>
-                </div>}
+                {mcvAmt&&(()=>{
+                  const isOnRamp=["USD","HKD"].includes(mcvFrom)&&["USDC","USDT"].includes(mcvTo);
+                  const feeRate=isOnRamp?0:0.002;
+                  const feePct=(feeRate*100).toFixed(2);
+                  return(
+                  <div style={{background:G.greenLight,borderRadius:8,padding:"10px 13px",marginBottom:10}}>
+                    <div style={{fontSize:11,color:G.textMid}}>받게 될 금액 (예상)</div>
+                    <div style={{fontSize:18,fontWeight:700,color:G.greenDark}}>≈ {(parseFloat(mcvAmt||0)*(1-feeRate)*0.9970).toFixed(2)} {mcvTo}{mcvToNet?<NetBadge net={mcvToNet}/>:""}</div>
+                    <div style={{fontSize:10,color:G.textLight,marginTop:2}}>Fee: {feePct}%</div>
+                  </div>
+                  );
+                })()}
                 <Btn t="Convert Now" onClick={()=>{T(`✅ ${mcvAmt} ${mcvFrom}${mcvFromNet?" ("+mcvFromNet+")":""}→${mcvTo}${mcvToNet?" ("+mcvToNet+")":""} 완료!`);setMcvAmt("");}}/>
               </Card>
             </div>
@@ -2173,21 +2238,35 @@ function MasterDash({onLogout,onSub}){
           )}
 
           {menu==="Fee Settings"&&(
-            <div style={{maxWidth:520}}>
+            <div style={{maxWidth:640}}>
               <Card>
-                <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>Convert Fee Markup</div>
-                <div style={{fontSize:11,color:G.textLight,marginBottom:14}}>OSL 기본 수수료 + IB 마크업 = 고객사 최종 수수료</div>
-                <div style={{background:"#F8F8F8",borderRadius:8,padding:"11px 14px",marginBottom:16,fontSize:11}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{color:G.textMid}}>OSL Base Fee</span><span style={{fontWeight:700}}>0.20%</span></div>
-                  <div style={{display:"flex",justifyContent:"space-between",color:G.greenDark}}><span style={{fontWeight:600}}>IB Markup</span><span style={{fontWeight:700}}>고객사별 설정</span></div>
+                <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>Convert 수수료 설정</div>
+                <div style={{fontSize:11,color:G.textLight,marginBottom:14}}>Sub Account 화면에는 합산 수수료만 표시됩니다. OSL/IB 내역 미노출.</div>
+                <div style={{background:"#F8F8F8",borderRadius:8,overflow:"hidden",border:`1px solid ${G.border}`}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                    <thead>
+                      <tr style={{background:"#EFEFED"}}>
+                        <th style={{padding:"10px 14px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`,width:110}}></th>
+                        <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:G.textDark,borderBottom:`1px solid ${G.border}`}}>On-ramp<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>Fiat → Crypto</span></th>
+                        <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:G.textDark,borderBottom:`1px solid ${G.border}`}}>Off-ramp<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>Crypto → Fiat</span></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{background:"#FAFAFA",borderBottom:`1px solid ${G.border}`}}>
+                        <td style={{padding:"10px 14px",fontWeight:700,color:G.textMid}}>OSL 도매가</td>
+                        <td style={{padding:"10px 14px",textAlign:"center"}}><span style={{background:"#EBEBEB",borderRadius:6,padding:"4px 12px",fontWeight:700,fontSize:11,color:G.textMid}}>0% (고정)</span></td>
+                        <td style={{padding:"10px 14px",textAlign:"center"}}><span style={{background:"#EBEBEB",borderRadius:6,padding:"4px 12px",fontWeight:700,fontSize:11,color:G.textMid}}>0.2% (고정)</span></td>
+                      </tr>
+                      {clients.filter(c=>c.st==="Active").map((c,i,arr)=>(
+                        <ConvertFeeRow key={c.id} c={c} isLast={i===arr.length-1}
+                          editState={editFee?.id===c.id?editFee.dir:null}
+                          onEdit={dir=>setEditFee(dir?{id:c.id,dir}:null)}
+                          onSave={(dir,val)=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,[dir==='on'?'muOn':'muOff']:parseFloat(val)/100}:x));setEditFee(null);T(`✅ ${c.name} ${dir==='on'?'On-ramp':'Off-ramp'} markup updated`);}}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                {clients.filter(c=>c.st==="Active").map((c,i,arr)=>(
-                  <FeeRow key={c.id} c={c} isLast={i===arr.length-1}
-                    isEditing={editMu===c.id}
-                    onEdit={()=>setEditMu(editMu===c.id?null:c.id)}
-                    onSave={val=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,mu:val}:x));setEditMu(null);T(`✅ ${c.name} markup updated`);}}
-                  />
-                ))}
               </Card>
             </div>
           )}
