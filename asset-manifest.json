@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.js": "/ib-bizpay-dashboard/static/js/main.b88ee01b.js",
+    "main.js": "/ib-bizpay-dashboard/static/js/main.82c40bd6.js",
     "static/media/USDT.png": "/ib-bizpay-dashboard/static/media/USDT.dcb21d3225f58e676216.png",
     "static/media/USD.png": "/ib-bizpay-dashboard/static/media/USD.1a7c4c7af26212fda4b6.png",
     "static/media/USDC.png": "/ib-bizpay-dashboard/static/media/USDC.74a0b282284f34b27892.png",
@@ -9,6 +9,6 @@
     "index.html": "/ib-bizpay-dashboard/index.html"
   },
   "entrypoints": [
-    "static/js/main.b88ee01b.js"
+    "static/js/main.82c40bd6.js"
   ]
 }
