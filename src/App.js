@@ -176,10 +176,11 @@ const TR = [
 ];
 
 const INIT_CLIENTS = [
-  {id:"SUB-001",name:"Hanpass",  email:"admin@hanpass.com",st:"Active",   created:"2026-01-10",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:false},
-  {id:"SUB-002",name:"Sentbe",   email:"admin@sentbe.com", st:"Active",   created:"2026-02-03",mu:0.15,muOn:0.15,muOff:0.15,otpReq:true, locked:false},
-  {id:"SUB-003",name:"MOIN",     email:"admin@moin.money", st:"Active",   created:"2026-02-20",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:true},
-  {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",mu:0.20,muOn:0.20,muOff:0.20,otpReq:false,locked:false},
+  {id:"SUB-001",name:"Hanpass",  email:"admin@hanpass.com",st:"Active",   created:"2026-01-10",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:false, kybStatus:"ACTIVE"},
+  {id:"SUB-002",name:"Sentbe",   email:"admin@sentbe.com", st:"Active",   created:"2026-02-03",mu:0.15,muOn:0.15,muOff:0.15,otpReq:true, locked:false, kybStatus:"INACTIVE"},
+  {id:"SUB-003",name:"MOIN",     email:"admin@moin.money", st:"Active",   created:"2026-02-20",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:true,  kybStatus:"ACTIVE"},
+  {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",mu:0.20,muOn:0.20,muOff:0.20,otpReq:false,locked:false, kybStatus:"REJECTED"},
+  {id:"SUB-005",name:"PayTech",  email:"admin@paytech.com",st:"Active",   created:"2026-04-01",mu:0.12,muOn:0.12,muOff:0.12,otpReq:false,locked:false, kybStatus:"PROCESSING"},
 ];
 
 const INIT_RECIP = [
@@ -293,6 +294,11 @@ function Card({children,style={}}){return <div style={{background:G.white,border
 
 function CounterpartyStatusBadge({status}){
   const MAP={ACTIVE:{bg:"#EBF8E1",text:"#276749"},PENDING:{bg:"#FFFBEB",text:"#B45309"},INACTIVE:{bg:"#F3F4F6",text:"#6B7280"}};
+  const s=MAP[status]||MAP.INACTIVE;
+  return <span style={{background:s.bg,color:s.text,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{status||"INACTIVE"}</span>;
+}
+function KYBBadge({status}){
+  const MAP={ACTIVE:{bg:"#EBF8E1",text:"#276749"},PROCESSING:{bg:"#FFFBEB",text:"#B45309"},INACTIVE:{bg:"#F3F4F6",text:"#6B7280"},REJECTED:{bg:"#FEE2E2",text:"#991B1B"}};
   const s=MAP[status]||MAP.INACTIVE;
   return <span style={{background:s.bg,color:s.text,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{status||"INACTIVE"}</span>;
 }
@@ -2287,6 +2293,7 @@ function MasterDash({onLogout,onSub}){
   const [editFee,setEditFee]=useState(null);
   const [showCreate,setShowCreate]=useState(false);
   const [nc,setNc]=useState({name:"",email:"",mu:0.10});
+  const [clientDeleteId,setClientDeleteId]=useState(null);
   const [mtrFrom,setMtrFrom]=useState("Master");
   const [mtrTo,setMtrTo]=useState("Hanpass");
   const [mtrCur,setMtrCur]=useState("USD");
@@ -2790,46 +2797,138 @@ function MasterDash({onLogout,onSub}){
                 <Btn t="+ New Client" sm onClick={()=>setShowCreate(v=>!v)}/>
               </div>
               {showCreate&&(
-                <Card style={{marginBottom:14}}>
-                  <div style={{fontWeight:700,fontSize:12,marginBottom:10}}>New Client</div>
+                <Card style={{marginBottom:14,border:`1.5px solid ${G.green}`}}>
+                  <div style={{fontWeight:700,fontSize:12,marginBottom:12,color:G.greenDark}}>New Client</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                    <div><Lbl t="Company Name"/><Inp v={nc.name} set={v=>setNc(c=>({...c,name:v}))} ph="e.g. GlobalPay"/></div>
-                    <div><Lbl t="Admin Email"/><Inp v={nc.email} set={v=>setNc(c=>({...c,email:v}))} ph="admin@company.com"/></div>
-                    <div><Lbl t="Convert Markup (%)"/>
-                      <input type="number" value={nc.mu*100} onChange={e=>setNc(c=>({...c,mu:parseFloat(e.target.value)/100}))} step="0.01" style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,boxSizing:"border-box",marginBottom:10}}/>
+                    <div><Lbl t="Company Name*"/><Inp v={nc.name} set={v=>setNc(c=>({...c,name:v}))} ph="e.g. GlobalPay"/></div>
+                    <div><Lbl t="Admin Email*"/><Inp v={nc.email} set={v=>setNc(c=>({...c,email:v}))} ph="admin@company.com"/></div>
+                    <div>
+                      <Lbl t="Convert Markup (%)"/>
+                      <input type="number" value={nc.mu*100} onChange={e=>setNc(c=>({...c,mu:parseFloat(e.target.value)/100}))} step="0.01"
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,boxSizing:"border-box",marginBottom:10}}/>
                     </div>
                   </div>
-                  <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:7,padding:"9px 12px",fontSize:10,color:"#2B6CB0",marginBottom:10}}>📧 저장 시 <b>{nc.email||"입력된 이메일"}</b>로 임시 비밀번호 자동 발송</div>
-                  <Btn t="계정 생성 및 초대 이메일 발송" sm onClick={()=>{if(!nc.name||!nc.email){T("⚠️ 이름/이메일 입력");return;}setClients(cs=>[...cs,{id:"SUB-00"+(cs.length+1),name:nc.name,email:nc.email,st:"Active",created:new Date().toISOString().split("T")[0],mu:nc.mu,otpReq:false,locked:false}]);setNc({name:"",email:"",mu:0.10});setShowCreate(false);T(`✅ "${nc.name}" 계정 생성 + 초대 이메일 발송!`);}}/>
+                  <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:7,padding:"9px 12px",fontSize:10,color:"#2B6CB0",marginBottom:8}}>
+                    📧 저장 시 <b>{nc.email||"입력된 이메일"}</b>로 임시 비밀번호 자동 발송
+                  </div>
+                  <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:7,padding:"8px 12px",fontSize:10,color:"#92400E",marginBottom:10}}>
+                    ⚠️ 생성 직후 KYB 상태: INACTIVE. KYB 제출 전까지 해당 Sub Account는 Payout/Convert 불가.
+                  </div>
+                  <Btn t="계정 생성 및 초대 이메일 발송" sm onClick={()=>{
+                    if(!nc.name||!nc.email){T("⚠️ 이름/이메일 입력");return;}
+                    setClients(cs=>[...cs,{id:"SUB-00"+(cs.length+1),name:nc.name,email:nc.email,st:"Active",created:new Date().toISOString().split("T")[0],mu:nc.mu,muOn:nc.mu,muOff:nc.mu,otpReq:false,locked:false,kybStatus:"INACTIVE"}]);
+                    setNc({name:"",email:"",mu:0.10});setShowCreate(false);
+                    T(`✅ "${nc.name}" 계정 생성 + 초대 이메일 발송!`);
+                  }}/>
                 </Card>
               )}
               <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,overflow:"hidden"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-                  <thead><tr style={{background:G.sidebar}}>{["ID","Company","Email","Status","Created","Markup","Actions"].map(h=><th key={h} style={{padding:"9px 11px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`}}>{h}</th>)}</tr></thead>
-                  <tbody>{clients.map((c,i)=>(
-                    <tr key={c.id} style={{background:i%2===0?G.white:"#FAFBF8"}}>
-                      <td style={{padding:"9px 11px",fontWeight:600,color:G.textLight,fontSize:10}}>{c.id}</td>
-                      <td style={{padding:"9px 11px",fontWeight:700}}>{c.name}{c.locked&&<span style={{marginLeft:4,fontSize:9,color:G.red}}>🔒</span>}{c.otpReq&&<span style={{marginLeft:3,fontSize:9,color:G.orange}}>OTP요청</span>}</td>
-                      <td style={{padding:"9px 11px",color:G.textMid,fontSize:10}}>{c.email}</td>
-                      <td style={{padding:"9px 11px"}}><Badge t={c.st} color={stColor(c.st)}/></td>
-                      <td style={{padding:"9px 11px",color:G.textLight}}>{c.created}</td>
-                      <td style={{padding:"9px 11px"}}>
-                        <FeeRow c={c} isLast={false} isEditing={editMu===c.id}
-                          onEdit={()=>setEditMu(editMu===c.id?null:c.id)}
-                          onSave={val=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,mu:val}:x));setEditMu(null);T(`✅ ${c.name} markup updated`);}}/>
-                      </td>
-                      <td style={{padding:"9px 11px"}}>
-                        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                          {c.otpReq&&<button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,otpReq:false}:x));T(`📧 ${c.name} OTP 재발송 완료`);}} style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #6366F1",background:"#EEF2FF",color:"#6366F1",cursor:"pointer",fontWeight:600}}>OTP 재발송</button>}
-                          {c.locked&&<button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,locked:false}:x));T(`🔓 ${c.name} 잠금 해제`);}} style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #0EA5E9",background:"#F0F9FF",color:"#0EA5E9",cursor:"pointer",fontWeight:600}}>잠금해제</button>}
-                          <button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,st:x.st==="Active"?"Suspended":"Active"}:x));T(`${c.st==="Active"?"⏸":"▶"} ${c.name}`);}} style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:`1px solid ${G.orange}`,background:"#FFF8EE",color:G.orange,cursor:"pointer",fontWeight:600}}>{c.st==="Active"?"정지":"활성화"}</button>
-                          <button onClick={()=>{if(window.confirm(`Delete "${c.name}"?`)){setClients(cs=>cs.filter(x=>x.id!==c.id));T(`🗑 ${c.name} 삭제`);}}} style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:`1px solid ${G.red}`,background:"#FFF5F5",color:G.red,cursor:"pointer",fontWeight:600}}>삭제</button>
-                        </div>
-                      </td>
+                  <thead>
+                    <tr style={{background:G.sidebar}}>
+                      {["ID","Company","Email","Status","KYB","Created","Markup","Actions"].map(h=>(
+                        <th key={h} style={{padding:"9px 11px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
+                      ))}
                     </tr>
-                  ))}</tbody>
+                  </thead>
+                  <tbody>
+                    {clients.map((c,i)=>(
+                      <tr key={c.id} style={{background:i%2===0?G.white:"#FAFBF8",verticalAlign:"middle"}}>
+                        <td style={{padding:"10px 11px",fontWeight:600,color:G.textLight,fontSize:10,whiteSpace:"nowrap"}}>{c.id}</td>
+                        <td style={{padding:"10px 11px",fontWeight:700,whiteSpace:"nowrap"}}>
+                          {c.name}
+                          {c.locked&&<span style={{marginLeft:5,fontSize:9,color:G.red}}>🔒</span>}
+                          {c.otpReq&&<span style={{marginLeft:4,fontSize:9,color:G.orange}}>●OTP</span>}
+                        </td>
+                        <td style={{padding:"10px 11px",color:G.textMid,fontSize:10}}>{c.email}</td>
+                        <td style={{padding:"10px 11px"}}><Badge t={c.st} color={stColor(c.st)}/></td>
+                        <td style={{padding:"10px 11px"}}><KYBBadge status={c.kybStatus}/></td>
+                        <td style={{padding:"10px 11px",color:G.textLight,whiteSpace:"nowrap"}}>{c.created}</td>
+                        <td style={{padding:"10px 11px"}}>
+                          {editMu===c.id?(
+                            <div style={{display:"flex",alignItems:"center",gap:4}}>
+                              <input type="number" defaultValue={(c.mu*100).toFixed(2)} id={`mu-${c.id}`} step="0.01"
+                                style={{width:58,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
+                              <span style={{fontSize:10,color:G.textMid}}>%</span>
+                              <Btn t="저장" sm color={G.green} onClick={()=>{
+                                const val=parseFloat(document.getElementById(`mu-${c.id}`).value)/100;
+                                setClients(cs=>cs.map(x=>x.id===c.id?{...x,mu:val}:x));setEditMu(null);T(`✅ ${c.name} markup updated`);
+                              }}/>
+                              <Btn t="취소" sm color={G.textLight} onClick={()=>setEditMu(null)}/>
+                            </div>
+                          ):(
+                            <div style={{display:"flex",alignItems:"center",gap:6}}>
+                              <span style={{background:G.greenLight,color:G.greenDark,borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11,cursor:"default",position:"relative"}}
+                                title={`최종 수수료 = OSL 0.02% + ${(c.mu*100).toFixed(2)}% = ${(0.02+c.mu*100).toFixed(2)}%`}>
+                                +{(c.mu*100).toFixed(2)}%
+                              </span>
+                              <button onClick={()=>setEditMu(c.id)} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
+                            </div>
+                          )}
+                        </td>
+                        <td style={{padding:"10px 11px"}}>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",minWidth:180}}>
+                            {/* KYB 등록 (INACTIVE 또는 REJECTED) */}
+                            {(c.kybStatus==="INACTIVE"||c.kybStatus==="REJECTED")&&(
+                              <button onClick={()=>T(`📋 ${c.name} KYB 등록 화면으로 이동 (SCR-21)`)}
+                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #7C3AED",background:"#F3E8FF",color:"#7C3AED",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>KYB 등록</button>
+                            )}
+                            {/* KYB 재제출 (REJECTED만) */}
+                            {c.kybStatus==="REJECTED"&&(
+                              <button onClick={()=>T(`⚠️ ${c.name} KYB 재제출 (REJECTED 사유 확인 필요)`)}
+                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #991B1B",background:"#FEE2E2",color:"#991B1B",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>KYB 재제출</button>
+                            )}
+                            {/* OTP 재발송 */}
+                            {c.otpReq&&(
+                              <button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,otpReq:false}:x));T(`📧 ${c.name} OTP 재발송 완료`);}}
+                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #6366F1",background:"#EEF2FF",color:"#6366F1",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>OTP 재발송</button>
+                            )}
+                            {/* 잠금 해제 */}
+                            {c.locked&&(
+                              <button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,locked:false}:x));T(`🔓 ${c.name} 잠금 해제`);}}
+                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #0EA5E9",background:"#F0F9FF",color:"#0EA5E9",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>잠금 해제</button>
+                            )}
+                            {/* 정지 / 활성화 */}
+                            {c.st==="Active"&&(
+                              <button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,st:"Suspended"}:x));T(`⏸ ${c.name} 정지`);}}
+                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:`1px solid ${G.orange}`,background:"#FFF8EE",color:G.orange,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>정지</button>
+                            )}
+                            {c.st==="Suspended"&&(
+                              <button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,st:"Active"}:x));T(`▶ ${c.name} 활성화`);}}
+                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:`1px solid ${G.green}`,background:G.greenLight,color:G.greenDark,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>활성화</button>
+                            )}
+                            {/* 삭제 */}
+                            <button onClick={()=>setClientDeleteId(c.id)}
+                              style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:`1px solid ${G.red}`,background:"#FFF5F5",color:G.red,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>삭제</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </div>
+
+              {/* 삭제 확인 모달 */}
+              {clientDeleteId&&(()=>{
+                const target=clients.find(c=>c.id===clientDeleteId);
+                return(
+                  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998}}>
+                    <div style={{background:G.white,borderRadius:14,padding:28,maxWidth:340,width:"90%",boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}}>
+                      <div style={{fontWeight:700,fontSize:14,marginBottom:10}}>고객사 삭제</div>
+                      <div style={{fontSize:12,color:G.textMid,marginBottom:6}}>'{target?.name}' 계정을 삭제하시겠습니까?</div>
+                      <div style={{fontSize:11,color:G.red,marginBottom:20}}>이 작업은 되돌릴 수 없습니다.</div>
+                      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                        <Btn t="취소" sm color={G.textMid} onClick={()=>setClientDeleteId(null)}/>
+                        <Btn t="삭제" sm color={G.red} onClick={()=>{
+                          setClients(cs=>cs.filter(x=>x.id!==clientDeleteId));
+                          setClientDeleteId(null);
+                          T(`🗑 ${target?.name} 삭제`);
+                        }}/>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
