@@ -29,9 +29,9 @@ const NET_COLOR = {
 };
 
 const ACCOUNTS = {
-  Hanpass:{ id:"ID:17615-HNP", email:"admin@hanpass.com", balances:{ USD:{total:12450}, USDC:{"ERC-20":5200.50,"Base":3120.00}, USDT:{"ERC-20":2100.00,"TRC-20":3000.00} } },
-  Sentbe: { id:"ID:17616-STB", email:"admin@sentbe.com",  balances:{ USD:{total:3200},  USDC:{"ERC-20":900.75,"Base":600.00},   USDT:{"ERC-20":480.00,"TRC-20":500.00} } },
-  MOIN:   { id:"ID:17617-MON", email:"admin@moin.money",  balances:{ USD:{total:7800},  USDC:{"ERC-20":2000.00,"Base":2200.00}, USDT:{"ERC-20":1100.50,"TRC-20":1200.00} } },
+  Hanpass:{ id:"ID:17615-HNP", email:"admin@hanpass.com", kybStatus:"ACTIVE",   kybInfo:{name:"Hanpass Corp.",  registrationNo:"110-81-55000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:12450}, USDC:{"ERC-20":5200.50,"Base":3120.00}, USDT:{"ERC-20":2100.00,"TRC-20":3000.00} } },
+  Sentbe: { id:"ID:17616-STB", email:"admin@sentbe.com",  kybStatus:"INACTIVE", kybInfo:null,                                                                                                    balances:{ USD:{total:3200},  USDC:{"ERC-20":900.75,"Base":600.00},   USDT:{"ERC-20":480.00,"TRC-20":500.00} } },
+  MOIN:   { id:"ID:17617-MON", email:"admin@moin.money",  kybStatus:"ACTIVE",   kybInfo:{name:"MOIN Corp.",     registrationNo:"110-81-77000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:7800},  USDC:{"ERC-20":2000.00,"Base":2200.00}, USDT:{"ERC-20":1100.50,"TRC-20":1200.00} } },
 };
 const MASTER_BAL = { USD:{total:52340}, USDC:{"ERC-20":18600,"Base":12600}, USDT:{"ERC-20":9400,"TRC-20":9500} };
 
@@ -1324,6 +1324,7 @@ function SubDash({acctName,onLogout,onMaster}){
   const [poAmt,setPoAmt]=useState("");
   const [poCur,setPoCur]=useState("USD");
   const [poNet,setPoNet]=useState("");
+  const [poOrig,setPoOrig]=useState({name:"",registrationNo:"",country:"",address:""});
   const [poFeeLoading,setPoFeeLoading]=useState(false);
   const [poGasFee,setPoGasFee]=useState(null);
   const [poFeeError,setPoFeeError]=useState(false);
@@ -1387,8 +1388,8 @@ function SubDash({acctName,onLogout,onMaster}){
         setPoOtpFail(next);
         setPoOtp(["","","","","",""]);
         setPoSubmitting(false);
-        if(next>=3){setPoCooldown(30);T("🔒 잠시 후 다시 시도하세요 (30초)");}
-        else{T(`⚠️ 인증 코드가 올바르지 않습니다. 다시 시도하세요 (${3-next}회 남음)`);}
+        if(next>=3){closePoOtp();T("🔒 잠시 후 다시 시도하세요. Payout 세션이 잠겼습니다.");}
+        else{T(`⚠️ 코드가 올바르지 않습니다. (${3-next}회 남음)`);}
       }
     },600);
   };
@@ -1617,18 +1618,29 @@ function SubDash({acctName,onLogout,onMaster}){
             const poAmtNum=parseFloat((poAmt||"0").replace(/,/g,""))||0;
             const swiftFee=35;
             const isLargeAmt=poAmtNum>=100000;
-            const nextDisabled=!poRec||!poAmt||(poType==="Crypto"&&(!poNet||poFeeLoading||!poGasFee||poFeeError));
+            const kybActive=account?.kybStatus==="ACTIVE";
+            const origOk=kybActive||(poOrig.name&&poOrig.registrationNo&&poOrig.country&&poOrig.address);
+            const filteredRecs=recs.filter(r=>poType==="Fiat"?r.type==="Bank":r.type==="Crypto");
+            const nextDisabled=!poRec||!poAmt||!origOk||(poType==="Crypto"&&(!poNet||poFeeLoading||!poGasFee||poFeeError));
+            const stepDone=[!!poRec,!!origOk,!!poAmt];
             return(
-            <div style={{maxWidth:440}}>
+            <div style={{maxWidth:480}}>
               <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
               <Card>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                {/* 헤더 + 스텝 상태 */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
                   <div style={{fontWeight:700,fontSize:13}}>Create Payout</div>
-                  <div style={{fontSize:10,color:G.textLight,background:G.greenLight,borderRadius:20,padding:"2px 9px",fontWeight:600}}>Step 1 / 2</div>
+                  <div style={{display:"flex",gap:4}}>
+                    {["수취인","송금인","금액"].map((s,i)=>(
+                      <span key={i} style={{fontSize:9,padding:"2px 8px",borderRadius:10,background:stepDone[i]?G.green:G.border,color:stepDone[i]?"#fff":G.textMid,fontWeight:700,transition:"background 0.2s"}}>
+                        Step {i+1}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div style={{fontSize:11,color:G.textLight,marginBottom:14}}>송금 정보를 입력하세요.</div>
-                {/* 송금 유형 */}
-                <div style={{display:"flex",gap:7,marginBottom:12}}>
+
+                {/* 송금 유형 토글 */}
+                <div style={{display:"flex",gap:7,marginBottom:18}}>
                   {["Fiat","Crypto"].map(tp=>(
                     <button key={tp} onClick={()=>{setPoType(tp);setPoCur(tp==="Fiat"?"USD":"USDC");setPoNet("");setPoRec("");setPoAmt("");setPoGasFee(null);setPoFeeError(false);}}
                       style={{flex:1,padding:"9px",borderRadius:8,border:`2px solid ${poType===tp?G.green:G.border}`,background:poType===tp?G.greenLight:G.white,fontWeight:700,cursor:"pointer",color:poType===tp?G.greenDark:G.textMid,fontSize:12}}>
@@ -1636,93 +1648,169 @@ function SubDash({acctName,onLogout,onMaster}){
                     </button>
                   ))}
                 </div>
-                {/* 수취인 */}
-                <Lbl t="수취인"/>
-                <select value={poRec} onChange={e=>setPoRec(e.target.value)} style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
-                  <option value="">— 수취인 선택 —</option>
-                  {recs.filter(r=>poType==="Fiat"?r.type==="Bank":r.type==="Crypto").map(r=>(
-                    <option key={r.id} value={r.id}>{r.name} · {r.cur}{r.network?" ("+r.network+")":""}</option>
-                  ))}
-                </select>
-                {/* 통화 */}
-                <Lbl t="통화"/><Sel v={poCur} set={v=>{setPoCur(v);setPoNet("");setPoGasFee(null);}} opts={poType==="Fiat"?["USD","HKD"]:["USDC","USDT"]}/>
-                {/* 네트워크 (Crypto) */}
-                {poType==="Crypto"&&<NetSelector cur={poCur} net={poNet} setNet={v=>{setPoNet(v);setPoGasFee(null);}}/>}
-                {/* 금액 */}
-                <Lbl t="금액"/><Inp v={poAmt} set={v=>{setPoAmt(v);setPoGasFee(null);}} ph="숫자 입력"/>
-                {/* ── Fiat 수수료 블록 ── */}
-                {poType==="Fiat"&&poAmt&&(
-                  <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#2B6CB0",marginBottom:10}}>🏦 SWIFT 전신망 수수료</div>
-                    {isLargeAmt?(
-                      <div style={{fontSize:11,color:"#2B6CB0",lineHeight:1.6}}>
-                        💬 100,000 USD 이상은 수수료가 별도 책정됩니다. 담당자에게 문의하세요.
+
+                {/* ── Step 1: 수취인 (Beneficiary) ── */}
+                <div style={{borderTop:`1px solid ${G.border}`,paddingTop:14,marginBottom:14}}>
+                  <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 1 — 수취인 (Beneficiary)</div>
+                  {filteredRecs.length===0?(
+                    <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:8,padding:"12px 14px",fontSize:11,color:"#92400E"}}>
+                      등록된 수취인이 없습니다.
+                      <button onClick={()=>setMenu("Recipients")} style={{marginLeft:8,fontSize:11,color:G.green,background:"none",border:"none",cursor:"pointer",fontWeight:700,textDecoration:"underline"}}>
+                        수취인 등록 바로가기 →
+                      </button>
+                    </div>
+                  ):(
+                    <>
+                      <Lbl t="수취인 선택"/>
+                      <select value={poRec} onChange={e=>{setPoRec(e.target.value);}}
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                        <option value="">— 수취인 선택 —</option>
+                        {filteredRecs.map(r=>(
+                          <option key={r.id} value={r.id}>{r.name} · {r.cur}{r.network?" ("+r.network+")":""}</option>
+                        ))}
+                      </select>
+                      {/* 수취인 미리보기 */}
+                      {poRecObj&&(
+                        <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:8,padding:"12px 14px",marginBottom:4}}>
+                          <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:7,flexWrap:"wrap"}}>
+                            <span style={{fontWeight:700,fontSize:12}}>{poRecObj.name}</span>
+                            <CounterpartyStatusBadge status={poRecObj.counterpartyStatus}/>
+                          </div>
+                          {poRecObj.type==="Bank"?(
+                            <div style={{fontSize:11,color:G.textMid,lineHeight:1.7}}>
+                              <div>🏦 {poRecObj.bankName||"—"} · {poRecObj.detail}</div>
+                              <div>SWIFT: {poRecObj.swiftCode||"—"}</div>
+                            </div>
+                          ):(
+                            <div style={{fontSize:11,color:G.textMid,lineHeight:1.7}}>
+                              <div>🔗 <AddressChip address={poRecObj.detail}/></div>
+                              <div>Network: {poRecObj.network}</div>
+                            </div>
+                          )}
+                          {poRecObj.counterpartyStatus!=="ACTIVE"&&(
+                            <div style={{fontSize:10,color:G.orange,marginTop:7,padding:"5px 9px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:5}}>
+                              ⚠️ Counterparty 상태가 ACTIVE가 아닙니다. Payout 실행 시 거부될 수 있습니다.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* ── Step 2: 송금인 (Originator) ── */}
+                <div style={{borderTop:`1px solid ${G.border}`,paddingTop:14,marginBottom:14}}>
+                  <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 2 — 송금인 (Originator)</div>
+                  {kybActive?(
+                    <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:8,padding:"12px 14px",fontSize:11}}>
+                      <div style={{fontWeight:700,marginBottom:8,color:G.greenDark}}>✅ KYB 완료 — 자동 입력 (읽기 전용)</div>
+                      {[["법인명",account?.kybInfo?.name],["등록번호",account?.kybInfo?.registrationNo],["국가",account?.kybInfo?.country],["주소",account?.kybInfo?.address]].map(([k,v])=>(
+                        <div key={k} style={{display:"flex",gap:8,marginBottom:3}}>
+                          <span style={{color:G.textMid,minWidth:48}}>{k}</span>
+                          <span style={{fontWeight:600,color:G.textDark}}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ):(
+                    <>
+                      <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:7,padding:"8px 11px",fontSize:10,color:"#92400E",marginBottom:12}}>
+                        ⚠️ KYB 미완료 계정입니다. 매 Payout마다 송금인 정보를 직접 입력해야 합니다. KYB 완료 후에는 자동 입력됩니다.
                       </div>
-                    ):(
-                      <>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                          <span style={{fontSize:11,color:G.textMid}}>송금 요청액</span>
-                          <span style={{fontSize:11,fontWeight:600}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
+                      <Lbl t="법인명 (Legal Name)*"/>
+                      <Inp v={poOrig.name} set={v=>setPoOrig(o=>({...o,name:v}))} ph="송금인 법인명"/>
+                      <Lbl t="사업자등록번호 (Registration No.)*"/>
+                      <Inp v={poOrig.registrationNo} set={v=>setPoOrig(o=>({...o,registrationNo:v}))} ph="예: 110-81-12345"/>
+                      <Lbl t="국가 (Country Code)*"/>
+                      <Inp v={poOrig.country} set={v=>setPoOrig(o=>({...o,country:v}))} ph="ISO alpha-2 (예: KR)"/>
+                      <Lbl t="주소 (Address)*"/>
+                      <Inp v={poOrig.address} set={v=>setPoOrig(o=>({...o,address:v}))} ph="법인 주소"/>
+                    </>
+                  )}
+                </div>
+
+                {/* ── Step 3: 금액 및 통화 ── */}
+                <div style={{borderTop:`1px solid ${G.border}`,paddingTop:14,marginBottom:14}}>
+                  <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 3 — 금액 및 통화</div>
+                  <Lbl t="통화"/><Sel v={poCur} set={v=>{setPoCur(v);setPoNet("");setPoGasFee(null);}} opts={poType==="Fiat"?["USD","HKD"]:["USDC","USDT"]}/>
+                  {poType==="Crypto"&&<NetSelector cur={poCur} net={poNet} setNet={v=>{setPoNet(v);setPoGasFee(null);}}/>}
+                  <Lbl t="금액"/>
+                  <Inp v={poAmt} set={v=>{setPoAmt(v);setPoGasFee(null);}} ph={poType==="Fiat"?"숫자 입력 (소수점 2자리)":"숫자 입력 (소수점 6자리)"}/>
+                  {/* Fiat 수수료 블록 */}
+                  {poType==="Fiat"&&poAmt&&(
+                    <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#2B6CB0",marginBottom:10}}>🏦 SWIFT 전신망 수수료</div>
+                      {isLargeAmt?(
+                        <div style={{fontSize:11,color:"#2B6CB0",lineHeight:1.6}}>
+                          💬 100,000 USD 이상은 수수료가 별도 책정됩니다. 담당자에게 문의하세요.
                         </div>
-                        <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #BEE3F8",marginBottom:8}}>
-                          <span style={{fontSize:11,color:G.textMid}}>SWIFT 수수료</span>
-                          <span style={{fontSize:11,fontWeight:700,color:G.orange}}>+ {swiftFee}.00 {poCur}</span>
+                      ):(
+                        <>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                            <span style={{fontSize:11,color:G.textMid}}>송금 요청액</span>
+                            <span style={{fontSize:11,fontWeight:600}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #BEE3F8",marginBottom:8}}>
+                            <span style={{fontSize:11,color:G.textMid}}>SWIFT 수수료</span>
+                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>+ {swiftFee}.00 {poCur}</span>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between"}}>
+                            <span style={{fontSize:13,fontWeight:700}}>총 차감액</span>
+                            <span style={{fontSize:14,fontWeight:700,color:G.textDark}}>{(poAmtNum+swiftFee).toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
+                          </div>
+                          <div style={{fontSize:10,color:"#2B6CB0",marginTop:8}}>ℹ️ 100,000 USD 미만 건당 USD 35</div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {/* Crypto 가스비 블록 */}
+                  {poType==="Crypto"&&poAmt&&poNet&&(
+                    <div style={{background:poFeeLoading?G.sidebar:"#FFFBEB",border:`1px solid ${poFeeLoading?G.border:"#FDE68A"}`,borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>🔗 네트워크 가스비 (예상)</div>
+                      {poFeeError?(
+                        <>
+                          <div style={{fontSize:11,color:G.red,marginBottom:8}}>수수료를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.</div>
+                          <button onClick={()=>{setPoFeeError(false);setPoFeeLoading(true);setTimeout(()=>{setPoGasFee("0.05");setPoFeeLoading(false);},800);}}
+                            style={{fontSize:11,padding:"5px 12px",borderRadius:6,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",fontWeight:600}}>재시도</button>
+                        </>
+                      ):poFeeLoading?(
+                        <div style={{display:"flex",alignItems:"center",gap:8,color:G.textMid,fontSize:11}}>
+                          <div style={{width:14,height:14,border:`2px solid ${G.green}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
+                          로딩 중...
                         </div>
-                        <div style={{display:"flex",justifyContent:"space-between"}}>
-                          <span style={{fontSize:13,fontWeight:700}}>총 차감액</span>
-                          <span style={{fontSize:14,fontWeight:700,color:G.textDark}}>{(poAmtNum+swiftFee).toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
-                        </div>
-                        <div style={{fontSize:10,color:"#2B6CB0",marginTop:8}}>ℹ️ 100,000 USD 미만 건당 USD 35</div>
-                      </>
-                    )}
-                  </div>
-                )}
-                {/* ── Crypto 가스비 블록 ── */}
-                {poType==="Crypto"&&poAmt&&poNet&&(
-                  <div style={{background:poFeeLoading?G.sidebar:"#FFFBEB",border:`1px solid ${poFeeLoading?G.border:"#FDE68A"}`,borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>🔗 네트워크 가스비 (예상)</div>
-                    {poFeeError?(
-                      <>
-                        <div style={{fontSize:11,color:G.red,marginBottom:8}}>수수료를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.</div>
-                        <button onClick={()=>{setPoFeeError(false);setPoFeeLoading(true);setTimeout(()=>{setPoGasFee("0.05");setPoFeeLoading(false);},800);}}
-                          style={{fontSize:11,padding:"5px 12px",borderRadius:6,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",fontWeight:600}}>재시도</button>
-                      </>
-                    ):poFeeLoading?(
-                      <div style={{display:"flex",alignItems:"center",gap:8,color:G.textMid,fontSize:11}}>
-                        <div style={{width:14,height:14,border:`2px solid ${G.green}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
-                        로딩 중...
-                      </div>
-                    ):(
-                      <>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                          <span style={{fontSize:11,color:G.textMid}}>송금 요청액</span>
-                          <span style={{fontSize:11,fontWeight:600}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
-                        </div>
-                        <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #FDE68A",marginBottom:8}}>
-                          <span style={{fontSize:11,color:G.textMid}}>예상 가스비</span>
-                          <span style={{fontSize:11,fontWeight:700,color:G.orange}}>+ {poGasFee} {poCur}</span>
-                        </div>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                          <span style={{fontSize:13,fontWeight:700}}>예상 총 차감액</span>
-                          <span style={{fontSize:14,fontWeight:700,color:G.textDark}}>{(poAmtNum+parseFloat(poGasFee||0)).toFixed(2)} {poCur}</span>
-                        </div>
-                        <div style={{fontSize:10,color:"#92400E"}}>⚠️ 실제 가스비는 처리 시점에 확정되며 변동될 수 있습니다.</div>
-                      </>
-                    )}
-                  </div>
-                )}
-                {/* 다음 버튼 */}
+                      ):(
+                        <>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                            <span style={{fontSize:11,color:G.textMid}}>송금 요청액</span>
+                            <span style={{fontSize:11,fontWeight:600}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #FDE68A",marginBottom:8}}>
+                            <span style={{fontSize:11,color:G.textMid}}>예상 가스비</span>
+                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>+ {poGasFee} {poCur}</span>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                            <span style={{fontSize:13,fontWeight:700}}>예상 총 차감액</span>
+                            <span style={{fontSize:14,fontWeight:700,color:G.textDark}}>{(poAmtNum+parseFloat(poGasFee||0)).toFixed(2)} {poCur}</span>
+                          </div>
+                          <div style={{fontSize:10,color:"#92400E"}}>⚠️ 실제 가스비는 처리 시점에 확정되며 변동될 수 있습니다.</div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Payout 실행 버튼 */}
                 <button disabled={nextDisabled}
                   onClick={()=>{
-                    if(!poRec||!poAmt){T("⚠️ 수취인/금액 입력");return;}
+                    if(!poRec||!poAmt){T("⚠️ 수취인/금액을 입력하세요");return;}
+                    if(!origOk){T("⚠️ 송금인 정보를 입력하세요");return;}
                     if(poType==="Crypto"&&!poNet){T("⚠️ 네트워크를 선택하세요");return;}
                     if(poType==="Crypto"&&(!poGasFee||poFeeError)){T("⚠️ 가스비 로딩 완료 후 진행하세요");return;}
                     setShowPoOtp(true);setPoOtp(["","","","","",""]);setPoOtpFail(0);setPoCooldown(0);setPoSubmitting(false);
                   }}
-                  style={{width:"100%",padding:"10px",borderRadius:9,border:"none",fontWeight:700,fontSize:13,
+                  style={{width:"100%",padding:"12px",borderRadius:9,border:"none",fontWeight:700,fontSize:13,
                     background:nextDisabled?"#ccc":G.green,color:nextDisabled?G.textLight:"#fff",
                     cursor:nextDisabled?"not-allowed":"pointer",transition:"background 0.15s"}}>
-                  다음 — OTP 인증으로 →
+                  🚀 Payout 실행
                 </button>
               </Card>
             </div>
@@ -1733,9 +1821,9 @@ function SubDash({acctName,onLogout,onMaster}){
           {showPoOtp&&(
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}}>
               <div style={{background:G.white,borderRadius:16,padding:28,width:400,boxShadow:"0 8px 40px rgba(0,0,0,0.22)",position:"relative"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
-                  <div style={{fontWeight:700,fontSize:15}}>🔐 송금을 최종 확인하세요</div>
-                </div>
+                <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>🔐 Payout 보안 인증</div>
+                <div style={{fontSize:11,color:G.textMid,marginBottom:16}}>이 송금을 실행하려면 OTP 코드를 입력하세요.</div>
+                {/* 송금 요약 */}
                 <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:14}}>
                   {(()=>{
                     const amtN=parseFloat((poAmt||"0").replace(/,/g,""))||0;
@@ -1754,28 +1842,28 @@ function SubDash({acctName,onLogout,onMaster}){
                 </div>
                 <div style={{height:"1px",background:G.border,marginBottom:16}}/>
                 <div style={{textAlign:"center",fontSize:12,color:G.textMid,fontWeight:600,marginBottom:4}}>Google Authenticator 앱의</div>
-                <div style={{textAlign:"center",fontSize:11,color:G.textLight,marginBottom:4}}>6자리 코드를 입력하여 승인하세요</div>
+                <div style={{textAlign:"center",fontSize:11,color:G.textLight,marginBottom:12}}>6자리 코드를 입력하세요.</div>
                 <OtpInput otp={poOtp} setOtp={setPoOtp} disabled={poCooldown>0||poSubmitting}/>
                 {poOtpFail>0&&poOtpFail<3&&(
-                  <div style={{textAlign:"center",fontSize:11,color:G.red,marginBottom:10}}>인증 코드가 올바르지 않습니다. 다시 시도하세요</div>
+                  <div style={{textAlign:"center",fontSize:11,color:G.red,marginBottom:10}}>코드가 올바르지 않습니다. ({3-poOtpFail}회 남음)</div>
                 )}
                 {poCooldown>0&&(
                   <div style={{textAlign:"center",fontSize:11,color:G.red,fontWeight:700,marginBottom:10}}>🔒 잠시 후 다시 시도하세요 ({poCooldown}초)</div>
                 )}
-                <button
-                  disabled={!poOtpFilled||poCooldown>0||poSubmitting}
-                  onClick={submitPoOtp}
-                  style={{width:"100%",padding:"12px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,
-                    cursor:(!poOtpFilled||poCooldown>0||poSubmitting)?"not-allowed":"pointer",
-                    background:(!poOtpFilled||poCooldown>0||poSubmitting)?"#ccc":G.green,
-                    color:(!poOtpFilled||poCooldown>0||poSubmitting)?G.textLight:"#fff",
-                    marginBottom:12,transition:"background 0.15s"}}>
-                  {poSubmitting?"처리 중...":"송금 승인"}
-                </button>
-                <div style={{textAlign:"center"}}>
+                <div style={{display:"flex",gap:8,marginBottom:4}}>
                   <button onClick={closePoOtp}
-                    style={{background:"none",border:"none",color:G.textMid,cursor:"pointer",fontSize:12,textDecoration:"underline"}}>
-                    ← 송금 정보 수정
+                    style={{flex:1,padding:"11px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer",fontWeight:600,fontSize:12}}>
+                    취소
+                  </button>
+                  <button
+                    disabled={!poOtpFilled||poCooldown>0||poSubmitting}
+                    onClick={submitPoOtp}
+                    style={{flex:2,padding:"11px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,
+                      cursor:(!poOtpFilled||poCooldown>0||poSubmitting)?"not-allowed":"pointer",
+                      background:(!poOtpFilled||poCooldown>0||poSubmitting)?"#ccc":G.green,
+                      color:(!poOtpFilled||poCooldown>0||poSubmitting)?G.textLight:"#fff",
+                      transition:"background 0.15s"}}>
+                    {poSubmitting?"처리 중...":"확인 및 실행"}
                   </button>
                 </div>
               </div>
