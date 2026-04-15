@@ -17,23 +17,24 @@ const G = {
   border:"#E2EFD9",red:"#E53E3E",orange:"#F5A623",blue:"#2775CA",blueLight:"#EEF6FF",
 };
 
-const NETWORKS = { USD:[], HKD:[], USDC:["ERC-20","Base"], USDT:["ERC-20","TRC-20"] };
+const NETWORKS = { USD:[], HKD:[], USDC:["ERC-20","Base","SPL"], USDT:["ERC-20","TRC-20","SPL"] };
 const NET_COLOR = {
-  "ERC-20":   { bg:"#EDE9FE", text:"#7C3AED" },
-  "Base":     { bg:"#DBEAFE", text:"#1D4ED8" },
-  "TRC-20":   { bg:"#CCFBF1", text:"#0D9488" },
-  "BNB-20":   { bg:"#FEF9C3", text:"#B45309" },
-  "SWIFT":    { bg:"#F0FDF4", text:"#166534" },
+  "ERC-20":    { bg:"#EDE9FE", text:"#7C3AED" },
+  "Base":      { bg:"#DBEAFE", text:"#1D4ED8" },
+  "TRC-20":    { bg:"#CCFBF1", text:"#0D9488" },
+  "SPL":       { bg:"#FFF7ED", text:"#C2410C" },
+  "SWIFT":     { bg:"#F0FDF4", text:"#166634" },
   "Local Bank":{ bg:"#EFF6FF", text:"#1D4ED8" },
-  "":         { bg:"#F3F4F6", text:"#6B7280" },
+  "HKD Local": { bg:"#FDF4FF", text:"#7E22CE" },
+  "":          { bg:"#F3F4F6", text:"#6B7280" },
 };
 
 const ACCOUNTS = {
-  Hanpass:{ id:"ID:17615-HNP", email:"admin@hanpass.com", kybStatus:"ACTIVE",   kybInfo:{name:"Hanpass Corp.",  registrationNo:"110-81-55000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:12450}, USDC:{"ERC-20":5200.50,"Base":3120.00}, USDT:{"ERC-20":2100.00,"TRC-20":3000.00} } },
-  Sentbe: { id:"ID:17616-STB", email:"admin@sentbe.com",  kybStatus:"INACTIVE", kybInfo:null,                                                                                                    balances:{ USD:{total:3200},  USDC:{"ERC-20":900.75,"Base":600.00},   USDT:{"ERC-20":480.00,"TRC-20":500.00} } },
-  MOIN:   { id:"ID:17617-MON", email:"admin@moin.money",  kybStatus:"ACTIVE",   kybInfo:{name:"MOIN Corp.",     registrationNo:"110-81-77000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:7800},  USDC:{"ERC-20":2000.00,"Base":2200.00}, USDT:{"ERC-20":1100.50,"TRC-20":1200.00} } },
+  Hanpass:{ id:"ID:17615-HNP", email:"admin@hanpass.com", kybStatus:"ACTIVE",   kybInfo:{name:"Hanpass Corp.",  registrationNo:"110-81-55000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:12450}, USDC:{"ERC-20":5200.50,"Base":3120.00,"SPL":1800.00}, USDT:{"ERC-20":2100.00,"TRC-20":3000.00,"SPL":950.00} } },
+  Sentbe: { id:"ID:17616-STB", email:"admin@sentbe.com",  kybStatus:"INACTIVE", kybInfo:null,                                                                                                    balances:{ USD:{total:3200},  USDC:{"ERC-20":900.75,"Base":600.00,"SPL":420.00},   USDT:{"ERC-20":480.00,"TRC-20":500.00,"SPL":210.00} } },
+  MOIN:   { id:"ID:17617-MON", email:"admin@moin.money",  kybStatus:"ACTIVE",   kybInfo:{name:"MOIN Corp.",     registrationNo:"110-81-77000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:7800},  USDC:{"ERC-20":2000.00,"Base":2200.00,"SPL":980.00}, USDT:{"ERC-20":1100.50,"TRC-20":1200.00,"SPL":630.00} } },
 };
-const MASTER_BAL = { USD:{total:52340}, USDC:{"ERC-20":18600,"Base":12600}, USDT:{"ERC-20":9400,"TRC-20":9500} };
+const MASTER_BAL = { USD:{total:52340}, USDC:{"ERC-20":18600,"Base":12600,"SPL":3200}, USDT:{"ERC-20":9400,"TRC-20":9500,"SPL":2100} };
 
 // ── TX_DATA (확장 필드 포함) ──────────────────────────────────────────
 const TX_DATA = [
@@ -207,10 +208,12 @@ const MASTER_DEPOSIT = {
     USDC:[
       {network:"ERC-20", address:"0x1A2B3C4D5E6F7890abcdef1234567890ABCDEF12"},
       {network:"Base",   address:"0xBASE1234abcdef5678ABCDEF9012345678901234"},
+      {network:"SPL",    address:"MSTRspl1111AAAAAAbbbbbbCCCCCCddddddEEEEEE"},
     ],
     USDT:[
       {network:"ERC-20", address:"0xERC20usdt1234567890ABCDEF1234567890abcd"},
       {network:"TRC-20", address:"TRX1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZab"},
+      {network:"SPL",    address:"MSTRspl2222FFFFFFggggggHHHHHHiiiiiJJJJJJ"},
     ],
   },
 };
@@ -225,10 +228,12 @@ const SUB_DEPOSIT = {
       USDC:[
         {network:"ERC-20",address:"0xHNP_ERC20_usdc_1234567890abcdef12345678"},
         {network:"Base",  address:"0xHNP_BASE_usdc_abcdef1234567890ABCDEF12"},
+        {network:"SPL",   address:"HNPspl1111AAAAbbbbCCCCddddEEEEffffGGGGhh"},
       ],
       USDT:[
         {network:"ERC-20",address:"0xHNP_ERC20_usdt_ABCDEF1234567890abcdef12"},
         {network:"TRC-20",address:"THNP_TRC20_usdt_1234567890ABCDEFGHIJKLab"},
+        {network:"SPL",   address:"HNPspl2222IIIIjjjjKKKKllllMMMMnnnnOOOOpp"},
       ],
     },
   },
@@ -241,10 +246,12 @@ const SUB_DEPOSIT = {
       USDC:[
         {network:"ERC-20",address:"0xSTB_ERC20_usdc_abcdef9876543210ABCDEF98"},
         {network:"Base",  address:"0xSTB_BASE_usdc_9876543210abcdefABCDEF98"},
+        {network:"SPL",   address:"STBspl1111QQQQrrrrSSSSttttuuuuVVVVwwwwXX"},
       ],
       USDT:[
         {network:"ERC-20",address:"0xSTB_ERC20_usdt_9876543210ABCDEF98765432"},
         {network:"TRC-20",address:"TSTB_TRC20_usdt_9876543210ABCDEFGHIJKLcd"},
+        {network:"SPL",   address:"STBspl2222YYYYzzzzAAAA1111BBBB2222CCCC33"},
       ],
     },
   },
@@ -257,10 +264,12 @@ const SUB_DEPOSIT = {
       USDC:[
         {network:"ERC-20",address:"0xMON_ERC20_usdc_1111222233334444AAAABBBB"},
         {network:"Base",  address:"0xMON_BASE_usdc_AAAABBBB1111222233334444"},
+        {network:"SPL",   address:"MONspl1111DDDDeeeeFFFfggggHHHHiiii3333JJ"},
       ],
       USDT:[
         {network:"ERC-20",address:"0xMON_ERC20_usdt_CCCCDDDD5555666677778888"},
         {network:"TRC-20",address:"TMON_TRC20_usdt_5555666677778888CCCCDDef"},
+        {network:"SPL",   address:"MONspl2222KKKKllllMMMMnnnn4444OOOO5555PP"},
       ],
     },
   },
@@ -908,7 +917,7 @@ function DepositInstruction({isMaster, acctName}){
   const activeFiat    = Array.isArray(activeFiatArr) ? activeFiatArr.find(f=>f.currency===fiatCur)||activeFiatArr[0] : activeFiatArr;
   const activeCrypto  = isMaster&&subTab!=="Master" ? SUB_DEPOSIT[subTab]?.crypto : cryptoData;
 
-  const netColors={"ERC-20":NET_COLOR["ERC-20"],"Base":NET_COLOR["Base"],"TRC-20":NET_COLOR["TRC-20"]};
+  const netColors={"ERC-20":NET_COLOR["ERC-20"],"Base":NET_COLOR["Base"],"TRC-20":NET_COLOR["TRC-20"],"SPL":NET_COLOR["SPL"]};
 
   return(
     <div style={{maxWidth:620}}>
@@ -999,6 +1008,11 @@ function DepositInstruction({isMaster, acctName}){
                   <div style={{marginTop:10,background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:7,padding:"8px 11px",fontSize:10,color:"#92400E"}}>
                     ⚠️ <b>{network}</b> 네트워크로만 전송하세요. 다른 네트워크로 전송 시 자산이 손실될 수 있습니다.
                   </div>
+                  {network==="SPL"&&(
+                    <div style={{marginTop:6,background:"#FFF7ED",border:"1px solid #FDBA74",borderRadius:7,padding:"8px 11px",fontSize:10,color:"#C2410C"}}>
+                      ⚠️ Solana(SPL) 네트워크 전용 주소입니다. SOL이 아닌 <b>USDC/USDT만</b> 전송 가능합니다.
+                    </div>
+                  )}
                 </Card>
               );
             })}
@@ -1365,7 +1379,7 @@ function SubDash({acctName,onLogout,onMaster}){
   useEffect(()=>{
     if(poType!=="Crypto"||!poAmt||!poNet){setPoGasFee(null);setPoFeeLoading(false);setPoFeeError(false);return;}
     setPoFeeLoading(true);setPoGasFee(null);setPoFeeError(false);
-    const GAS_FEE={"ERC-20":"3.50","Base":"0.05","TRC-20":"1.00"};
+    const GAS_FEE={"ERC-20":"3.50","Base":"0.05","TRC-20":"1.00","SPL":"0.50"};
     const t=setTimeout(()=>{setPoGasFee(GAS_FEE[poNet]||"0.05");setPoFeeLoading(false);},500);
     return()=>clearTimeout(t);
   },[poType,poAmt,poNet]);
@@ -2343,7 +2357,7 @@ function MasterDash({onLogout,onSub}){
   useEffect(()=>{
     if(mpoType!=="Crypto"||!mpoAmt||!mpoNet){setMpoGasFee(null);setMpoFeeLoading(false);setMpoFeeError(false);return;}
     setMpoFeeLoading(true);setMpoGasFee(null);setMpoFeeError(false);
-    const GAS_FEE={"ERC-20":"3.50","Base":"0.05","TRC-20":"1.00"};
+    const GAS_FEE={"ERC-20":"3.50","Base":"0.05","TRC-20":"1.00","SPL":"0.50"};
     const t=setTimeout(()=>{setMpoGasFee(GAS_FEE[mpoNet]||"0.05");setMpoFeeLoading(false);},500);
     return()=>clearTimeout(t);
   },[mpoType,mpoAmt,mpoNet]);
