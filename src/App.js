@@ -2294,6 +2294,15 @@ function MasterDash({onLogout,onSub}){
   const [showCreate,setShowCreate]=useState(false);
   const [nc,setNc]=useState({name:"",email:"",mu:0.10});
   const [clientDeleteId,setClientDeleteId]=useState(null);
+  const [kybTargetId,setKybTargetId]=useState(null);
+  const [kybSection,setKybSection]=useState(1);
+  const [kybForm,setKybForm]=useState({enterpriseName:"",enterpriseNameEn:"",registrationNumber:"",enterpriseType:"주식회사",establishmentDate:"",officeCountry:"KR",officialAddress:"",registrationAddress:"",registrationCity:"",industry:"핀테크/송금",fundsSource:"영업 수익",accountPurpose:"해외 송금",tradingFrequency:"월 1~5회",transactionAmount:"$0 ~ $10,000",bearerShare:"N",email:"",ip:"203.0.113.1",deviceId:"DEV-A1B2C3D4"});
+  const [kybDocs,setKybDocs]=useState({incorporation:null,businessReg:null,bylaws:null,companyExtract:null,orgChart:null,shareholding:null,license:null,bankStatement:null});
+  const [kybPersons,setKybPersons]=useState([]);
+  const [kybCompanies,setKybCompanies]=useState([]);
+  const [kybNoCompany,setKybNoCompany]=useState(false);
+  const [kybErrors,setKybErrors]=useState([]);
+  const [kybSumsubWarn,setKybSumsubWarn]=useState(false);
   const [mtrFrom,setMtrFrom]=useState("Master");
   const [mtrTo,setMtrTo]=useState("Hanpass");
   const [mtrCur,setMtrCur]=useState("USD");
@@ -2346,8 +2355,8 @@ function MasterDash({onLogout,onSub}){
   },[mcvAmt,mcvFrom,mcvTo]);
   const allTr=trF==="All"?TR:TR.filter(t=>t.st===trF);
   const mcvFiltered=mcvFilter==="All"?mcvHistory:mcvHistory.filter(t=>t.st===mcvFilter);
-  const nav=[{g:"Overview",items:["Overview"]},{g:"Operations",items:["Transfer","Deposit","Convert","Payout"]},{g:"Management",items:["Clients","All Transfers","All Orders","Fee Settings"]}];
-  const menuLabel={Overview:"Master Overview",Transfer:"Master Transfer",Deposit:"Deposit Instructions",Convert:"Convert",Payout:"Create Payout",Clients:"Sub Accounts",["All Transfers"]:"All Transfers",["All Orders"]:"All Orders",["Fee Settings"]:"Fee Settings"};
+  const nav=[{g:"Overview",items:["Overview"]},{g:"Operations",items:["Transfer","Deposit","Convert","Payout"]},{g:"Management",items:["Clients","All Transfers","All Orders","Fee Settings","Sub KYB"]}];
+  const menuLabel={Overview:"Master Overview",Transfer:"Master Transfer",Deposit:"Deposit Instructions",Convert:"Convert",Payout:"Create Payout",Clients:"Sub Accounts",["All Transfers"]:"All Transfers",["All Orders"]:"All Orders",["Fee Settings"]:"Fee Settings",["Sub KYB"]:"Sub Account KYB"};
 
   const mpoRecObj=masterRecs.find(r=>String(r.id)===String(mpoRec));
   const mpoRecName=mpoRecObj?.name||"—";
@@ -2870,12 +2879,12 @@ function MasterDash({onLogout,onSub}){
                           <div style={{display:"flex",gap:4,flexWrap:"wrap",minWidth:180}}>
                             {/* KYB 등록 (INACTIVE 또는 REJECTED) */}
                             {(c.kybStatus==="INACTIVE"||c.kybStatus==="REJECTED")&&(
-                              <button onClick={()=>T(`📋 ${c.name} KYB 등록 화면으로 이동 (SCR-21)`)}
+                              <button onClick={()=>{setKybTargetId(c.id);setKybSection(1);setKybErrors([]);setKybSumsubWarn(false);setMenu("Sub KYB");}}
                                 style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #7C3AED",background:"#F3E8FF",color:"#7C3AED",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>KYB 등록</button>
                             )}
                             {/* KYB 재제출 (REJECTED만) */}
                             {c.kybStatus==="REJECTED"&&(
-                              <button onClick={()=>T(`⚠️ ${c.name} KYB 재제출 (REJECTED 사유 확인 필요)`)}
+                              <button onClick={()=>{setKybTargetId(c.id);setKybSection(1);setKybErrors([]);setKybSumsubWarn(false);setMenu("Sub KYB");}}
                                 style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #991B1B",background:"#FEE2E2",color:"#991B1B",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>KYB 재제출</button>
                             )}
                             {/* OTP 재발송 */}
@@ -2950,6 +2959,360 @@ function MasterDash({onLogout,onSub}){
               <TxTable rows={TX_DATA} showAcct={true} onSelect={setSelectedTx}/>
             </div>
           )}
+
+          {menu==="Sub KYB"&&(()=>{
+            const KYB_ENT_TYPES=["주식회사","유한회사","합명회사","합자회사","기타"];
+            const KYB_INDUSTRIES=["핀테크/송금","무역/수출입","제조업","서비스업","금융업","기타"];
+            const KYB_FUNDS=["영업 수익","투자 유치","대출","자기 자본","기타"];
+            const KYB_PURPOSE=["해외 송금","결제 서비스","환전","투자","기타"];
+            const KYB_FREQ=["월 1~5회","월 6~20회","월 21~50회","월 50회 이상"];
+            const KYB_AMT=["$0 ~ $10,000","$10,001 ~ $50,000","$50,001 ~ $200,000","$200,001 이상"];
+            const DOC_LIST=[
+              {key:"incorporation",  label:"Certificate of Incorporation (법인설립증명서)"},
+              {key:"businessReg",    label:"Business Registration (사업자등록증)"},
+              {key:"bylaws",         label:"M&A / Bylaws / Constitution (정관)"},
+              {key:"companyExtract", label:"Official Company Extract (등기 초본)"},
+              {key:"orgChart",       label:"Functional Org Chart (조직도)"},
+              {key:"shareholding",   label:"Shareholding Structure Chart (지분구조도)"},
+              {key:"license",        label:"Proof of License (라이선스 증명)"},
+              {key:"bankStatement",  label:"Bank Statement — 3 months (자금출처)"},
+            ];
+            const PERSON_ROLES=["UBO","Director","Authorized Signatory"];
+            const target=clients.find(c=>c.id===kybTargetId);
+            if(!target) return(
+              <div style={{padding:20,textAlign:"center",color:G.textMid}}>
+                <div style={{marginBottom:12,fontSize:13}}>대상 고객사를 선택하세요.</div>
+                <Btn t="← Clients 목록으로" sm onClick={()=>setMenu("Clients")}/>
+              </div>
+            );
+            const isRejected=target.kybStatus==="REJECTED";
+            // validation checks
+            const f=kybForm;
+            const sec1Done=f.enterpriseName&&f.enterpriseNameEn&&f.registrationNumber&&f.enterpriseType&&f.establishmentDate&&f.officeCountry&&f.officialAddress&&f.registrationAddress&&f.registrationCity&&f.industry&&f.fundsSource&&f.accountPurpose&&f.tradingFrequency&&f.transactionAmount;
+            const sec2Done=Object.values(kybDocs).every(v=>v!==null);
+            const sec3Done=kybPersons.length>0;
+            const sec4Done=kybNoCompany||kybCompanies.length>0;
+            const sec5Done=f.email&&f.ip&&f.deviceId;
+            const secDone=[null,sec1Done,sec2Done,sec3Done,sec4Done,sec5Done];
+            const handleFileUpload=(key,file)=>{
+              if(!file)return;
+              if(file.size>15*1024*1024){T("⚠️ 파일 크기는 15MB를 초과할 수 없습니다.");return;}
+              setKybDocs(d=>({...d,[key]:{name:file.name,size:(file.size/1024/1024).toFixed(1)+"MB"}}));
+            };
+            const handleSubmitKyb=(forceContinue=false)=>{
+              const errs=[];
+              if(!sec1Done) errs.push("Section 1: 모든 필수 필드를 입력하세요");
+              if(!sec2Done) errs.push("Section 2: 모든 필수 서류를 업로드하세요");
+              if(!sec3Done) errs.push("Section 3: 관련 인물을 최소 1명 등록하세요");
+              if(!sec4Done) errs.push("Section 4: 관련 법인 정보를 완성하세요");
+              if(!sec5Done) errs.push("Section 5: 제출 정보를 입력하세요");
+              if(errs.length>0){setKybErrors(errs);return;}
+              const sumsubPending=kybPersons.some(p=>p.sumsubStatus!=="verified");
+              if(sumsubPending&&!forceContinue){setKybSumsubWarn(true);return;}
+              setKybErrors([]);setKybSumsubWarn(false);
+              setClients(cs=>cs.map(x=>x.id===kybTargetId?{...x,kybStatus:"PROCESSING"}:x));
+              T("✅ KYB 제출 완료. 심사 결과는 영업일 기준 수일 내 안내됩니다.");
+              setMenu("Clients");
+            };
+            const SECTIONS=[
+              {id:1,label:"기업 기본 정보 (Enterprise Info)"},
+              {id:2,label:"서류 업로드 (KYB Documents)"},
+              {id:3,label:"관련 인물 (Related Persons)"},
+              {id:4,label:"관련 법인 (Related Companies)"},
+              {id:5,label:"제출 정보 (Submission Info)"},
+            ];
+            return(
+              <div style={{maxWidth:720}}>
+                {/* 헤더 */}
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+                  <button onClick={()=>setMenu("Clients")} style={{background:"none",border:"none",cursor:"pointer",color:G.textMid,fontSize:12,fontWeight:600}}>← 목록</button>
+                  <div style={{fontWeight:700,fontSize:15}}>{target.name} — KYB {isRejected?"재제출":"등록"}</div>
+                  <KYBBadge status={target.kybStatus}/>
+                </div>
+
+                {/* REJECTED 사유 배너 */}
+                {isRejected&&(
+                  <div style={{background:"#FEE2E2",border:"1px solid #FECACA",borderRadius:9,padding:"12px 16px",marginBottom:16}}>
+                    <div style={{fontWeight:700,color:"#991B1B",fontSize:12,marginBottom:4}}>KYB 거절 사유</div>
+                    <div style={{fontSize:11,color:"#991B1B"}}>서류 불충분 또는 정보 불일치. 모든 서류를 재확인 후 재제출하세요.</div>
+                  </div>
+                )}
+
+                {/* 에러 요약 배너 */}
+                {kybErrors.length>0&&(
+                  <div style={{background:"#FFF7ED",border:`1px solid ${G.orange}`,borderRadius:9,padding:"12px 16px",marginBottom:16}}>
+                    <div style={{fontWeight:700,color:G.orange,fontSize:12,marginBottom:6}}>⚠️ 제출 전 확인 필요 항목</div>
+                    {kybErrors.map((e,i)=><div key={i} style={{fontSize:11,color:"#92400E",marginBottom:2}}>• {e}</div>)}
+                  </div>
+                )}
+
+                {/* 섹션 아코디언 */}
+                {SECTIONS.map(sec=>{
+                  const isOpen=kybSection===sec.id;
+                  const hasErr=kybErrors.some(e=>e.startsWith(`Section ${sec.id}`));
+                  return(
+                    <div key={sec.id} style={{border:`1.5px solid ${hasErr?G.orange:isOpen?G.green:G.border}`,borderRadius:10,marginBottom:10,overflow:"hidden",transition:"border 0.15s"}}>
+                      {/* 섹션 헤더 */}
+                      <div onClick={()=>setKybSection(isOpen?0:sec.id)}
+                        style={{padding:"12px 16px",cursor:"pointer",background:isOpen?G.greenLight:G.sidebar,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{fontWeight:700,fontSize:12,color:isOpen?G.greenDark:G.textDark,display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{width:20,height:20,borderRadius:"50%",background:secDone[sec.id]?G.green:hasErr?G.orange:G.border,color:secDone[sec.id]||hasErr?"#fff":G.textMid,fontSize:10,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sec.id}</span>
+                          {sec.label}
+                          {secDone[sec.id]&&<span style={{fontSize:10,color:G.green,fontWeight:600}}>✓</span>}
+                        </div>
+                        <span style={{color:G.textMid,fontSize:12}}>{isOpen?"▲":"▼"}</span>
+                      </div>
+
+                      {/* 섹션 콘텐츠 */}
+                      {isOpen&&(
+                        <div style={{padding:"16px 18px"}}>
+
+                          {/* ── Section 1: Enterprise Info ── */}
+                          {sec.id===1&&(
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
+                              {[
+                                {k:"enterpriseName",    l:"법인명 (한국어)*",       ph:"예: 핸패스 주식회사"},
+                                {k:"enterpriseNameEn",  l:"법인명 (영문)*",         ph:"e.g. Hanpass Corp."},
+                                {k:"registrationNumber",l:"사업자등록번호*",         ph:"예: 110-81-55000"},
+                                {k:"officeCountry",     l:"법인 국가 (ISO alpha-2)*",ph:"예: KR"},
+                                {k:"officialAddress",   l:"공식 주소*",             ph:"법인 공식 주소"},
+                                {k:"registrationAddress",l:"등록 주소*",            ph:"등기 주소"},
+                                {k:"registrationCity",  l:"등록 도시*",             ph:"예: Seoul"},
+                                {k:"establishmentDate", l:"설립일 (yyyy-MM-dd)*",   ph:"2020-01-01"},
+                              ].map(({k,l,ph})=>(
+                                <div key={k}>
+                                  <Lbl t={l}/>
+                                  <Inp v={kybForm[k]} set={v=>setKybForm(fm=>({...fm,[k]:v}))} ph={ph}/>
+                                </div>
+                              ))}
+                              {[
+                                {k:"enterpriseType",   l:"기업 유형*",     opts:KYB_ENT_TYPES},
+                                {k:"industry",         l:"업종*",          opts:KYB_INDUSTRIES},
+                                {k:"fundsSource",      l:"자금 출처*",     opts:KYB_FUNDS},
+                                {k:"accountPurpose",   l:"계정 목적*",     opts:KYB_PURPOSE},
+                                {k:"tradingFrequency", l:"거래 빈도*",     opts:KYB_FREQ},
+                                {k:"transactionAmount",l:"거래 금액 범위*",opts:KYB_AMT},
+                              ].map(({k,l,opts})=>(
+                                <div key={k}>
+                                  <Lbl t={l}/>
+                                  <Sel v={kybForm[k]} set={v=>setKybForm(fm=>({...fm,[k]:v}))} opts={opts}/>
+                                </div>
+                              ))}
+                              <div style={{gridColumn:"1/-1"}}>
+                                <Lbl t="Bearer Share*"/>
+                                <div style={{display:"flex",gap:10,marginBottom:10}}>
+                                  {["Y","N"].map(v=>(
+                                    <label key={v} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",fontSize:12}}>
+                                      <input type="radio" name="bearerShare" value={v} checked={kybForm.bearerShare===v} onChange={()=>setKybForm(fm=>({...fm,bearerShare:v}))} style={{accentColor:G.green}}/>
+                                      {v==="Y"?"Yes (있음)":"No (없음)"}
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* ── Section 2: KYB Documents ── */}
+                          {sec.id===2&&(
+                            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                              <div style={{fontSize:11,color:G.textMid,marginBottom:4}}>지원 형식: PDF, JPG, JPEG, PNG · 파일당 최대 15MB</div>
+                              {DOC_LIST.map(doc=>(
+                                <div key={doc.key}>
+                                  <div style={{fontSize:11,fontWeight:600,marginBottom:5}}>{doc.label} <span style={{color:G.red}}>*</span></div>
+                                  {kybDocs[doc.key]?(
+                                    <div style={{display:"flex",alignItems:"center",gap:8,background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:7,padding:"9px 12px"}}>
+                                      <span>📎</span>
+                                      <span style={{flex:1,fontSize:11,fontWeight:600,color:G.textDark}}>{kybDocs[doc.key].name}</span>
+                                      <span style={{fontSize:10,color:G.textLight}}>{kybDocs[doc.key].size}</span>
+                                      <button onClick={()=>setKybDocs(d=>({...d,[doc.key]:null}))}
+                                        style={{fontSize:10,padding:"2px 7px",borderRadius:4,border:`1px solid ${G.red}`,background:"#FFF5F5",color:G.red,cursor:"pointer",fontWeight:600}}>삭제</button>
+                                    </div>
+                                  ):(
+                                    <div style={{border:`1.5px dashed ${G.border}`,borderRadius:7,padding:"14px",textAlign:"center",cursor:"pointer",background:"#FAFAFA",fontSize:11,color:G.textMid}}
+                                      onClick={()=>document.getElementById(`kd-${doc.key}`).click()}>
+                                      📁 파일 선택 또는 드래그앤드롭
+                                      <input id={`kd-${doc.key}`} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                                        onChange={e=>{if(e.target.files[0])handleFileUpload(doc.key,e.target.files[0]);e.target.value="";}}/>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* ── Section 3: Related Persons ── */}
+                          {sec.id===3&&(
+                            <div>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                                <div style={{fontSize:11,color:G.textMid}}>UBO, 이사(Director), 공인 서명자(Authorized Signatory) 각각 등록. 최소 1명 필수.</div>
+                                <Btn t="+ 인물 추가" sm onClick={()=>setKybPersons(ps=>[...ps,{id:Date.now(),roles:[],name:"",nationality:"KR",birthDate:"",residenceCountry:"KR",docFile:null,addressFile:null,sumsubStatus:"pending"}])}/>
+                              </div>
+                              {kybPersons.length===0&&(
+                                <div style={{textAlign:"center",padding:"24px",color:G.textLight,fontSize:11,border:`1.5px dashed ${G.border}`,borderRadius:8}}>
+                                  인물을 추가하세요 (최소 1명)
+                                </div>
+                              )}
+                              {kybPersons.map((p,pi)=>(
+                                <div key={p.id} style={{border:`1px solid ${G.border}`,borderRadius:9,marginBottom:10,overflow:"hidden"}}>
+                                  <div style={{padding:"10px 14px",background:G.sidebar,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                    <div style={{fontWeight:700,fontSize:12}}>{p.name||`인물 ${pi+1}`}</div>
+                                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                      {p.sumsubStatus==="verified"?(
+                                        <span style={{fontSize:10,padding:"2px 8px",borderRadius:10,background:G.greenLight,color:G.greenDark,fontWeight:700}}>✓ 인증 완료</span>
+                                      ):(
+                                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                          <span style={{fontSize:10,padding:"2px 8px",borderRadius:10,background:"#FFFBEB",color:"#B45309",fontWeight:700}}>인증 필요</span>
+                                          <button onClick={()=>{setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,sumsubStatus:"verified"}:x));T(`📧 ${p.name||"인물"} Sumsub 인증 링크 발송`);}}
+                                            style={{fontSize:9,padding:"3px 8px",borderRadius:4,border:"1px solid #B45309",background:"#FFF8EE",color:"#B45309",cursor:"pointer",fontWeight:600}}>Sumsub 인증 링크 발송</button>
+                                        </div>
+                                      )}
+                                      <button onClick={()=>setKybPersons(ps=>ps.filter(x=>x.id!==p.id))}
+                                        style={{fontSize:9,padding:"3px 7px",borderRadius:4,border:`1px solid ${G.red}`,background:"#FFF5F5",color:G.red,cursor:"pointer",fontWeight:600}}>제거</button>
+                                    </div>
+                                  </div>
+                                  <div style={{padding:"14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
+                                    <div style={{gridColumn:"1/-1",marginBottom:10}}>
+                                      <Lbl t="역할* (복수 선택 가능)"/>
+                                      <div style={{display:"flex",gap:8}}>
+                                        {PERSON_ROLES.map(role=>(
+                                          <label key={role} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",fontSize:11}}>
+                                            <input type="checkbox" checked={p.roles.includes(role)}
+                                              onChange={e=>setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,roles:e.target.checked?[...x.roles,role]:x.roles.filter(r=>r!==role)}:x))}
+                                              style={{accentColor:G.green}}/>
+                                            {role}
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div><Lbl t="영문 성명*"/><Inp v={p.name} set={v=>setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,name:v}:x))} ph="Full Name (English)"/></div>
+                                    <div><Lbl t="국적 (ISO alpha-2)*"/><Inp v={p.nationality} set={v=>setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,nationality:v}:x))} ph="예: KR"/></div>
+                                    <div><Lbl t="생년월일 (yyyy-MM-dd)*"/><Inp v={p.birthDate} set={v=>setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,birthDate:v}:x))} ph="1990-01-01"/></div>
+                                    <div><Lbl t="거주 국가 (ISO alpha-2)*"/><Inp v={p.residenceCountry} set={v=>setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,residenceCountry:v}:x))} ph="예: KR"/></div>
+                                    <div>
+                                      <Lbl t="여권 / 신분증 업로드*"/>
+                                      {p.docFile?(
+                                        <div style={{display:"flex",alignItems:"center",gap:6,background:G.greenLight,borderRadius:6,padding:"6px 10px",fontSize:11}}>
+                                          <span>📎</span><span style={{flex:1,fontWeight:600}}>{p.docFile}</span>
+                                          <button onClick={()=>setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,docFile:null}:x))} style={{fontSize:10,color:G.red,background:"none",border:"none",cursor:"pointer"}}>×</button>
+                                        </div>
+                                      ):(
+                                        <div style={{border:`1.5px dashed ${G.border}`,borderRadius:6,padding:"10px",textAlign:"center",cursor:"pointer",fontSize:10,color:G.textMid,marginBottom:10}}
+                                          onClick={()=>document.getElementById(`kp-doc-${p.id}`).click()}>
+                                          📁 파일 선택
+                                          <input id={`kp-doc-${p.id}`} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                                            onChange={e=>{if(e.target.files[0]){if(e.target.files[0].size>15*1024*1024){T("⚠️ 파일 크기는 15MB를 초과할 수 없습니다.");return;}setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,docFile:e.target.files[0].name}:x));e.target.value="";}}}/>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <Lbl t="개인 주소 증명 (3개월 이내)*"/>
+                                      {p.addressFile?(
+                                        <div style={{display:"flex",alignItems:"center",gap:6,background:G.greenLight,borderRadius:6,padding:"6px 10px",fontSize:11}}>
+                                          <span>📎</span><span style={{flex:1,fontWeight:600}}>{p.addressFile}</span>
+                                          <button onClick={()=>setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,addressFile:null}:x))} style={{fontSize:10,color:G.red,background:"none",border:"none",cursor:"pointer"}}>×</button>
+                                        </div>
+                                      ):(
+                                        <div style={{border:`1.5px dashed ${G.border}`,borderRadius:6,padding:"10px",textAlign:"center",cursor:"pointer",fontSize:10,color:G.textMid,marginBottom:10}}
+                                          onClick={()=>document.getElementById(`kp-addr-${p.id}`).click()}>
+                                          📁 파일 선택
+                                          <input id={`kp-addr-${p.id}`} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                                            onChange={e=>{if(e.target.files[0]){if(e.target.files[0].size>15*1024*1024){T("⚠️ 파일 크기는 15MB를 초과할 수 없습니다.");return;}setKybPersons(ps=>ps.map(x=>x.id===p.id?{...x,addressFile:e.target.files[0].name}:x));e.target.value="";}}}/>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* ── Section 4: Related Companies ── */}
+                          {sec.id===4&&(
+                            <div>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                                <div style={{fontSize:11,color:G.textMid}}>지분 25% 이상 모회사 또는 지배 법인이 있을 경우 등록.</div>
+                                <Btn t="+ 법인 추가" sm onClick={()=>{setKybNoCompany(false);setKybCompanies(cs=>[...cs,{id:Date.now(),name:"",registrationNo:"",country:"KR",relation:"모회사"}]);}}/>
+                              </div>
+                              <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:12,marginBottom:12,padding:"10px 14px",background:kybNoCompany?G.greenLight:"#FAFAFA",borderRadius:8,border:`1px solid ${kybNoCompany?G.green:G.border}`}}>
+                                <input type="checkbox" checked={kybNoCompany} onChange={e=>{setKybNoCompany(e.target.checked);if(e.target.checked)setKybCompanies([]);}} style={{accentColor:G.green}}/>
+                                <span style={{fontWeight:kybNoCompany?700:400,color:kybNoCompany?G.greenDark:G.textMid}}>관련 법인 없음 (해당 없음)</span>
+                              </label>
+                              {!kybNoCompany&&kybCompanies.map((co,ci)=>(
+                                <div key={co.id} style={{border:`1px solid ${G.border}`,borderRadius:8,marginBottom:8,padding:"14px"}}>
+                                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                                    <div style={{fontWeight:700,fontSize:12}}>{co.name||`법인 ${ci+1}`}</div>
+                                    <button onClick={()=>setKybCompanies(cs=>cs.filter(x=>x.id!==co.id))}
+                                      style={{fontSize:10,padding:"2px 8px",borderRadius:4,border:`1px solid ${G.red}`,background:"#FFF5F5",color:G.red,cursor:"pointer",fontWeight:600}}>제거</button>
+                                  </div>
+                                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
+                                    <div><Lbl t="법인명*"/><Inp v={co.name} set={v=>setKybCompanies(cs=>cs.map(x=>x.id===co.id?{...x,name:v}:x))} ph="법인명"/></div>
+                                    <div><Lbl t="사업자등록번호*"/><Inp v={co.registrationNo} set={v=>setKybCompanies(cs=>cs.map(x=>x.id===co.id?{...x,registrationNo:v}:x))} ph="등록번호"/></div>
+                                    <div><Lbl t="설립 국가 (ISO alpha-2)*"/><Inp v={co.country} set={v=>setKybCompanies(cs=>cs.map(x=>x.id===co.id?{...x,country:v}:x))} ph="예: KR"/></div>
+                                    <div>
+                                      <Lbl t="관계*"/>
+                                      <Sel v={co.relation} set={v=>setKybCompanies(cs=>cs.map(x=>x.id===co.id?{...x,relation:v}:x))} opts={["모회사","자회사","계열사","지배주주"]}/>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              {!kybNoCompany&&kybCompanies.length===0&&(
+                                <div style={{textAlign:"center",padding:"20px",color:G.textLight,fontSize:11,border:`1.5px dashed ${G.border}`,borderRadius:8}}>
+                                  법인을 추가하거나 "관련 법인 없음"을 체크하세요.
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* ── Section 5: Submission Info ── */}
+                          {sec.id===5&&(
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
+                              <div style={{gridColumn:"1/-1"}}>
+                                <Lbl t="담당자 이메일*"/>
+                                <Inp v={kybForm.email} set={v=>setKybForm(fm=>({...fm,email:v}))} ph="admin@company.com"/>
+                              </div>
+                              <div>
+                                <Lbl t="IP 주소*"/>
+                                <Inp v={kybForm.ip} set={v=>setKybForm(fm=>({...fm,ip:v}))} ph="자동 감지"/>
+                              </div>
+                              <div>
+                                <Lbl t="Device ID*"/>
+                                <Inp v={kybForm.deviceId} set={v=>setKybForm(fm=>({...fm,deviceId:v}))} ph="자동 생성"/>
+                              </div>
+                              <div style={{gridColumn:"1/-1",background:G.blueLight,borderRadius:7,padding:"9px 12px",fontSize:10,color:"#1D4ED8"}}>
+                                ℹ️ IP 주소와 Device ID는 시스템 자동 감지로 기본 채워지며 수동 수정 가능합니다.
+                              </div>
+                            </div>
+                          )}
+
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* 하단 버튼 */}
+                <div style={{display:"flex",gap:8,marginTop:16}}>
+                  <Btn t="임시저장" sm color={G.textMid} onClick={()=>T("💾 임시저장 완료")}/>
+                  <Btn t="제출" sm onClick={()=>handleSubmitKyb(false)}/>
+                  <button onClick={()=>setMenu("Clients")} style={{background:"none",border:`1px solid ${G.border}`,borderRadius:6,padding:"6px 13px",fontSize:11,color:G.textMid,cursor:"pointer",fontWeight:600}}>← 목록으로</button>
+                </div>
+
+                {/* Sumsub 미완료 경고 모달 */}
+                {kybSumsubWarn&&(
+                  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998}}>
+                    <div style={{background:G.white,borderRadius:14,padding:28,maxWidth:360,width:"90%",boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}}>
+                      <div style={{fontWeight:700,fontSize:14,marginBottom:10}}>⚠️ Sumsub 인증 미완료</div>
+                      <div style={{fontSize:12,color:G.textMid,marginBottom:18}}>인물 Sumsub 인증이 완료되지 않았습니다. 계속 진행하시겠습니까?</div>
+                      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                        <Btn t="취소" sm color={G.textMid} onClick={()=>setKybSumsubWarn(false)}/>
+                        <Btn t="계속 제출" sm color={G.green} onClick={()=>handleSubmitKyb(true)}/>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {menu==="Fee Settings"&&(
             <div style={{maxWidth:640}}>
