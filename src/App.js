@@ -183,11 +183,17 @@ const INIT_CLIENTS = [
 ];
 
 const INIT_RECIP = [
-  {id:1,name:"Kim Jae-won",      type:"Bank",  detail:"Citibank **** 4821",              cur:"USD", network:"SWIFT"},
-  {id:2,name:"Tokyo Trading Ltd",type:"Bank",  detail:"MUFG **** 3390",                  cur:"USD", network:"SWIFT"},
-  {id:3,name:"USDC ERC-20 Wallet",type:"Crypto",detail:"0xA3f9b2c7d1e8f6a5B4C3D2E1F0a9b8c7d6e5f4A3c91B",cur:"USDC",network:"ERC-20"},
-  {id:4,name:"USDT TRC-20 Wallet",type:"Crypto",detail:"TRXbc1qxy2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8pz09w",cur:"USDT",network:"TRC-20"},
-  {id:5,name:"USDC Base Wallet",  type:"Crypto",detail:"0xB9d3e4f5a6b7c8d9E0F1A2B3C4D5E6F7A8B9C0D1E2F3f44A",cur:"USDC",network:"Base"},
+  {id:1,name:"Kim Jae-won",       type:"Bank",  detail:"Citibank **** 4821",                                     cur:"USD",  network:"SWIFT",  counterpartyStatus:"ACTIVE",   registrationNo:"110-81-12345", country:"KR", address:"Seoul, Korea",    alias:"",          bankName:"Citibank",  swiftCode:"CITIKRSX"},
+  {id:2,name:"Tokyo Trading Ltd", type:"Bank",  detail:"MUFG **** 3390",                                         cur:"USD",  network:"SWIFT",  counterpartyStatus:"PENDING",  registrationNo:"1234567890",   country:"JP", address:"Tokyo, Japan",    alias:"Tokyo Trade",bankName:"MUFG Bank", swiftCode:"BOTKJPJT"},
+  {id:3,name:"USDC ERC-20 Wallet",type:"Crypto",detail:"0xA3f9b2c7d1e8f6a5B4C3D2E1F0a9b8c7d6e5f4A3c91B",        cur:"USDC", network:"ERC-20", counterpartyStatus:"ACTIVE",   registrationNo:"US123456",     country:"US", address:"New York, USA",   alias:"",          bankName:"",          swiftCode:""},
+  {id:4,name:"USDT TRC-20 Wallet",type:"Crypto",detail:"TRXbc1qxy2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8pz09w",      cur:"USDT", network:"TRC-20", counterpartyStatus:"INACTIVE", registrationNo:"SG987654",     country:"SG", address:"Singapore",       alias:"",          bankName:"",          swiftCode:""},
+  {id:5,name:"USDC Base Wallet",  type:"Crypto",detail:"0xB9d3e4f5a6b7c8d9E0F1A2B3C4D5E6F7A8B9C0D1E2F3f44A",    cur:"USDC", network:"Base",   counterpartyStatus:"PENDING",  registrationNo:"HK112233",     country:"HK", address:"Hong Kong",       alias:"",          bankName:"",          swiftCode:""},
+];
+
+const INIT_QUOTA = [
+  {id:1,recipientId:1,recipientName:"Kim Jae-won",       registrationNo:"110-81-12345",docType:"Invoice",  totalApproved:500000,usedAmount:320000,frozenAmount:50000, status:"ACTIVE",  validFrom:"2025-01-01",validTo:"2025-12-31"},
+  {id:2,recipientId:2,recipientName:"Tokyo Trading Ltd", registrationNo:"1234567890",  docType:"Contract", totalApproved:200000,usedAmount:180000,frozenAmount:10000, status:"PENDING", validFrom:"2025-03-01",validTo:"2025-09-30"},
+  {id:3,recipientId:3,recipientName:"USDC ERC-20 Wallet",registrationNo:"US123456",    docType:"Invoice",  totalApproved:100000,usedAmount:10000, frozenAmount:5000,  status:"ACTIVE",  validFrom:"2025-01-01",validTo:"2025-12-31"},
 ];
 
 // ── 입금 계좌 정보 ────────────────────────────────────────────────────
@@ -284,6 +290,26 @@ function Sel({v,set,opts}){return <select value={v} onChange={e=>set(e.target.va
 function Btn({t,onClick,color,sm}){return <button onClick={onClick} style={{background:color||G.green,color:"#fff",border:"none",borderRadius:sm?6:9,padding:sm?"6px 13px":"10px",width:sm?"auto":"100%",fontWeight:700,fontSize:sm?11:13,cursor:"pointer",flexShrink:0}}>{t}</button>;}
 function Badge({t,color}){return <span style={{background:color+"22",color,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{t}</span>;}
 function Card({children,style={}}){return <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:18,...style}}>{children}</div>;}
+
+function CounterpartyStatusBadge({status}){
+  const MAP={ACTIVE:{bg:"#EBF8E1",text:"#276749"},PENDING:{bg:"#FFFBEB",text:"#B45309"},INACTIVE:{bg:"#F3F4F6",text:"#6B7280"}};
+  const s=MAP[status]||MAP.INACTIVE;
+  return <span style={{background:s.bg,color:s.text,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{status||"INACTIVE"}</span>;
+}
+function QuotaBar({total,used,frozen}){
+  const avail=Math.max(0,total-used-frozen);
+  const pct=total>0?Math.round(avail/total*100):0;
+  const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
+  return(
+    <div style={{minWidth:80}}>
+      <div style={{fontSize:11,fontWeight:700,color:G.textDark,marginBottom:3}}>${avail.toLocaleString()}</div>
+      <div style={{height:5,background:"#F3F4F6",borderRadius:3,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${pct}%`,background:barColor,borderRadius:3}}/>
+      </div>
+      <div style={{fontSize:9,color:barColor,fontWeight:700,marginTop:1}}>{pct}% 잔여</div>
+    </div>
+  );
+}
 
 function NetSelector({cur,net,setNet}){
   const nets=NETWORKS[cur]||[];
@@ -1302,10 +1328,17 @@ function SubDash({acctName,onLogout,onMaster}){
   const [poGasFee,setPoGasFee]=useState(null);
   const [poFeeError,setPoFeeError]=useState(false);
   const [recs,setRecs]=useState(INIT_RECIP);
+  const [recTab,setRecTab]=useState(0);
   const [showAddRec,setShowAddRec]=useState(false);
-  const [nr,setNr]=useState({name:"",type:"Bank",detail:"",cur:"USD",network:""});
+  const [recStep,setRecStep]=useState(1);
+  const [nr,setNr]=useState({name:"",type:"Bank",detail:"",cur:"USD",network:"",registrationNo:"",country:"",address:"",alias:"",bankName:"",swiftCode:""});
+  const [nrQuota,setNrQuota]=useState({docType:"Invoice",amount:"",validFrom:"",validTo:"",file:null});
   const [editRecId,setEditRecId]=useState(null);
-  const [er,setEr]=useState({name:"",type:"Bank",detail:"",cur:"USD",network:""});
+  const [er,setEr]=useState({name:"",type:"Bank",detail:"",cur:"USD",network:"",alias:""});
+  const [quotas,setQuotas]=useState(INIT_QUOTA);
+  const [quotaFormRecId,setQuotaFormRecId]=useState(null);
+  const [quotaForm,setQuotaForm]=useState({docType:"Invoice",recipientId:"",amount:"",validFrom:"",validTo:"",file:null});
+  const [deleteConfirmId,setDeleteConfirmId]=useState(null);
   const [showSec,setShowSec]=useState(false);
   const [curPw,setCurPw]=useState("");const [newPw,setNewPw]=useState("");const [confPw,setConfPw]=useState("");
   const [otpSent,setOtpSent]=useState(false);
@@ -1750,100 +1783,399 @@ function SubDash({acctName,onLogout,onMaster}){
           )}
 
           {!showSec&&menu==="Recipients"&&(
-            <div style={{maxWidth:560}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontWeight:700,fontSize:13}}>등록된 수취인 ({recs.length})</div>
-                <Btn t="+ Add Recipient" sm onClick={()=>{setShowAddRec(v=>!v);setEditRecId(null);}}/>
+            <div style={{maxWidth:760}}>
+              {/* 헤더 */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <div style={{fontWeight:700,fontSize:15}}>
+                  {recTab===0?`Recipients 등록된 수취인 (${recs.length})`:"Quota 한도 현황"}
+                </div>
+                {recTab===0&&<Btn t="+ 새 수취인" sm onClick={()=>{setShowAddRec(v=>{const next=!v;if(next){setRecStep(1);setNr({name:"",type:"Bank",detail:"",cur:"USD",network:"",registrationNo:"",country:"",address:"",alias:"",bankName:"",swiftCode:""});setNrQuota({docType:"Invoice",amount:"",validFrom:"",validTo:"",file:null});}setEditRecId(null);return next;});}}/>}
+                {recTab===1&&<Btn t="+ 한도 신청" sm onClick={()=>{setQuotaFormRecId("new");setQuotaForm({docType:"Invoice",recipientId:"",amount:"",validFrom:"",validTo:"",file:null});}}/>}
               </div>
 
-              {/* 새 수취인 등록 폼 */}
-              {showAddRec&&(
-                <Card style={{marginBottom:14,border:`1.5px solid ${G.green}`}}>
-                  <div style={{fontWeight:700,fontSize:12,marginBottom:10,color:G.greenDark}}>➕ 새 수취인 등록</div>
-                  <Lbl t="이름"/><Inp v={nr.name} set={v=>setNr(r=>({...r,name:v}))} ph="수취인 이름 또는 법인명"/>
-                  <Lbl t="타입"/>
-                  <div style={{display:"flex",gap:7,marginBottom:10}}>
-                    {["Bank","Crypto"].map(tp=>(
-                      <button key={tp} onClick={()=>setNr(r=>({...r,type:tp,network:""}))} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${nr.type===tp?G.green:G.border}`,background:nr.type===tp?G.greenLight:G.white,fontWeight:nr.type===tp?700:400,cursor:"pointer",color:nr.type===tp?G.greenDark:G.textMid,fontSize:12}}>{tp==="Bank"?"🏦 Bank":"🔗 Crypto"}</button>
-                    ))}
-                  </div>
-                  <Lbl t={nr.type==="Bank"?"계좌 정보":"지갑 주소"}/><Inp v={nr.detail} set={v=>setNr(r=>({...r,detail:v}))} ph={nr.type==="Bank"?"은행명 **** 1234":"0x..."}/>
-                  <Lbl t="Currency"/><Sel v={nr.cur} set={v=>setNr(r=>({...r,cur:v,network:""}))} opts={nr.type==="Bank"?["USD"]:["USDC","USDT"]}/>
-                  {nr.type==="Crypto"&&<NetSelector cur={nr.cur} net={nr.network} setNet={v=>setNr(r=>({...r,network:v}))}/>}
-                  <div style={{display:"flex",gap:7}}>
-                    <Btn t="등록" sm onClick={()=>{if(!nr.name||!nr.detail){T("⚠️ 필수 입력");return;}setRecs(rs=>[...rs,{id:Date.now(),...nr}]);setNr({name:"",type:"Bank",detail:"",cur:"USD",network:""});setShowAddRec(false);T("✅ 수취인 등록 완료");}}/>
-                    <Btn t="취소" sm color={G.textLight} onClick={()=>setShowAddRec(false)}/>
-                  </div>
-                </Card>
-              )}
+              {/* 탭 바 */}
+              <div style={{display:"flex",borderBottom:`1.5px solid ${G.border}`,marginBottom:18}}>
+                {["수취인 목록 (Recipients)","한도 관리 (Quota)"].map((label,i)=>(
+                  <button key={i} onClick={()=>{setRecTab(i);setShowAddRec(false);setEditRecId(null);setQuotaFormRecId(null);}}
+                    style={{padding:"9px 18px",border:"none",background:"transparent",
+                      borderBottom:recTab===i?`2px solid ${G.green}`:"2px solid transparent",
+                      fontWeight:recTab===i?700:400,color:recTab===i?G.greenDark:G.textMid,
+                      fontSize:12,cursor:"pointer",marginBottom:-1.5}}>
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-              {/* 수취인 목록 */}
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {recs.map(r=>(
-                  <div key={r.id} style={{background:G.white,border:`1px solid ${editRecId===r.id?G.green:G.border}`,borderRadius:10,overflow:"hidden",transition:"border 0.15s"}}>
-
-                    {/* 기본 행 */}
-                    <div style={{padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:12}}>
-                        <span style={{fontSize:18}}>{r.type==="Bank"?"🏦":"🔗"}</span>
-                        <div>
-                          <div style={{fontWeight:700,fontSize:12}}>{r.name}</div>
-                          {r.type==="Crypto"
-                            ?<div style={{marginTop:3}}><AddressChip address={r.detail}/></div>
-                            :<div style={{fontSize:10,color:G.textMid,marginTop:2}}>{r.detail}</div>
-                          }
-                        </div>
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",gap:7}}>
-                        <CIcon c={r.cur}/><span style={{fontSize:11,fontWeight:600}}>{r.cur}</span>
-                        <NetBadge net={r.network}/>
-                        <button
-                          onClick={()=>{
-                            if(editRecId===r.id){setEditRecId(null);}
-                            else{setEditRecId(r.id);setEr({name:r.name,type:r.type,detail:r.detail,cur:r.cur,network:r.network});setShowAddRec(false);}
-                          }}
-                          style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:`1px solid ${G.green}`,background:editRecId===r.id?G.greenLight:G.white,color:G.greenDark,cursor:"pointer",fontWeight:600}}>
-                          {editRecId===r.id?"접기":"수정"}
-                        </button>
-                        <button
-                          onClick={()=>{if(window.confirm(`"${r.name}" 수취인을 삭제할까요?`)){setRecs(rs=>rs.filter(x=>x.id!==r.id));if(editRecId===r.id)setEditRecId(null);T("🗑 수취인 삭제 완료");}}}
-                          style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:`1px solid ${G.red}`,background:"#FFF5F5",color:G.red,cursor:"pointer",fontWeight:600}}>
-                          삭제
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 인라인 편집 폼 */}
-                    {editRecId===r.id&&(
-                      <div style={{borderTop:`1px solid ${G.border}`,background:G.greenLight,padding:"14px 16px"}}>
-                        <div style={{fontWeight:700,fontSize:11,color:G.greenDark,marginBottom:10}}>✏️ 수취인 정보 수정</div>
-                        <Lbl t="이름"/><Inp v={er.name} set={v=>setEr(e=>({...e,name:v}))} ph="수취인 이름 또는 법인명"/>
-                        <Lbl t="타입"/>
-                        <div style={{display:"flex",gap:7,marginBottom:10}}>
-                          {["Bank","Crypto"].map(tp=>(
-                            <button key={tp} onClick={()=>setEr(e=>({...e,type:tp,network:""}))} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${er.type===tp?G.green:G.border}`,background:er.type===tp?G.white:"#f0f0f0",fontWeight:er.type===tp?700:400,cursor:"pointer",color:er.type===tp?G.greenDark:G.textMid,fontSize:12}}>{tp==="Bank"?"🏦 Bank":"🔗 Crypto"}</button>
+              {/* ── TAB 1: 수취인 목록 ── */}
+              {recTab===0&&(
+                <div>
+                  {/* 새 수취인 등록 폼 */}
+                  {showAddRec&&(
+                    <Card style={{marginBottom:16,border:`1.5px solid ${G.green}`}}>
+                      {/* 스텝 인디케이터 */}
+                      <div style={{display:"flex",alignItems:"center",marginBottom:14}}>
+                        <div style={{fontWeight:700,fontSize:12,color:G.greenDark}}>➕ 새 수취인 등록</div>
+                        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
+                          {[1,2].map(s=>(
+                            <div key={s} style={{display:"flex",alignItems:"center",gap:4}}>
+                              <div style={{width:22,height:22,borderRadius:"50%",background:recStep>=s?G.green:G.border,color:recStep>=s?"#fff":G.textMid,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{s}</div>
+                              {s<2&&<div style={{width:18,height:2,background:recStep>1?G.green:G.border}}/>}
+                            </div>
                           ))}
                         </div>
-                        <Lbl t={er.type==="Bank"?"계좌 정보":"지갑 주소"}/><Inp v={er.detail} set={v=>setEr(e=>({...e,detail:v}))} ph={er.type==="Bank"?"은행명 **** 1234":"0x..."}/>
-                        <Lbl t="Currency"/><Sel v={er.cur} set={v=>setEr(e=>({...e,cur:v,network:""}))} opts={er.type==="Bank"?["USD"]:["USDC","USDT"]}/>
-                        {er.type==="Crypto"&&<NetSelector cur={er.cur} net={er.network} setNet={v=>setEr(e=>({...e,network:v}))}/>}
-                        <div style={{display:"flex",gap:7,marginTop:4}}>
-                          <Btn t="저장" sm onClick={()=>{if(!er.name||!er.detail){T("⚠️ 필수 입력");return;}setRecs(rs=>rs.map(x=>x.id===r.id?{...x,...er}:x));setEditRecId(null);T(`✅ "${er.name}" 정보 수정 완료`);}}/>
-                          <Btn t="취소" sm color={G.textLight} onClick={()=>setEditRecId(null)}/>
+                      </div>
+
+                      {/* STEP 1 */}
+                      {recStep===1&&(
+                        <>
+                          <div style={{fontSize:11,color:G.textMid,marginBottom:12,padding:"6px 10px",background:"#F9FAFB",borderRadius:6}}>Step 1 — 기본 정보 입력 (IB 내부 저장)</div>
+                          <Lbl t="이름 / 법인명 (Legal Name)*"/>
+                          <Inp v={nr.name} set={v=>setNr(r=>({...r,name:v}))} ph="법인명 또는 이름"/>
+                          <Lbl t="유형*"/>
+                          <div style={{display:"flex",gap:7,marginBottom:10}}>
+                            {["Bank","Crypto"].map(tp=>(
+                              <button key={tp} onClick={()=>setNr(r=>({...r,type:tp,network:"",cur:tp==="Bank"?"USD":"USDC"}))}
+                                style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${nr.type===tp?G.green:G.border}`,background:nr.type===tp?G.greenLight:G.white,fontWeight:nr.type===tp?700:400,cursor:"pointer",color:nr.type===tp?G.greenDark:G.textMid,fontSize:12}}>
+                                {tp==="Bank"?"🏦 Bank":"🔗 Crypto"}
+                              </button>
+                            ))}
+                          </div>
+                          <Lbl t="사업자등록번호 (Registration No.)*"/>
+                          <Inp v={nr.registrationNo} set={v=>setNr(r=>({...r,registrationNo:v}))} ph="예: 110-81-12345"/>
+                          <Lbl t="국가 (Country Code)*"/>
+                          <Inp v={nr.country} set={v=>setNr(r=>({...r,country:v}))} ph="ISO alpha-2 (예: KR, US, SG)"/>
+                          <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:6,padding:"7px 10px",fontSize:10,color:"#92400E",marginBottom:10}}>
+                            ⚠️ 불가 국가: CU · KP · IR · SY · RU
+                          </div>
+                          <Lbl t="주소*"/>
+                          <Inp v={nr.address} set={v=>setNr(r=>({...r,address:v}))} ph="법인 주소"/>
+                          <Lbl t="별칭 (Alias)"/>
+                          <Inp v={nr.alias} set={v=>setNr(r=>({...r,alias:v}))} ph="검색용 별명 (선택)"/>
+                          <Lbl t="통화*"/>
+                          <Sel v={nr.cur} set={v=>setNr(r=>({...r,cur:v,network:""}))} opts={nr.type==="Bank"?["USD"]:["USDC","USDT"]}/>
+                          <Lbl t={nr.type==="Bank"?"계좌번호*":"지갑 주소*"}/>
+                          <Inp v={nr.detail} set={v=>setNr(r=>({...r,detail:v}))} ph={nr.type==="Bank"?"계좌번호":"0x..."}/>
+                          {nr.type==="Crypto"&&<NetSelector cur={nr.cur} net={nr.network} setNet={v=>setNr(r=>({...r,network:v}))}/>}
+                          {nr.type==="Bank"&&(<>
+                            <Lbl t="은행명*"/>
+                            <Inp v={nr.bankName} set={v=>setNr(r=>({...r,bankName:v}))} ph="예: Citibank"/>
+                            <Lbl t="SWIFT 코드*"/>
+                            <Inp v={nr.swiftCode} set={v=>setNr(r=>({...r,swiftCode:v}))} ph="예: CITIKRSX"/>
+                          </>)}
+                          <div style={{display:"flex",gap:7,marginTop:4}}>
+                            <Btn t="다음 →" sm onClick={()=>{
+                              const BLOCKED=["CU","KP","IR","SY","RU"];
+                              if(!nr.name||!nr.registrationNo||!nr.country||!nr.address||!nr.detail){T("⚠️ 필수 항목을 입력하세요");return;}
+                              if(BLOCKED.includes(nr.country.toUpperCase())){T("⚠️ 해당 국가는 송금이 불가합니다");return;}
+                              if(nr.type==="Bank"&&(!nr.bankName||!nr.swiftCode)){T("⚠️ 은행명과 SWIFT 코드를 입력하세요");return;}
+                              if(nr.type==="Crypto"&&!nr.network){T("⚠️ 네트워크를 선택하세요");return;}
+                              setRecStep(2);
+                            }}/>
+                            <Btn t="취소" sm color={G.textLight} onClick={()=>{setShowAddRec(false);setRecStep(1);}}/>
+                          </div>
+                        </>
+                      )}
+
+                      {/* STEP 2 */}
+                      {recStep===2&&(
+                        <>
+                          <div style={{fontSize:11,color:G.textMid,marginBottom:8,padding:"6px 10px",background:"#F9FAFB",borderRadius:6}}>Step 2 — 한도 신청 (Quota Application)</div>
+                          <div style={{background:G.blueLight,border:`1px solid #BFDBFE`,borderRadius:7,padding:"9px 11px",fontSize:10,color:"#1D4ED8",marginBottom:12}}>
+                            ℹ️ 수취인에게 송금하려면 OSL에 한도(Quota)를 사전 신청해야 합니다. 인보이스 또는 계약서를 업로드하여 송금 한도를 설정합니다.
+                          </div>
+                          <Lbl t="서류 유형*"/>
+                          <div style={{display:"flex",gap:7,marginBottom:10}}>
+                            {["Invoice","Contract"].map(dt=>(
+                              <button key={dt} onClick={()=>setNrQuota(q=>({...q,docType:dt}))}
+                                style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${nrQuota.docType===dt?G.green:G.border}`,background:nrQuota.docType===dt?G.greenLight:G.white,fontWeight:nrQuota.docType===dt?700:400,cursor:"pointer",color:nrQuota.docType===dt?G.greenDark:G.textMid,fontSize:12}}>
+                                {dt}
+                              </button>
+                            ))}
+                          </div>
+                          <Lbl t="통화"/>
+                          <div style={{padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:"#F9FAFB",color:G.textMid}}>USD (고정)</div>
+                          <Lbl t="신청 한도 금액 (USD)*"/>
+                          <Inp v={nrQuota.amount} set={v=>setNrQuota(q=>({...q,amount:v}))} ph="0.01 ~ 999,999,999.99"/>
+                          <div style={{display:"flex",gap:8}}>
+                            <div style={{flex:1}}><Lbl t="유효 시작일"/><Inp v={nrQuota.validFrom} set={v=>setNrQuota(q=>({...q,validFrom:v}))} ph="yyyy-MM-dd"/></div>
+                            <div style={{flex:1}}><Lbl t="유효 종료일"/><Inp v={nrQuota.validTo} set={v=>setNrQuota(q=>({...q,validTo:v}))} ph="yyyy-MM-dd"/></div>
+                          </div>
+                          <Lbl t="서류 업로드 (PDF / JPG / PNG, max 10MB)*"/>
+                          <div style={{border:`1.5px dashed ${G.border}`,borderRadius:7,padding:"16px",textAlign:"center",marginBottom:10,background:"#FAFAFA",fontSize:11,color:G.textMid,cursor:"pointer"}}
+                            onClick={()=>document.getElementById("nrq-file").click()}>
+                            {nrQuota.file?`📎 ${nrQuota.file}`:"파일 선택 또는 드래그 앤 드롭"}
+                            <input id="nrq-file" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                              onChange={e=>{if(e.target.files[0])setNrQuota(q=>({...q,file:e.target.files[0].name}));}}/>
+                          </div>
+                          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                            <Btn t="한도 신청 완료" sm onClick={()=>{
+                              if(!nrQuota.amount){T("⚠️ 한도 금액을 입력하세요");return;}
+                              if(!nrQuota.file){T("⚠️ 서류를 업로드하세요");return;}
+                              const newRec={id:Date.now(),...nr,counterpartyStatus:"PENDING"};
+                              const newQ={id:Date.now()+1,recipientId:newRec.id,recipientName:nr.name,registrationNo:nr.registrationNo,docType:nrQuota.docType,totalApproved:parseFloat(nrQuota.amount)||0,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:nrQuota.validFrom,validTo:nrQuota.validTo};
+                              setRecs(rs=>[...rs,newRec]);setQuotas(qs=>[...qs,newQ]);
+                              setShowAddRec(false);setRecStep(1);
+                              T("✅ 한도 신청이 제출되었습니다. 승인 후 해당 수취인으로 송금이 가능합니다.");
+                            }}/>
+                            <Btn t="나중에 신청" sm color={G.textMid} onClick={()=>{
+                              const newRec={id:Date.now(),...nr,counterpartyStatus:"PENDING"};
+                              setRecs(rs=>[...rs,newRec]);
+                              setShowAddRec(false);setRecStep(1);
+                              T("✅ 수취인 등록 완료. 한도를 나중에 신청하세요.");
+                            }}/>
+                            <Btn t="← 이전" sm color={G.textLight} onClick={()=>setRecStep(1)}/>
+                          </div>
+                        </>
+                      )}
+                    </Card>
+                  )}
+
+                  {/* 수취인 카드 목록 */}
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {recs.map(r=>(
+                      <div key={r.id} style={{background:G.white,border:`1.5px solid ${editRecId===r.id?"#6FCF4A":G.border}`,borderRadius:10,overflow:"hidden",transition:"border 0.15s"}}>
+                        {/* 카드 메인 */}
+                        <div style={{padding:"14px 16px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
+                          <div style={{display:"flex",alignItems:"flex-start",gap:12,flex:1,minWidth:0}}>
+                            <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{r.type==="Bank"?"🏦":"🔗"}</span>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:4}}>
+                                <div style={{fontWeight:700,fontSize:13}}>{r.name}</div>
+                                <span style={{fontSize:10,padding:"1px 7px",borderRadius:10,background:r.type==="Bank"?"#EFF6FF":"#F3E8FF",color:r.type==="Bank"?"#1D4ED8":"#7C3AED",fontWeight:600}}>{r.type}</span>
+                                <CounterpartyStatusBadge status={r.counterpartyStatus}/>
+                              </div>
+                              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                                <CIcon c={r.cur}/><span style={{fontSize:11,fontWeight:600,color:G.textMid}}>{r.cur}</span>
+                                <NetBadge net={r.network}/>
+                              </div>
+                              <div>
+                                {r.type==="Crypto"?<AddressChip address={r.detail}/>:<div style={{fontSize:10,color:G.textMid}}>{r.detail}</div>}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{display:"flex",gap:6,flexShrink:0}}>
+                            <button onClick={()=>{
+                              if(editRecId===r.id){setEditRecId(null);}
+                              else{setEditRecId(r.id);setEr({name:r.name,type:r.type,detail:r.detail,cur:r.cur,network:r.network,alias:r.alias||""});setShowAddRec(false);}
+                            }} style={{fontSize:10,padding:"4px 10px",borderRadius:5,border:`1px solid ${G.green}`,background:editRecId===r.id?G.greenLight:G.white,color:G.greenDark,cursor:"pointer",fontWeight:600}}>
+                              {editRecId===r.id?"접기":"수정"}
+                            </button>
+                            <button onClick={()=>setDeleteConfirmId(r.id)}
+                              style={{fontSize:10,padding:"4px 10px",borderRadius:5,border:`1px solid ${G.red}`,background:"#FFF5F5",color:G.red,cursor:"pointer",fontWeight:600}}>
+                              삭제
+                            </button>
+                          </div>
                         </div>
+
+                        {/* 인라인 편집 폼 */}
+                        {editRecId===r.id&&(
+                          <div style={{borderTop:`1px solid ${G.border}`,background:G.greenLight,padding:"14px 16px"}}>
+                            <div style={{fontWeight:700,fontSize:11,color:G.greenDark,marginBottom:10}}>✏️ 수취인 정보 수정</div>
+                            <Lbl t="이름"/>
+                            <Inp v={er.name} set={v=>setEr(e=>({...e,name:v}))} ph="수취인 이름 또는 법인명"/>
+                            <Lbl t="별칭 (Alias)"/>
+                            <Inp v={er.alias} set={v=>setEr(e=>({...e,alias:v}))} ph="검색용 별명"/>
+                            <Lbl t={er.type==="Bank"?"계좌번호":"지갑 주소"}/>
+                            <Inp v={er.detail} set={v=>setEr(e=>({...e,detail:v}))} ph={er.type==="Bank"?"계좌번호":"0x..."}/>
+                            <Lbl t="통화"/>
+                            <Sel v={er.cur} set={v=>setEr(e=>({...e,cur:v,network:""}))} opts={er.type==="Bank"?["USD"]:["USDC","USDT"]}/>
+                            {er.type==="Crypto"&&<NetSelector cur={er.cur} net={er.network} setNet={v=>setEr(e=>({...e,network:v}))}/>}
+                            <div style={{fontSize:10,color:G.textMid,marginBottom:10,padding:"6px 9px",background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:6}}>
+                              ⚠️ 법인명 · 사업자번호 · 국가는 수정 불가 (OSL Counterparty 등록 후)
+                            </div>
+                            <div style={{display:"flex",gap:7}}>
+                              <Btn t="저장" sm onClick={()=>{if(!er.name||!er.detail){T("⚠️ 필수 입력");return;}setRecs(rs=>rs.map(x=>x.id===r.id?{...x,...er}:x));setEditRecId(null);T("✅ 수취인 정보 업데이트 완료");}}/>
+                              <Btn t="취소" sm color={G.textLight} onClick={()=>setEditRecId(null)}/>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {recs.length===0&&(
+                      <div style={{textAlign:"center",padding:"40px 20px",color:G.textLight,fontSize:12}}>
+                        등록된 수취인이 없습니다.<br/>
+                        <span style={{fontSize:11}}>+ 새 수취인 버튼으로 추가하세요.</span>
                       </div>
                     )}
-
                   </div>
-                ))}
+                </div>
+              )}
 
-                {recs.length===0&&(
-                  <div style={{textAlign:"center",padding:"40px 20px",color:G.textLight,fontSize:12}}>
-                    등록된 수취인이 없습니다.<br/>
-                    <span style={{fontSize:11}}>+ Add Recipient 버튼으로 추가하세요.</span>
+              {/* ── TAB 2: 한도 관리 ── */}
+              {recTab===1&&(
+                <div>
+                  {/* 한도 신청 폼 (인라인) */}
+                  {quotaFormRecId&&(
+                    <Card style={{marginBottom:16,border:`1.5px solid ${G.green}`}}>
+                      <div style={{fontWeight:700,fontSize:12,color:G.greenDark,marginBottom:12}}>➕ 한도 신청</div>
+                      <Lbl t="수취인 선택*"/>
+                      <select value={quotaForm.recipientId} onChange={e=>setQuotaForm(q=>({...q,recipientId:e.target.value}))}
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                        <option value="">수취인 선택...</option>
+                        {recs.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                      <Lbl t="서류 유형*"/>
+                      <div style={{display:"flex",gap:7,marginBottom:10}}>
+                        {["Invoice","Contract"].map(dt=>(
+                          <button key={dt} onClick={()=>setQuotaForm(q=>({...q,docType:dt}))}
+                            style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${quotaForm.docType===dt?G.green:G.border}`,background:quotaForm.docType===dt?G.greenLight:G.white,fontWeight:quotaForm.docType===dt?700:400,cursor:"pointer",color:quotaForm.docType===dt?G.greenDark:G.textMid,fontSize:12}}>
+                            {dt}
+                          </button>
+                        ))}
+                      </div>
+                      <Lbl t="통화"/>
+                      <div style={{padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:"#F9FAFB",color:G.textMid}}>USD (고정)</div>
+                      <Lbl t="신청 한도 금액 (USD)*"/>
+                      <Inp v={quotaForm.amount} set={v=>setQuotaForm(q=>({...q,amount:v}))} ph="0.01 ~ 999,999,999.99"/>
+                      <div style={{display:"flex",gap:8}}>
+                        <div style={{flex:1}}><Lbl t="유효 시작일"/><Inp v={quotaForm.validFrom} set={v=>setQuotaForm(q=>({...q,validFrom:v}))} ph="yyyy-MM-dd"/></div>
+                        <div style={{flex:1}}><Lbl t="유효 종료일"/><Inp v={quotaForm.validTo} set={v=>setQuotaForm(q=>({...q,validTo:v}))} ph="yyyy-MM-dd"/></div>
+                      </div>
+                      <Lbl t="서류 업로드 (PDF / JPG / PNG, max 10MB)*"/>
+                      <div style={{border:`1.5px dashed ${G.border}`,borderRadius:7,padding:"16px",textAlign:"center",marginBottom:12,background:"#FAFAFA",fontSize:11,color:G.textMid,cursor:"pointer"}}
+                        onClick={()=>document.getElementById("q2-file").click()}>
+                        {quotaForm.file?`📎 ${quotaForm.file}`:"파일 선택 또는 드래그 앤 드롭"}
+                        <input id="q2-file" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                          onChange={e=>{if(e.target.files[0])setQuotaForm(q=>({...q,file:e.target.files[0].name}));}}/>
+                      </div>
+                      <div style={{display:"flex",gap:7}}>
+                        <Btn t="한도 신청 완료" sm onClick={()=>{
+                          if(!quotaForm.recipientId){T("⚠️ 수취인을 선택하세요");return;}
+                          if(!quotaForm.amount){T("⚠️ 한도 금액을 입력하세요");return;}
+                          if(!quotaForm.file){T("⚠️ 서류를 업로드하세요");return;}
+                          const rec=recs.find(r=>String(r.id)===String(quotaForm.recipientId));
+                          const newQ={id:Date.now(),recipientId:Number(quotaForm.recipientId),recipientName:rec?.name||"",registrationNo:rec?.registrationNo||"",docType:quotaForm.docType,totalApproved:parseFloat(quotaForm.amount)||0,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:quotaForm.validFrom,validTo:quotaForm.validTo};
+                          setQuotas(qs=>[...qs,newQ]);setQuotaFormRecId(null);
+                          T("✅ 한도 신청이 제출되었습니다. 승인 후 해당 수취인으로 송금이 가능합니다.");
+                        }}/>
+                        <Btn t="취소" sm color={G.textLight} onClick={()=>setQuotaFormRecId(null)}/>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* 한도 현황 테이블 */}
+                  <div style={{overflowX:"auto"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                      <thead>
+                        <tr style={{background:G.sidebar,borderBottom:`1.5px solid ${G.border}`}}>
+                          {["수취인명","사업자번호","서류 유형","승인 한도","사용액","처리 중","잔여 한도","상태","유효기간",""].map((h,i)=>(
+                            <th key={i} style={{padding:"10px 12px",textAlign:"left",fontWeight:700,fontSize:10,color:G.textMid,whiteSpace:"nowrap"}}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {quotas.map((q,qi)=>{
+                          const showInlineForm=quotaFormRecId===q.id;
+                          return(
+                            <>
+                              <tr key={q.id} style={{borderBottom:`1px solid ${G.border}`,background:qi%2===0?G.white:"#FAFAFA"}}>
+                                <td style={{padding:"12px 12px",fontWeight:600}}>{q.recipientName}</td>
+                                <td style={{padding:"12px 12px",color:G.textMid}}>{q.registrationNo}</td>
+                                <td style={{padding:"12px 12px"}}><span style={{background:"#F3F4F6",color:G.textMid,borderRadius:4,padding:"2px 7px",fontWeight:600,fontSize:10}}>{q.docType}</span></td>
+                                <td style={{padding:"12px 12px",fontWeight:600}}>${q.totalApproved.toLocaleString()}</td>
+                                <td style={{padding:"12px 12px",color:G.textMid}}>${q.usedAmount.toLocaleString()}</td>
+                                <td style={{padding:"12px 12px",color:G.orange}}>${q.frozenAmount.toLocaleString()}</td>
+                                <td style={{padding:"12px 12px"}}><QuotaBar total={q.totalApproved} used={q.usedAmount} frozen={q.frozenAmount}/></td>
+                                <td style={{padding:"12px 12px"}}><CounterpartyStatusBadge status={q.status}/></td>
+                                <td style={{padding:"12px 12px",color:G.textMid,fontSize:10,whiteSpace:"nowrap"}}>{q.validFrom||"—"}{q.validTo?` ~ ${q.validTo}`:""}</td>
+                                <td style={{padding:"12px 12px"}}>
+                                  <button onClick={()=>{if(quotaFormRecId===q.id){setQuotaFormRecId(null);}else{setQuotaFormRecId(q.id);setQuotaForm({docType:"Invoice",recipientId:q.recipientId,amount:"",validFrom:"",validTo:"",file:null});}}}
+                                    style={{fontSize:10,padding:"4px 9px",borderRadius:5,border:`1px solid ${G.green}`,background:showInlineForm?G.greenLight:G.white,color:G.greenDark,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>
+                                    {showInlineForm?"접기":"추가 신청"}
+                                  </button>
+                                </td>
+                              </tr>
+                              {showInlineForm&&(
+                                <tr key={`${q.id}-form`}>
+                                  <td colSpan={10} style={{padding:0}}>
+                                    <div style={{background:G.greenLight,borderBottom:`1px solid ${G.border}`,padding:"14px 16px"}}>
+                                      <div style={{fontWeight:700,fontSize:11,color:G.greenDark,marginBottom:10}}>➕ {q.recipientName} — 추가 한도 신청</div>
+                                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                                        <div style={{minWidth:120}}>
+                                          <Lbl t="서류 유형*"/>
+                                          <div style={{display:"flex",gap:6,marginBottom:10}}>
+                                            {["Invoice","Contract"].map(dt=>(
+                                              <button key={dt} onClick={()=>setQuotaForm(qf=>({...qf,docType:dt}))}
+                                                style={{padding:"5px 10px",borderRadius:6,border:`1.5px solid ${quotaForm.docType===dt?G.green:G.border}`,background:quotaForm.docType===dt?G.white:G.white,fontWeight:quotaForm.docType===dt?700:400,cursor:"pointer",color:quotaForm.docType===dt?G.greenDark:G.textMid,fontSize:11}}>
+                                                {dt}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                        <div style={{minWidth:140}}>
+                                          <Lbl t="신청 금액 (USD)*"/>
+                                          <Inp v={quotaForm.amount} set={v=>setQuotaForm(qf=>({...qf,amount:v}))} ph="금액 입력"/>
+                                        </div>
+                                        <div style={{minWidth:110}}>
+                                          <Lbl t="유효 시작일"/>
+                                          <Inp v={quotaForm.validFrom} set={v=>setQuotaForm(qf=>({...qf,validFrom:v}))} ph="yyyy-MM-dd"/>
+                                        </div>
+                                        <div style={{minWidth:110}}>
+                                          <Lbl t="유효 종료일"/>
+                                          <Inp v={quotaForm.validTo} set={v=>setQuotaForm(qf=>({...qf,validTo:v}))} ph="yyyy-MM-dd"/>
+                                        </div>
+                                        <div style={{minWidth:160}}>
+                                          <Lbl t="서류 업로드*"/>
+                                          <div style={{border:`1.5px dashed ${G.border}`,borderRadius:6,padding:"8px 10px",fontSize:10,color:G.textMid,cursor:"pointer",background:"#fff",marginBottom:10}}
+                                            onClick={()=>document.getElementById(`qi-file-${q.id}`).click()}>
+                                            {quotaForm.file?`📎 ${quotaForm.file}`:"파일 선택"}
+                                            <input id={`qi-file-${q.id}`} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                                              onChange={e=>{if(e.target.files[0])setQuotaForm(qf=>({...qf,file:e.target.files[0].name}));}}/>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div style={{display:"flex",gap:7}}>
+                                        <Btn t="신청 완료" sm onClick={()=>{
+                                          if(!quotaForm.amount){T("⚠️ 금액을 입력하세요");return;}
+                                          if(!quotaForm.file){T("⚠️ 서류를 업로드하세요");return;}
+                                          const newQ={id:Date.now(),recipientId:q.recipientId,recipientName:q.recipientName,registrationNo:q.registrationNo,docType:quotaForm.docType,totalApproved:parseFloat(quotaForm.amount)||0,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:quotaForm.validFrom,validTo:quotaForm.validTo};
+                                          setQuotas(qs=>[...qs,newQ]);setQuotaFormRecId(null);
+                                          T("✅ 한도 신청이 제출되었습니다. 승인 후 해당 수취인으로 송금이 가능합니다.");
+                                        }}/>
+                                        <Btn t="취소" sm color={G.textLight} onClick={()=>setQuotaFormRecId(null)}/>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    {quotas.length===0&&(
+                      <div style={{textAlign:"center",padding:"40px 20px",color:G.textLight,fontSize:12}}>
+                        신청된 한도가 없습니다.<br/>
+                        <span style={{fontSize:11}}>+ 한도 신청 버튼으로 추가하세요.</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* 삭제 확인 모달 */}
+              {deleteConfirmId&&(()=>{
+                const target=recs.find(r=>r.id===deleteConfirmId);
+                return(
+                  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998}}>
+                    <div style={{background:G.white,borderRadius:14,padding:28,maxWidth:340,width:"90%",boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}}>
+                      <div style={{fontWeight:700,fontSize:14,marginBottom:10}}>수취인 삭제</div>
+                      <div style={{fontSize:12,color:G.textMid,marginBottom:6}}>'{target?.name}' 수취인을 삭제하시겠습니까?</div>
+                      <div style={{fontSize:11,color:G.red,marginBottom:20}}>이 작업은 되돌릴 수 없습니다.</div>
+                      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                        <Btn t="취소" sm color={G.textMid} onClick={()=>setDeleteConfirmId(null)}/>
+                        <Btn t="삭제" sm color={G.red} onClick={()=>{
+                          setRecs(rs=>rs.filter(x=>x.id!==deleteConfirmId));
+                          if(editRecId===deleteConfirmId)setEditRecId(null);
+                          setDeleteConfirmId(null);
+                          T("🗑 수취인 삭제 완료");
+                        }}/>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
