@@ -2487,21 +2487,16 @@ function MasterDash({onLogout,onSub}){
                   {mcvAmt&&!mcvOverBal&&(
                     <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
                       <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:8}}>환율/수수료 요약</div>
-                      {[
-                        ["환율", mcvLoading?"계산 중...": `1 ${mcvFrom} = 0.9998 ${mcvTo} (실시간 OSL fetch-rate)`],
-                        [isOnRamp?"On-ramp Fee":"Off-ramp Fee", isOnRamp?"OSL 0% + IB Markup (USD → Crypto)":"OSL 0.2% + IB Markup (Crypto → USD)"],
-                      ].map(([k,v])=>(
-                        <div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:5,gap:8}}>
-                          <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>{k}</span>
-                          <span style={{fontSize:11,fontWeight:600,color:G.textDark,textAlign:"right"}}>{v}</span>
-                        </div>
-                      ))}
-                      {!mcvLoading&&(
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                          <span style={{fontSize:11,color:G.textMid}}>수수료율</span>
-                          <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feePct}% (총 {totalFeeAmt} {mcvFrom})</span>
-                        </div>
-                      )}
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,gap:8}}>
+                        <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>환율</span>
+                        <span style={{fontSize:11,fontWeight:600,color:G.textDark,textAlign:"right"}}>{mcvLoading?"계산 중...":`1 ${mcvFrom} = 0.9998 ${mcvTo} (실시간 OSL fetch-rate)`}</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,gap:8}}>
+                        <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>{isOnRamp?"On-ramp Fee":"Off-ramp Fee"}</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.orange,textAlign:"right"}}>
+                          {mcvLoading?"계산 중...":`${feePct}% (OSL + IB Markup 합산)`}
+                        </span>
+                      </div>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:8,borderTop:`1px solid ${G.border}`}}>
                         <span style={{fontSize:12,fontWeight:700}}>예상 수취량</span>
                         <div style={{display:"flex",alignItems:"center",gap:4}}>
