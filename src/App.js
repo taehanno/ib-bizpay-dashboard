@@ -322,7 +322,7 @@ function KYBBadge({status}){
   return <span style={{background:s.bg,color:s.text,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{status||"INACTIVE"}</span>;
 }
 function QuotaBar({total,used,frozen}){
-  const avail=Math.max(0,total-used-frozen);
+  const avail=Math.max(0,total-used+frozen);
   const pct=total>0?Math.round(avail/total*100):0;
   const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
   return(
@@ -2181,7 +2181,7 @@ function SubDash({acctName,onLogout,onMaster}){
                       const totalApproved=group.items.filter(q=>q.status==="ACTIVE").reduce((s,q)=>s+q.totalApproved,0);
                       const usedAmount=group.items.reduce((s,q)=>s+q.usedAmount,0);
                       const frozenAmount=group.items.reduce((s,q)=>s+q.frozenAmount,0);
-                      const avail=Math.max(0,totalApproved-usedAmount-frozenAmount);
+                      const avail=Math.max(0,totalApproved-usedAmount+frozenAmount);
                       const pct=totalApproved>0?Math.round(avail/totalApproved*100):0;
                       const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
                       const isExpanded=expandedQuotaRecId===group.recipientId;
@@ -2242,7 +2242,7 @@ function SubDash({acctName,onLogout,onMaster}){
                                   </thead>
                                   <tbody>
                                     {group.items.map((q,qi)=>{
-                                      const itemAvail=q.status==="PENDING"?null:Math.max(0,q.totalApproved-q.usedAmount-q.frozenAmount);
+                                      const itemAvail=q.status==="PENDING"?null:Math.max(0,q.totalApproved-q.usedAmount+q.frozenAmount);
                                       const stC=q.status==="ACTIVE"?"#276749":q.status==="PENDING"?"#B45309":"#6B7280";
                                       const stBg=q.status==="ACTIVE"?"#EBF8E1":q.status==="PENDING"?"#FFFBEB":"#F3F4F6";
                                       return(
@@ -3271,7 +3271,7 @@ function MasterDash({onLogout,onSub}){
                       const totalApproved=group.items.filter(q=>q.status==="ACTIVE").reduce((s,q)=>s+q.totalApproved,0);
                       const usedAmount=group.items.reduce((s,q)=>s+q.usedAmount,0);
                       const frozenAmount=group.items.reduce((s,q)=>s+q.frozenAmount,0);
-                      const avail=Math.max(0,totalApproved-usedAmount-frozenAmount);
+                      const avail=Math.max(0,totalApproved-usedAmount+frozenAmount);
                       const pct=totalApproved>0?Math.round(avail/totalApproved*100):0;
                       const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
                       const isExpanded=masterExpandedQuotaRecId===group.recipientId;
@@ -3332,7 +3332,7 @@ function MasterDash({onLogout,onSub}){
                                   </thead>
                                   <tbody>
                                     {group.items.map((q,qi)=>{
-                                      const itemAvail=q.status==="PENDING"?null:Math.max(0,q.totalApproved-q.usedAmount-q.frozenAmount);
+                                      const itemAvail=q.status==="PENDING"?null:Math.max(0,q.totalApproved-q.usedAmount+q.frozenAmount);
                                       const stC=q.status==="ACTIVE"?"#276749":q.status==="PENDING"?"#B45309":"#6B7280";
                                       const stBg=q.status==="ACTIVE"?"#EBF8E1":q.status==="PENDING"?"#FFFBEB":"#F3F4F6";
                                       const docLabel=q.purpose==="TREASURY"?"내부 자금 이동 근거":q.docType;
