@@ -425,9 +425,9 @@ function MiniBalCards({balances,title}){
 
 // 타입별 뱃지
 function TypeBadge({type}){
-  if(type==="Convert") return <span style={{background:"#FEF3C7",color:"#92400E",borderRadius:20,padding:"2px 9px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>🔄 Convert</span>;
-  if(type==="Deposit") return <span style={{background:"#DBEAFE",color:"#1D4ED8",borderRadius:20,padding:"2px 9px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>🏦 Deposit</span>;
-  if(type==="Payout")  return <span style={{background:"#DCFCE7",color:"#166534",borderRadius:20,padding:"2px 9px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>💸 Payout</span>;
+  if(type==="Convert") return <span style={{background:"#FFFBEB",color:"#B45309",borderRadius:20,padding:"2px 9px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>🔄 Convert</span>;
+  if(type==="Deposit") return <span style={{background:"#EBF3FF",color:"#1D4ED8",borderRadius:20,padding:"2px 9px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>🏦 Deposit</span>;
+  if(type==="Payout")  return <span style={{background:"#ECFDF5",color:"#065F46",borderRadius:20,padding:"2px 9px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>💸 Payout</span>;
   return <span style={{color:G.textMid,fontSize:11}}>{type}</span>;
 }
 
@@ -467,7 +467,7 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
       <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.25)",zIndex:200}}/>
       {/* 패널 */}
       <div style={{
-        position:"fixed",top:0,right:0,bottom:0,width:420,
+        position:"fixed",top:0,right:0,bottom:0,width:360,
         background:G.white,boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
         zIndex:201,display:"flex",flexDirection:"column",
         animation:"slideIn 0.22s ease"
@@ -562,31 +562,20 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
                 </div>
               </div>
 
-              {/* 수수료 내역 — Failed 일 때는 표시 안 함 */}
+              {/* Fee — Fiat일 때만 Wire Fee 표시, Failed는 제외 */}
               {tx.st!=="Failed"&&(()=>{
                 const isFiat=tx.network==="SWIFT"||tx.network==="Local Bank"||!EXPLORER_URL[tx.network];
                 const rawAmt=parseFloat((tx.amt||"0").replace(/,/g,"").replace(/-/g,""))||0;
-                const isPending=tx.st==="Pending";
                 const wireFee=rawAmt>=100000?0:35;
-                const offRampPct="OSL 0.2% + IB Markup";
+                if(!isFiat) return null;
                 return(
                   <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:10}}>수수료 내역</div>
+                    <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:10}}>Fee</div>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                      <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
-                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{offRampPct}</span>
-                    </div>
-                    {isFiat&&(
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
-                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
-                          {wireFee===0?"면제 ($100K 이상)":`USD ${wireFee}.00`}
-                        </span>
-                      </div>
-                    )}
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                      <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
-                      <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
+                      <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
+                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
+                        {wireFee===0?"면제 ($100K 이상)":`USD ${wireFee}.00`}
+                      </span>
                     </div>
                     <div style={{fontSize:10,color:G.textLight,marginTop:6,paddingTop:6,borderTop:"1px solid #BEE3F8"}}>예치 잔액에서 USD 기준 자동 차감</div>
                   </div>
