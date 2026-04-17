@@ -3754,12 +3754,9 @@ function MasterDash({onLogout,onSub}){
 
                 {/* 하단 버튼 */}
                 <div style={{display:"flex",gap:8,marginTop:16}}>
-                  {target.kybStatus!=="PROCESSING"&&(
-                    <Btn t="임시저장" sm color={G.textMid} onClick={()=>T("💾 임시저장 완료")}/>
-                  )}
-                  {target.kybStatus!=="PROCESSING"&&(
-                    <Btn t={isRejected?"재제출":"제출"} sm onClick={()=>handleSubmitKyb(false)}/>
-                  )}
+                  <Btn t="임시저장" sm color={G.textMid} onClick={()=>T("💾 임시저장 완료")}/>
+                  {!isRejected&&<Btn t="제출" sm onClick={()=>handleSubmitKyb(false)}/>}
+                  {isRejected&&<Btn t="재제출" sm onClick={()=>handleSubmitKyb(false)}/>}
                   <button onClick={()=>setMenu("Clients")} style={{background:"none",border:`1px solid ${G.border}`,borderRadius:6,padding:"6px 13px",fontSize:11,color:G.textMid,cursor:"pointer",fontWeight:600}}>← 목록으로</button>
                 </div>
 
