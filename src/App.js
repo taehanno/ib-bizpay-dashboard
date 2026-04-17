@@ -180,7 +180,8 @@ const INIT_CLIENTS = [
   {id:"SUB-001",name:"Hanpass",  email:"admin@hanpass.com",st:"Active",   created:"2026-01-10",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:false, kybStatus:"ACTIVE"},
   {id:"SUB-002",name:"Sentbe",   email:"admin@sentbe.com", st:"Active",   created:"2026-02-03",mu:0.15,muOn:0.15,muOff:0.15,otpReq:true, locked:false, kybStatus:"INACTIVE"},
   {id:"SUB-003",name:"MOIN",     email:"admin@moin.money", st:"Active",   created:"2026-02-20",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:true,  kybStatus:"ACTIVE"},
-  {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",mu:0.20,muOn:0.20,muOff:0.20,otpReq:false,locked:false, kybStatus:"REJECTED"},
+  {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",mu:0.20,muOn:0.20,muOff:0.20,otpReq:false,locked:false, kybStatus:"REJECTED",
+    kybData:{enterpriseName:"와이어코리아 주식회사",enterpriseNameEn:"WireKorea Corp.",registrationNumber:"220-81-44321",enterpriseType:"주식회사",establishmentDate:"2021-06-15",officeCountry:"KR",officialAddress:"서울시 강남구 테헤란로 123",registrationAddress:"서울시 강남구 테헤란로 123",registrationCity:"Seoul",industry:"핀테크/송금",fundsSource:"영업 수익",accountPurpose:"해외 송금",tradingFrequency:"월 6~20회",transactionAmount:"$10,001 ~ $50,000",bearerShare:"N",email:"admin@wirek.com",ip:"203.0.113.55",deviceId:"DEV-WK9988"}},
   {id:"SUB-005",name:"PayTech",  email:"admin@paytech.com",st:"Active",   created:"2026-04-01",mu:0.12,muOn:0.12,muOff:0.12,otpReq:false,locked:false, kybStatus:"PROCESSING"},
 ];
 
@@ -3297,15 +3298,18 @@ function MasterDash({onLogout,onSub}){
                         </td>
                         <td style={{padding:"10px 11px"}}>
                           <div style={{display:"flex",gap:4,flexWrap:"wrap",minWidth:180}}>
-                            {/* KYB 등록 (INACTIVE 또는 REJECTED) */}
-                            {(c.kybStatus==="INACTIVE"||c.kybStatus==="REJECTED")&&(
+                            {/* KYB 등록 (INACTIVE만) */}
+                            {c.kybStatus==="INACTIVE"&&(
                               <button onClick={()=>{setKybTargetId(c.id);setKybSection(1);setKybErrors([]);setKybSumsubWarn(false);setMenu("Sub KYB");}}
                                 style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #7C3AED",background:"#F3E8FF",color:"#7C3AED",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>KYB 등록</button>
                             )}
-                            {/* KYB 재제출 (REJECTED만) */}
+                            {/* KYB 재제출 (REJECTED만) — 기존 데이터 pre-fill */}
                             {c.kybStatus==="REJECTED"&&(
-                              <button onClick={()=>{setKybTargetId(c.id);setKybSection(1);setKybErrors([]);setKybSumsubWarn(false);setMenu("Sub KYB");}}
-                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #991B1B",background:"#FEE2E2",color:"#991B1B",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>KYB 재제출</button>
+                              <button onClick={()=>{
+                                setKybTargetId(c.id);setKybSection(1);setKybErrors([]);setKybSumsubWarn(false);
+                                if(c.kybData) setKybForm(f=>({...f,...c.kybData}));
+                                setMenu("Sub KYB");
+                              }} style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #991B1B",background:"#FEE2E2",color:"#991B1B",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>KYB 재제출</button>
                             )}
                             {/* OTP 재발송 */}
                             {c.otpReq&&(
@@ -3476,9 +3480,17 @@ function MasterDash({onLogout,onSub}){
                 {/* 헤더 */}
                 <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
                   <button onClick={()=>setMenu("Clients")} style={{background:"none",border:"none",cursor:"pointer",color:G.textMid,fontSize:12,fontWeight:600}}>← 목록</button>
-                  <div style={{fontWeight:700,fontSize:15}}>{target.name} — KYB {isRejected?"재제출":"등록"}</div>
+                  <div style={{fontWeight:700,fontSize:15}}>{target.name} — KYB {isRejected?"재제출":target.kybStatus==="PROCESSING"?"심사 현황":"등록"}</div>
                   <KYBBadge status={target.kybStatus}/>
                 </div>
+
+                {/* PROCESSING 배너 */}
+                {target.kybStatus==="PROCESSING"&&(
+                  <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:9,padding:"12px 16px",marginBottom:16}}>
+                    <div style={{fontWeight:700,color:"#B45309",fontSize:12,marginBottom:4}}>KYB 심사 진행 중</div>
+                    <div style={{fontSize:11,color:"#92400E"}}>제출된 서류를 검토 중입니다. 영업일 기준 수일 내 결과를 안내드립니다. 심사 중에는 내용 수정 및 재제출이 불가합니다.</div>
+                  </div>
+                )}
 
                 {/* REJECTED 사유 배너 */}
                 {isRejected&&(
@@ -3742,8 +3754,12 @@ function MasterDash({onLogout,onSub}){
 
                 {/* 하단 버튼 */}
                 <div style={{display:"flex",gap:8,marginTop:16}}>
-                  <Btn t="임시저장" sm color={G.textMid} onClick={()=>T("💾 임시저장 완료")}/>
-                  <Btn t="제출" sm onClick={()=>handleSubmitKyb(false)}/>
+                  {target.kybStatus!=="PROCESSING"&&(
+                    <Btn t="임시저장" sm color={G.textMid} onClick={()=>T("💾 임시저장 완료")}/>
+                  )}
+                  {target.kybStatus!=="PROCESSING"&&(
+                    <Btn t={isRejected?"재제출":"제출"} sm onClick={()=>handleSubmitKyb(false)}/>
+                  )}
                   <button onClick={()=>setMenu("Clients")} style={{background:"none",border:`1px solid ${G.border}`,borderRadius:6,padding:"6px 13px",fontSize:11,color:G.textMid,cursor:"pointer",fontWeight:600}}>← 목록으로</button>
                 </div>
 
@@ -3755,7 +3771,7 @@ function MasterDash({onLogout,onSub}){
                       <div style={{fontSize:12,color:G.textMid,marginBottom:18}}>인물 Sumsub 인증이 완료되지 않았습니다. 계속 진행하시겠습니까?</div>
                       <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                         <Btn t="취소" sm color={G.textMid} onClick={()=>setKybSumsubWarn(false)}/>
-                        <Btn t="계속 제출" sm color={G.green} onClick={()=>handleSubmitKyb(true)}/>
+                        <Btn t={isRejected?"계속 재제출":"계속 제출"} sm color={G.green} onClick={()=>handleSubmitKyb(true)}/>
                       </div>
                     </div>
                   </div>
