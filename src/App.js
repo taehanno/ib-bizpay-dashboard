@@ -495,28 +495,40 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
                 <AmtChip amt={`-${tx.fromAmt}`} cur={tx.fromCur} net={tx.fromNet||undefined} color={G.red} size={15}/>
               </div>
 
-              {/* FX Rate */}
-              <div style={{background:G.sidebar,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
-                <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:8}}>FX Rate & Fee</div>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                  <span style={{fontSize:11,color:G.textMid}}>Rate</span>
-                  <span style={{fontSize:11,fontWeight:700,color:G.textDark}}>{tx.fxRate||"—"}</span>
-                </div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
-                  <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>Fee</span>
-                  <div style={{textAlign:"right"}}>
-                    {tx.fxFee&&tx.fxFee.includes("총")?(()=>{
-                      const [rate,total]=tx.fxFee.split("(총");
-                      const isOnRamp=["USD","HKD"].includes(tx.fromCur)&&["USDC","USDT"].includes(tx.cur);
-                      return(<>
-                        <div style={{fontSize:11,fontWeight:700,color:G.orange}}>{rate.trim()}</div>
-                        <div style={{fontSize:10,color:G.textMid}}>(총 {total?.replace(")","").trim()})</div>
-                        {isMaster&&<div style={{fontSize:9,color:G.textLight,marginTop:2}}>OSL 도매가 {isOnRamp?"On-ramp":"Off-ramp"} 기준</div>}
-                      </>);
-                    })():<span style={{fontSize:11,fontWeight:700,color:G.orange}}>{tx.fxFee||"—"}</span>}
+              {/* Fee Info */}
+              {(()=>{
+                const isOnRamp=["USD","HKD"].includes(tx.fromCur)&&["USDC","USDT"].includes(tx.cur);
+                const feeType=isOnRamp?"On-ramp":"Off-ramp";
+                const feeBase=isOnRamp?"OSL 0%":"OSL 0.2%";
+                let feePctStr="—"; let feeUsdStr="—";
+                if(tx.fxFee&&tx.fxFee.includes("총")){
+                  const [r,t]=tx.fxFee.split("(총");
+                  feePctStr=r.trim();
+                  feeUsdStr=t?.replace(")","").trim()||"—";
+                }
+                return(
+                  <div style={{background:G.sidebar,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
+                    <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:8}}>Fee</div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:11,color:G.textMid}}>유형</span>
+                      <span style={{fontSize:11,fontWeight:700,color:G.textDark}}>{feeType} · {feeBase}</span>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:11,color:G.textMid}}>수수료율</span>
+                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feePctStr}</span>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:11,color:G.textMid}}>차감 금액 (USD)</span>
+                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feeUsdStr}</span>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:11,color:G.textMid}}>환율</span>
+                      <span style={{fontSize:11,fontWeight:600,color:G.textDark}}>{tx.fxRate||"—"}</span>
+                    </div>
+                    <div style={{fontSize:10,color:G.textLight,marginTop:4}}>예치 잔액에서 USD 기준 자동 차감 · 네트워크 수수료 없음</div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* To */}
               <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:16}}>
@@ -550,74 +562,35 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
                 </div>
               </div>
 
-              {/* 출금 수수료 — Failed 일 때는 표시 안 함 */}
+              {/* 수수료 내역 — Failed 일 때는 표시 안 함 */}
               {tx.st!=="Failed"&&(()=>{
                 const isFiat=tx.network==="SWIFT"||tx.network==="Local Bank"||!EXPLORER_URL[tx.network];
                 const rawAmt=parseFloat((tx.amt||"0").replace(/,/g,"").replace(/-/g,""))||0;
                 const isPending=tx.st==="Pending";
-                if(isFiat){
-                  const fee=35;
-                  return(
-                    <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                      <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:10}}>출금 수수료</div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>네트워크</span><NetBadge net="SWIFT"/>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>수수료 항목</span>
-                        <span style={{fontSize:11,fontWeight:600}}>SWIFT 전신망 수수료</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #BEE3F8",marginBottom:8}}>
-                        <span style={{fontSize:11,color:G.textMid}}>수수료 금액</span>
-                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>USD {fee}.00</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-                        <span style={{fontSize:10,color:G.textMid}}>송금 요청액</span>
-                        <span style={{fontSize:10,fontWeight:600}}>{rawAmt.toLocaleString()}.00 {tx.cur}</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                        <span style={{fontSize:10,color:G.textMid}}>SWIFT 수수료</span>
-                        <span style={{fontSize:10,fontWeight:600}}>+ {fee}.00 {tx.cur}</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",background:G.greenLight,borderRadius:6,padding:"6px 10px"}}>
-                        <span style={{fontSize:11,fontWeight:700,color:G.textDark}}>{isPending?"예상 총 차감액":"총 차감액"}</span>
-                        <span style={{fontSize:11,fontWeight:700,color:G.red}}>{(rawAmt+fee).toLocaleString()}.00 {tx.cur}</span>
-                      </div>
+                const wireFee=rawAmt>=100000?0:35;
+                const offRampPct="OSL 0.2% + IB Markup";
+                return(
+                  <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:10}}>수수료 내역</div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                      <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
+                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{offRampPct}</span>
                     </div>
-                  );
-                } else {
-                  const GAS_FEES={"ERC-20":3.50,"Base":0.05,"TRC-20":1.00};
-                  const gasFee=GAS_FEES[tx.network]||0.05;
-                  return(
-                    <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                      <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:10}}>출금 수수료</div>
+                    {isFiat&&(
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>네트워크</span><NetBadge net={tx.network}/>
+                        <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
+                          {wireFee===0?"면제 ($100K 이상)":`USD ${wireFee}.00`}
+                        </span>
                       </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>수수료 항목</span>
-                        <span style={{fontSize:11,fontWeight:600}}>네트워크 가스비</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #BEE3F8",marginBottom:8}}>
-                        <span style={{fontSize:11,color:G.textMid}}>수수료 금액</span>
-                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>≈ {gasFee} {tx.cur}</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-                        <span style={{fontSize:10,color:G.textMid}}>송금 요청액</span>
-                        <span style={{fontSize:10,fontWeight:600}}>{rawAmt.toLocaleString()} {tx.cur}</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                        <span style={{fontSize:10,color:G.textMid}}>가스비</span>
-                        <span style={{fontSize:10,fontWeight:600}}>+ {gasFee} {tx.cur}</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",background:G.greenLight,borderRadius:6,padding:"6px 10px",marginBottom:isPending?4:0}}>
-                        <span style={{fontSize:11,fontWeight:700,color:G.textDark}}>예상 총 차감액</span>
-                        <span style={{fontSize:11,fontWeight:700,color:G.red}}>{(rawAmt+gasFee).toFixed(2)} {tx.cur}</span>
-                      </div>
-                      {isPending&&<div style={{fontSize:9,color:G.textLight,textAlign:"right"}}>* 가스비는 처리 시점에 확정됩니다.</div>}
+                    )}
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                      <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
+                      <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
                     </div>
-                  );
-                }
+                    <div style={{fontSize:10,color:G.textLight,marginTop:6,paddingTop:6,borderTop:"1px solid #BEE3F8"}}>예치 잔액에서 USD 기준 자동 차감</div>
+                  </div>
+                );
               })()}
 
               {/* From */}
@@ -666,12 +639,6 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
               <span style={{fontSize:11,color:G.textMid}}>TX ID</span>
               <span style={{fontSize:10,fontWeight:600,color:G.textDark,fontFamily:"monospace"}}>{tx.id}</span>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8,gap:8}}>
-              <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>Chain TXID</span>
-              <div style={{textAlign:"right"}}>
-                <ExplorerLink txid={tx.txid} network={tx.network}/>
-              </div>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:11,color:G.textMid}}>시간</span>
@@ -1504,7 +1471,15 @@ function SubDash({acctName,onLogout,onMaster}){
                     <button key={f} onClick={()=>setTxF(f)} style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${txF===f?G.green:G.border}`,background:txF===f?G.greenLight:G.white,color:txF===f?G.greenDark:G.textMid,fontWeight:txF===f?700:400,cursor:"pointer",fontSize:11}}>{f}</button>
                   ))}
                 </div>
-                <Btn t="📥 Export" sm onClick={()=>exportCSV(filtTx,[{l:"TX ID",k:"id"},{l:"Date",k:"date"},{l:"Type",k:"type"},{l:"Recipient",k:"recipientName"},{l:"From Cur",k:"fromCur"},{l:"From Amt",k:"fromAmt"},{l:"To Cur",k:"cur"},{l:"To Amt",k:"amt"},{l:"Network",k:"network"},{l:"Status",k:"st"},{l:"TXID",k:"txid"}],`orders_${acct}.csv`)}/>
+                <Btn t="📥 Export" sm onClick={()=>{
+                  const rows=filtTx.map(r=>{
+                    let feeUsd="";
+                    if(r.fxFee&&r.fxFee.includes("총")){const m=r.fxFee.match(/총 ([\d.]+)/);if(m)feeUsd=m[1]+" USD";}
+                    else if(r.type==="Payout"&&(r.network==="SWIFT"||r.network==="Local Bank"))feeUsd="35.00 USD";
+                    return {...r,feeUsd};
+                  });
+                  exportCSV(rows,[{l:"TX ID",k:"id"},{l:"Date",k:"date"},{l:"Type",k:"type"},{l:"Recipient",k:"recipientName"},{l:"From Currency",k:"fromCur"},{l:"From Amount",k:"fromAmt"},{l:"To Currency",k:"cur"},{l:"To Amount",k:"amt"},{l:"Network",k:"network"},{l:"Fee (USD)",k:"feeUsd"},{l:"Status",k:"st"}],`orders_${acct}.csv`);
+                }}/>
               </div>
               <TxTable rows={filtTx} showAcct={false} onSelect={setSelectedTx}/>
             </div>
@@ -1539,6 +1514,7 @@ function SubDash({acctName,onLogout,onMaster}){
                   <NetSelector cur={trCur} net={trNet} setNet={setTrNet}/>
                   <Lbl t="금액"/><Inp v={trAmt} set={setTrAmt} ph="숫자 입력"/>
                   <Lbl t="Note (선택)"/><Inp v={trNote} set={setTrNote} ph="e.g. Fee settlement"/>
+                  <div style={{fontSize:10,color:"#2B6CB0",background:"#EBF4FF",borderRadius:6,padding:"6px 10px",marginBottom:10}}>ℹ️ Internal Transfer는 수수료 없음. OSL 동일 계정 내 이체.</div>
                   <Btn t="이체 실행" onClick={()=>{if(!trAmt){T("⚠️ 금액 입력");return;}T(`✅ ${trAmt} ${trCur}${trNet?" ("+trNet+")":""}: ${trFrom}→${trTo}`);setTrAmt("");setTrNote("");}}/>
                 </Card>
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -1641,7 +1617,7 @@ function SubDash({acctName,onLogout,onMaster}){
             const kybActive=account?.kybStatus==="ACTIVE";
             const origOk=kybActive||(poOrig.name&&poOrig.registrationNo&&poOrig.country&&poOrig.address);
             const filteredRecs=recs.filter(r=>poType==="Fiat"?r.type==="Bank":r.type==="Crypto");
-            const nextDisabled=!poRec||!poAmt||!origOk||(poType==="Crypto"&&(!poNet||poFeeLoading||!poGasFee||poFeeError));
+            const nextDisabled=!poRec||!poAmt||!origOk||(poType==="Crypto"&&!poNet);
             const stepDone=[!!poRec,!!origOk,!!poAmt];
             return(
             <div style={{maxWidth:480}}>
@@ -1758,62 +1734,44 @@ function SubDash({acctName,onLogout,onMaster}){
                   {/* Fiat 수수료 블록 */}
                   {poType==="Fiat"&&poAmt&&(
                     <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#2B6CB0",marginBottom:10}}>🏦 SWIFT 전신망 수수료</div>
-                      {isLargeAmt?(
-                        <div style={{fontSize:11,color:"#2B6CB0",lineHeight:1.6}}>
-                          💬 100,000 USD 이상은 수수료가 별도 책정됩니다. 담당자에게 문의하세요.
-                        </div>
-                      ):(
-                        <>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                            <span style={{fontSize:11,color:G.textMid}}>송금 요청액</span>
-                            <span style={{fontSize:11,fontWeight:600}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
-                          </div>
-                          <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #BEE3F8",marginBottom:8}}>
-                            <span style={{fontSize:11,color:G.textMid}}>SWIFT 수수료</span>
-                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>+ {swiftFee}.00 {poCur}</span>
-                          </div>
-                          <div style={{display:"flex",justifyContent:"space-between"}}>
-                            <span style={{fontSize:13,fontWeight:700}}>총 차감액</span>
-                            <span style={{fontSize:14,fontWeight:700,color:G.textDark}}>{(poAmtNum+swiftFee).toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
-                          </div>
-                          <div style={{fontSize:10,color:"#2B6CB0",marginTop:8}}>ℹ️ 100,000 USD 미만 건당 USD 35</div>
-                        </>
-                      )}
+                      <div style={{fontSize:12,fontWeight:700,color:"#2B6CB0",marginBottom:10}}>수수료 미리보기</div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
+                        <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% + IB Markup (예치 잔액 차감)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
+                          {isLargeAmt?"면제 ($100K 이상)":"$35 / 건 (예치 잔액 차감)"}
+                        </span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
+                        <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #BEE3F8"}}>
+                        <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
+                        <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
+                      </div>
+                      <div style={{fontSize:10,color:"#2B6CB0",marginTop:6}}>⏱ 환율 고정: Confirm 시점에 10분간 고정됩니다.</div>
                     </div>
                   )}
-                  {/* Crypto 가스비 블록 */}
+                  {/* Crypto 수수료 블록 */}
                   {poType==="Crypto"&&poAmt&&poNet&&(
-                    <div style={{background:poFeeLoading?G.sidebar:"#FFFBEB",border:`1px solid ${poFeeLoading?G.border:"#FDE68A"}`,borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>🔗 네트워크 가스비 (예상)</div>
-                      {poFeeError?(
-                        <>
-                          <div style={{fontSize:11,color:G.red,marginBottom:8}}>수수료를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.</div>
-                          <button onClick={()=>{setPoFeeError(false);setPoFeeLoading(true);setTimeout(()=>{setPoGasFee("0.05");setPoFeeLoading(false);},800);}}
-                            style={{fontSize:11,padding:"5px 12px",borderRadius:6,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",fontWeight:600}}>재시도</button>
-                        </>
-                      ):poFeeLoading?(
-                        <div style={{display:"flex",alignItems:"center",gap:8,color:G.textMid,fontSize:11}}>
-                          <div style={{width:14,height:14,border:`2px solid ${G.green}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
-                          로딩 중...
-                        </div>
-                      ):(
-                        <>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                            <span style={{fontSize:11,color:G.textMid}}>송금 요청액</span>
-                            <span style={{fontSize:11,fontWeight:600}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
-                          </div>
-                          <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #FDE68A",marginBottom:8}}>
-                            <span style={{fontSize:11,color:G.textMid}}>예상 가스비</span>
-                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>+ {poGasFee} {poCur}</span>
-                          </div>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                            <span style={{fontSize:13,fontWeight:700}}>예상 총 차감액</span>
-                            <span style={{fontSize:14,fontWeight:700,color:G.textDark}}>{(poAmtNum+parseFloat(poGasFee||0)).toFixed(2)} {poCur}</span>
-                          </div>
-                          <div style={{fontSize:10,color:"#92400E"}}>⚠️ 실제 가스비는 처리 시점에 확정되며 변동될 수 있습니다.</div>
-                        </>
-                      )}
+                    <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>수수료 미리보기</div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
+                        <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% + IB Markup (예치 잔액 차감)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
+                        <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A"}}>
+                        <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
+                        <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1824,7 +1782,6 @@ function SubDash({acctName,onLogout,onMaster}){
                     if(!poRec||!poAmt){T("⚠️ 수취인/금액을 입력하세요");return;}
                     if(!origOk){T("⚠️ 송금인 정보를 입력하세요");return;}
                     if(poType==="Crypto"&&!poNet){T("⚠️ 네트워크를 선택하세요");return;}
-                    if(poType==="Crypto"&&(!poGasFee||poFeeError)){T("⚠️ 가스비 로딩 완료 후 진행하세요");return;}
                     setShowPoOtp(true);setPoOtp(["","","","","",""]);setPoOtpFail(0);setPoCooldown(0);setPoSubmitting(false);
                   }}
                   style={{width:"100%",padding:"12px",borderRadius:9,border:"none",fontWeight:700,fontSize:13,
@@ -1847,9 +1804,8 @@ function SubDash({acctName,onLogout,onMaster}){
                 <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:14}}>
                   {(()=>{
                     const amtN=parseFloat((poAmt||"0").replace(/,/g,""))||0;
-                    const fee=poType==="Fiat"?`+ 35.00 ${poCur}`:`+ ${poGasFee||"0.05"} ${poCur}`;
-                    const total=poType==="Fiat"?`${(amtN+35).toLocaleString("en-US",{minimumFractionDigits:2})} ${poCur}`:`${(amtN+parseFloat(poGasFee||"0.05")).toFixed(2)} ${poCur}`;
-                    return [["수취인",poRecName],[`금액`,`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${poCur}`],["수수료",fee],["총 차감액",total],["네트워크",poNetDisplay]];
+                    const fee=poType==="Fiat"?(amtN>=100000?"Wire Fee: 면제":"Wire Fee: USD 35.00 + Off-ramp Fee"):"Off-ramp Fee: OSL 0.2% + IB Markup";
+                    return [["수취인",poRecName],[`금액`,`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${poCur}`],["수수료",fee],["수취인 수령",`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${poCur}`],["네트워크",poNetDisplay]];
                   })().map(([k,v],i,arr)=>(
                     <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:i<arr.length-1?`1px solid ${G.border}`:"none"}}>
                       <span style={{color:G.textMid,fontSize:12}}>{k}</span>
@@ -2306,7 +2262,9 @@ function MasterDash({onLogout,onSub}){
   const [editMu,setEditMu]=useState(null);
   const [editFee,setEditFee]=useState(null);
   const [showCreate,setShowCreate]=useState(false);
-  const [nc,setNc]=useState({name:"",email:"",mu:0.10});
+  const [nc,setNc]=useState({name:"",muOn:0.10,muOff:0.10});
+  const [inviteClientId,setInviteClientId]=useState(null);
+  const [inviteEmail,setInviteEmail]=useState("");
   const [clientDeleteId,setClientDeleteId]=useState(null);
   const [kybTargetId,setKybTargetId]=useState(null);
   const [kybSection,setKybSection]=useState(1);
@@ -2462,6 +2420,7 @@ function MasterDash({onLogout,onSub}){
                 <NetSelector cur={mtrCur} net={mtrNet} setNet={setMtrNet}/>
                 <Lbl t="Amount"/><Inp v={mtrAmt} set={setMtrAmt} ph="Enter amount"/>
                 <Lbl t="Note"/><Inp v={mtrNote} set={setMtrNote} ph="e.g. Liquidity top-up"/>
+                <div style={{fontSize:10,color:"#2B6CB0",background:"#EBF4FF",borderRadius:6,padding:"6px 10px",marginBottom:10}}>ℹ️ Internal Transfer 수수료 없음.</div>
                 <Btn t="Execute Transfer" onClick={()=>{if(!mtrAmt){T("⚠️ 금액 입력");return;}T(`✅ ${mtrAmt} ${mtrCur}${mtrNet?" ("+mtrNet+")":""}: ${mtrFrom}→${mtrTo}`);setMtrAmt("");setMtrNote("");}}/>
               </Card>
             </div>
@@ -2531,32 +2490,35 @@ function MasterDash({onLogout,onSub}){
                   {/* 수수료 미리보기 */}
                   {mcvAmt&&!mcvOverBal&&(
                     <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                        <span style={{fontSize:11,color:G.textMid}}>환율 미리보기</span>
-                        {mcvLoading
-                          ?<span style={{fontSize:11,color:G.textLight}}>계산 중...</span>
-                          :<span style={{fontSize:11,fontWeight:600}}>1 {mcvFrom} = 0.9998 {mcvTo}</span>
-                        }
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                        <span style={{fontSize:11,color:G.textMid}}>수수료</span>
-                        <div style={{textAlign:"right"}}>
-                          {mcvLoading?<span style={{fontSize:11,color:G.textLight}}>계산 중...</span>:<>
-                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feePct}% (총 {totalFeeAmt} {mcvFrom})</span>
-                            <div style={{fontSize:9,color:G.textLight,marginTop:1}}>{feeDir}</div>
-                          </>}
+                      <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:8}}>환율/수수료 요약</div>
+                      {[
+                        ["환율", mcvLoading?"계산 중...": `1 ${mcvFrom} = 0.9998 ${mcvTo} (실시간 OSL fetch-rate)`],
+                        [isOnRamp?"On-ramp Fee":"Off-ramp Fee", isOnRamp?"OSL 0% + IB Markup (USD → Crypto)":"OSL 0.2% + IB Markup (Crypto → USD)"],
+                        ["수수료 차감 방식","예치 잔액에서 USD 기준 자동 차감"],
+                        ["네트워크 수수료","없음 (OSL 내부 처리)"],
+                      ].map(([k,v])=>(
+                        <div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:5,gap:8}}>
+                          <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>{k}</span>
+                          <span style={{fontSize:11,fontWeight:600,color:G.textDark,textAlign:"right"}}>{v}</span>
                         </div>
-                      </div>
+                      ))}
+                      {!mcvLoading&&(
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                          <span style={{fontSize:11,color:G.textMid}}>수수료율</span>
+                          <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feePct}% (총 {totalFeeAmt} {mcvFrom})</span>
+                        </div>
+                      )}
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:8,borderTop:`1px solid ${G.border}`}}>
-                        <span style={{fontSize:12,fontWeight:700}}>예상 수령액</span>
+                        <span style={{fontSize:12,fontWeight:700}}>예상 수취량</span>
                         <div style={{display:"flex",alignItems:"center",gap:4}}>
                           {mcvLoading?<span style={{fontSize:14,color:G.textLight}}>계산 중...</span>:<>
-                            <span style={{fontSize:16,fontWeight:700,color:G.greenDark}}>{received}</span>
+                            <span style={{fontSize:14,fontWeight:700,color:G.greenDark}}>{received}</span>
                             <CIcon c={mcvTo} size={16}/><span style={{fontSize:12,fontWeight:600,color:G.greenDark}}>{mcvTo}</span>
                             {mcvToNet&&<NetBadge net={mcvToNet}/>}
                           </>}
                         </div>
                       </div>
+                      <div style={{fontSize:9,color:G.textLight,marginTop:4}}>금액 × (1 - 수수료율) 실시간 계산</div>
                     </div>
                   )}
                   <button
@@ -2717,45 +2679,33 @@ function MasterDash({onLogout,onSub}){
                   }
                   if(mpoType==="Crypto"&&mpoAmt&&mpoNet){
                     return(
-                      <div style={{background:mpoFeeLoading?G.sidebar:"#FFFBEB",border:`1px solid ${mpoFeeLoading?G.border:"#FDE68A"}`,borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                        <div style={{fontSize:10,fontWeight:700,color:"#92400E",textTransform:"uppercase",marginBottom:10}}>네트워크 가스비</div>
-                        {mpoFeeError?(
-                          <div style={{fontSize:11,color:G.red}}>가스비 조회 실패. 잠시 후 다시 시도하세요.</div>
-                        ):mpoFeeLoading?(
-                          <div style={{display:"flex",alignItems:"center",gap:8,color:G.textMid,fontSize:11}}>
-                            <span style={{display:"inline-block",width:14,height:14,border:"2px solid #ccc",borderTopColor:G.green,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-                            가스비 조회 중...
-                          </div>
-                        ):(
-                          <>
-                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-                              <span style={{fontSize:10,color:G.textMid}}>송금 요청액</span>
-                              <span style={{fontSize:11,fontWeight:600}}>{mpoAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
-                            </div>
-                            <div style={{display:"flex",justifyContent:"space-between",paddingBottom:6,borderBottom:"1px solid #FDE68A",marginBottom:6}}>
-                              <span style={{fontSize:10,color:G.textMid}}>예상 가스비</span>
-                              <span style={{fontSize:11,fontWeight:700,color:G.orange}}>+ {mpoGasFee} {mpoCur}</span>
-                            </div>
-                            <div style={{display:"flex",justifyContent:"space-between",background:G.greenLight,borderRadius:6,padding:"6px 10px"}}>
-                              <span style={{fontSize:11,fontWeight:700,color:G.textDark}}>예상 총 차감액</span>
-                              <span style={{fontSize:14,fontWeight:700,color:G.textDark}}>{(mpoAmtNum+parseFloat(mpoGasFee||0)).toFixed(2)} {mpoCur}</span>
-                            </div>
-                          </>
-                        )}
+                      <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+                        <div style={{fontSize:10,fontWeight:700,color:"#92400E",textTransform:"uppercase",marginBottom:10}}>수수료 미리보기</div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                          <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
+                          <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% + IB Markup (예치 잔액 차감)</span>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                          <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
+                          <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A"}}>
+                          <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
+                          <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{mpoAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
+                        </div>
                       </div>
                     );
                   }
                   return null;
                 })()}
                 <button
-                  disabled={!mpoRec||!mpoAmt||(mpoType==="Crypto"&&(!mpoNet||mpoFeeLoading||!mpoGasFee||mpoFeeError))}
+                  disabled={!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet)}
                   onClick={()=>{
                     if(!mpoRec||!mpoAmt){T("⚠️ 수취인/금액 입력");return;}
                     if(mpoType==="Crypto"&&!mpoNet){T("⚠️ 네트워크를 선택하세요");return;}
-                    if(mpoType==="Crypto"&&(!mpoGasFee||mpoFeeError)){T("⚠️ 가스비 로딩 완료 후 진행하세요");return;}
                     setShowMpoOtp(true);setMpoOtp(["","","","","",""]);setMpoOtpFail(0);setMpoCooldown(0);setMpoSubmitting(false);
                   }}
-                  style={{width:"100%",padding:"11px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,cursor:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&(!mpoNet||mpoFeeLoading||!mpoGasFee||mpoFeeError)))?"not-allowed":"pointer",background:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&(!mpoNet||mpoFeeLoading||!mpoGasFee||mpoFeeError)))?"#ccc":G.green,color:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&(!mpoNet||mpoFeeLoading||!mpoGasFee||mpoFeeError)))?G.textLight:"#fff",transition:"background 0.15s"}}>
+                  style={{width:"100%",padding:"11px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,cursor:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"not-allowed":"pointer",background:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"#ccc":G.green,color:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?G.textLight:"#fff",transition:"background 0.15s"}}>
                   다음 — OTP 인증으로 →
                 </button>
               </Card>
@@ -2770,9 +2720,8 @@ function MasterDash({onLogout,onSub}){
                 <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:14}}>
                   {(()=>{
                     const amtN=parseFloat((mpoAmt||"0").replace(/,/g,""))||0;
-                    const fee=mpoType==="Fiat"?`+ 35.00 ${mpoCur}`:`+ ${mpoGasFee||"0.05"} ${mpoCur}`;
-                    const total=mpoType==="Fiat"?`${(amtN+35).toLocaleString("en-US",{minimumFractionDigits:2})} ${mpoCur}`:`${(amtN+parseFloat(mpoGasFee||"0.05")).toFixed(2)} ${mpoCur}`;
-                    return [["수취인",mpoRecName],[`금액`,`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${mpoCur}`],["수수료",fee],["총 차감액",total],["네트워크",mpoNetDisplay]].map(([k,v])=>(
+                    const fee=mpoType==="Fiat"?(amtN>=100000?"Wire Fee: 면제":"Wire Fee: USD 35.00 + Off-ramp Fee"):"Off-ramp Fee: OSL 0.2% + IB Markup";
+                    return [["수취인",mpoRecName],[`금액`,`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${mpoCur}`],["수수료",fee],["수취인 수령",`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${mpoCur}`],["네트워크",mpoNetDisplay]].map(([k,v])=>(
                       <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${G.border}`}}>
                         <span style={{color:G.textMid,fontSize:12}}>{k}</span>
                         <span style={{fontWeight:700,fontSize:12,color:k==="총 차감액"?G.red:G.textDark}}>{v}</span>
@@ -2821,27 +2770,28 @@ function MasterDash({onLogout,onSub}){
               </div>
               {showCreate&&(
                 <Card style={{marginBottom:14,border:`1.5px solid ${G.green}`}}>
-                  <div style={{fontWeight:700,fontSize:12,marginBottom:12,color:G.greenDark}}>New Client</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                    <div><Lbl t="Company Name*"/><Inp v={nc.name} set={v=>setNc(c=>({...c,name:v}))} ph="e.g. GlobalPay"/></div>
-                    <div><Lbl t="Admin Email*"/><Inp v={nc.email} set={v=>setNc(c=>({...c,email:v}))} ph="admin@company.com"/></div>
+                  <div style={{fontWeight:700,fontSize:12,marginBottom:12,color:G.greenDark}}>New Client — 1단계: 계정 생성 (KYB 전)</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+                    <div style={{gridColumn:"1/-1"}}><Lbl t="Company Name *"/><Inp v={nc.name} set={v=>setNc(c=>({...c,name:v}))} ph="e.g. GlobalPay"/></div>
                     <div>
-                      <Lbl t="Convert Markup (%)"/>
-                      <input type="number" value={nc.mu*100} onChange={e=>setNc(c=>({...c,mu:parseFloat(e.target.value)/100}))} step="0.01"
+                      <Lbl t="On-ramp Markup (%)"/>
+                      <input type="number" value={(nc.muOn*100).toFixed(2)} onChange={e=>setNc(c=>({...c,muOn:parseFloat(e.target.value)/100}))} step="0.01"
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,boxSizing:"border-box",marginBottom:10}}/>
+                    </div>
+                    <div>
+                      <Lbl t="Off-ramp Markup (%)"/>
+                      <input type="number" value={(nc.muOff*100).toFixed(2)} onChange={e=>setNc(c=>({...c,muOff:parseFloat(e.target.value)/100}))} step="0.01"
                         style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,boxSizing:"border-box",marginBottom:10}}/>
                     </div>
                   </div>
-                  <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:7,padding:"9px 12px",fontSize:10,color:"#2B6CB0",marginBottom:8}}>
-                    📧 저장 시 <b>{nc.email||"입력된 이메일"}</b>로 임시 비밀번호 자동 발송
+                  <div style={{background:"#EBF4FF",border:"1px solid #BEE3F8",borderRadius:7,padding:"9px 12px",fontSize:10,color:"#2B6CB0",marginBottom:10}}>
+                    📋 계정 생성 후 KYB를 진행하세요. KYB 승인 완료 후 이메일 초대가 발송됩니다.
                   </div>
-                  <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:7,padding:"8px 12px",fontSize:10,color:"#92400E",marginBottom:10}}>
-                    ⚠️ 생성 직후 KYB 상태: INACTIVE. KYB 제출 전까지 해당 Sub Account는 Payout/Convert 불가.
-                  </div>
-                  <Btn t="계정 생성 및 초대 이메일 발송" sm onClick={()=>{
-                    if(!nc.name||!nc.email){T("⚠️ 이름/이메일 입력");return;}
-                    setClients(cs=>[...cs,{id:"SUB-00"+(cs.length+1),name:nc.name,email:nc.email,st:"Active",created:new Date().toISOString().split("T")[0],mu:nc.mu,muOn:nc.mu,muOff:nc.mu,otpReq:false,locked:false,kybStatus:"INACTIVE"}]);
-                    setNc({name:"",email:"",mu:0.10});setShowCreate(false);
-                    T(`✅ "${nc.name}" 계정 생성 + 초대 이메일 발송!`);
+                  <Btn t="계정 생성" sm onClick={()=>{
+                    if(!nc.name){T("⚠️ Company Name 입력");return;}
+                    setClients(cs=>[...cs,{id:"SUB-00"+(cs.length+1),name:nc.name,email:"",st:"Active",created:new Date().toISOString().split("T")[0],mu:nc.muOn,muOn:nc.muOn,muOff:nc.muOff,otpReq:false,locked:false,kybStatus:"INACTIVE"}]);
+                    setNc({name:"",muOn:0.10,muOff:0.10});setShowCreate(false);
+                    T(`✅ "${nc.name}" 계정 생성 완료. KYB 등록 후 이메일 초대를 발송하세요.`);
                   }}/>
                 </Card>
               )}
@@ -2849,7 +2799,7 @@ function MasterDash({onLogout,onSub}){
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                   <thead>
                     <tr style={{background:G.sidebar}}>
-                      {["ID","Company","Email","Status","KYB","Created","Markup","Actions"].map(h=>(
+                      {["ID","Company","Email","Status","KYB","Created","On-ramp Markup","Off-ramp Markup","Actions"].map(h=>(
                         <th key={h} style={{padding:"9px 11px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
                       ))}
                     </tr>
@@ -2868,24 +2818,46 @@ function MasterDash({onLogout,onSub}){
                         <td style={{padding:"10px 11px"}}><KYBBadge status={c.kybStatus}/></td>
                         <td style={{padding:"10px 11px",color:G.textLight,whiteSpace:"nowrap"}}>{c.created}</td>
                         <td style={{padding:"10px 11px"}}>
-                          {editMu===c.id?(
+                          {editFee?.id===c.id&&editFee?.dir==='on'?(
                             <div style={{display:"flex",alignItems:"center",gap:4}}>
-                              <input type="number" defaultValue={(c.mu*100).toFixed(2)} id={`mu-${c.id}`} step="0.01"
+                              <input type="number" defaultValue={(c.muOn*100).toFixed(2)} id={`muOn-${c.id}`} step="0.01"
                                 style={{width:58,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
                               <span style={{fontSize:10,color:G.textMid}}>%</span>
                               <Btn t="저장" sm color={G.green} onClick={()=>{
-                                const val=parseFloat(document.getElementById(`mu-${c.id}`).value)/100;
-                                setClients(cs=>cs.map(x=>x.id===c.id?{...x,mu:val}:x));setEditMu(null);T(`✅ ${c.name} markup updated`);
+                                const val=parseFloat(document.getElementById(`muOn-${c.id}`).value)/100;
+                                setClients(cs=>cs.map(x=>x.id===c.id?{...x,muOn:val,mu:val}:x));setEditFee(null);T(`✅ ${c.name} On-ramp markup updated`);
                               }}/>
-                              <Btn t="취소" sm color={G.textLight} onClick={()=>setEditMu(null)}/>
+                              <Btn t="취소" sm color={G.textLight} onClick={()=>setEditFee(null)}/>
                             </div>
                           ):(
                             <div style={{display:"flex",alignItems:"center",gap:6}}>
-                              <span style={{background:G.greenLight,color:G.greenDark,borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11,cursor:"default",position:"relative"}}
-                                title={`최종 수수료 = OSL 0.02% + ${(c.mu*100).toFixed(2)}% = ${(0.02+c.mu*100).toFixed(2)}%`}>
-                                +{(c.mu*100).toFixed(2)}%
+                              <span style={{background:G.greenLight,color:G.greenDark,borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11,cursor:"default"}}
+                                title={`OSL Base 0% + IB Markup = 고객사 최종 On-ramp 수수료`}>
+                                +{(c.muOn*100).toFixed(2)}%
                               </span>
-                              <button onClick={()=>setEditMu(c.id)} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
+                              <button onClick={()=>setEditFee({id:c.id,dir:'on'})} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
+                            </div>
+                          )}
+                        </td>
+                        <td style={{padding:"10px 11px"}}>
+                          {editFee?.id===c.id&&editFee?.dir==='off'?(
+                            <div style={{display:"flex",alignItems:"center",gap:4}}>
+                              <input type="number" defaultValue={(c.muOff*100).toFixed(2)} id={`muOff-${c.id}`} step="0.01"
+                                style={{width:58,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
+                              <span style={{fontSize:10,color:G.textMid}}>%</span>
+                              <Btn t="저장" sm color={G.green} onClick={()=>{
+                                const val=parseFloat(document.getElementById(`muOff-${c.id}`).value)/100;
+                                setClients(cs=>cs.map(x=>x.id===c.id?{...x,muOff:val}:x));setEditFee(null);T(`✅ ${c.name} Off-ramp markup updated`);
+                              }}/>
+                              <Btn t="취소" sm color={G.textLight} onClick={()=>setEditFee(null)}/>
+                            </div>
+                          ):(
+                            <div style={{display:"flex",alignItems:"center",gap:6}}>
+                              <span style={{background:"#DBEAFE",color:"#1D4ED8",borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11,cursor:"default"}}
+                                title={`OSL Base 0.2% + IB Markup = 고객사 최종 Off-ramp 수수료`}>
+                                +{(c.muOff*100).toFixed(2)}%
+                              </span>
+                              <button onClick={()=>setEditFee({id:c.id,dir:'off'})} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
                             </div>
                           )}
                         </td>
@@ -2905,6 +2877,28 @@ function MasterDash({onLogout,onSub}){
                             {c.otpReq&&(
                               <button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,otpReq:false}:x));T(`📧 ${c.name} OTP 재발송 완료`);}}
                                 style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #6366F1",background:"#EEF2FF",color:"#6366F1",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>OTP 재발송</button>
+                            )}
+                            {/* 이메일 초대 / 재발송 (KYB ACTIVE인 경우) */}
+                            {c.kybStatus==="ACTIVE"&&!c.email&&inviteClientId!==c.id&&(
+                              <button onClick={()=>{setInviteClientId(c.id);setInviteEmail("");}}
+                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #0EA5E9",background:"#F0F9FF",color:"#0EA5E9",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>이메일 초대</button>
+                            )}
+                            {c.kybStatus==="ACTIVE"&&inviteClientId===c.id&&(
+                              <div style={{display:"flex",gap:3,alignItems:"center",flexWrap:"nowrap"}}>
+                                <input value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="admin@company.com"
+                                  style={{width:130,padding:"3px 6px",borderRadius:4,border:`1.5px solid #0EA5E9`,fontSize:10,outline:"none"}}/>
+                                <button onClick={()=>{
+                                  if(!inviteEmail){T("⚠️ 이메일 입력");return;}
+                                  setClients(cs=>cs.map(x=>x.id===c.id?{...x,email:inviteEmail}:x));
+                                  setInviteClientId(null);setInviteEmail("");
+                                  T(`✅ ${inviteEmail}로 초대 이메일이 발송되었습니다.`);
+                                }} style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #0EA5E9",background:"#0EA5E9",color:"#fff",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>초대 발송</button>
+                                <button onClick={()=>{setInviteClientId(null);setInviteEmail("");}} style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer",fontWeight:600}}>취소</button>
+                              </div>
+                            )}
+                            {c.kybStatus==="ACTIVE"&&c.email&&(
+                              <button onClick={()=>{T(`📧 ${c.email}로 재발송 완료`);}}
+                                style={{fontSize:9,padding:"3px 7px",borderRadius:3,border:"1px solid #0EA5E9",background:"#EFF6FF",color:"#0EA5E9",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>재발송</button>
                             )}
                             {/* 잠금 해제 */}
                             {c.locked&&(
@@ -3330,6 +3324,26 @@ function MasterDash({onLogout,onSub}){
 
           {menu==="Fee Settings"&&(
             <div style={{maxWidth:640}}>
+              <div style={{background:"#EBF8E1",border:"1px solid #C3E6CB",borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+                <div style={{fontWeight:700,fontSize:12,marginBottom:8,color:"#276749"}}>수수료 정책 원칙</div>
+                <ul style={{margin:"0 0 10px 0",padding:"0 0 0 16px",fontSize:11,color:"#276749",lineHeight:1.8}}>
+                  <li>블록체인 네트워크 수수료(Gas fee)는 사용자에게 별도 청구하지 않는다.</li>
+                  <li>모든 수수료는 OSL이 정한 기준에 따라 <b>예치된 계정 잔액(USD/USDC/USDT)에서 자동 차감</b>된다.</li>
+                  <li>IB Markup은 IB 서버에서 계산하여 OSL Base Fee에 합산 적용한다.</li>
+                </ul>
+                <div style={{background:"white",borderRadius:7,overflow:"hidden",border:"1px solid #C3E6CB"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                    <thead><tr style={{background:"rgba(39,103,73,0.08)"}}>
+                      {["수수료 항목","기준","차감 방식"].map(h=><th key={h} style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:"#276749"}}>{h}</th>)}
+                    </tr></thead>
+                    <tbody>
+                      {[["On-ramp Fee","OSL 0% + IB Markup","예치 잔액 차감"],["Off-ramp Fee","OSL 0.2% + IB Markup","예치 잔액 차감"],["Wire Fee (Fiat Payout)","$35 / 건 ($100K 이상 면제)","예치 잔액 차감"],["네트워크 수수료 (Gas)","OSL 내부 흡수","별도 청구 없음"]].map(([a,b,c])=>(
+                        <tr key={a}><td style={{padding:"6px 10px",borderTop:"1px solid #C3E6CB",color:"#276749"}}>{a}</td><td style={{padding:"6px 10px",borderTop:"1px solid #C3E6CB",color:"#276749"}}>{b}</td><td style={{padding:"6px 10px",borderTop:"1px solid #C3E6CB",color:"#276749"}}>{c}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
               <Card>
                 <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>Convert 수수료 설정</div>
                 <div style={{fontSize:11,color:G.textLight,marginBottom:14}}>Sub Account 화면에는 합산 수수료만 표시됩니다. OSL/IB 내역 미노출.</div>
