@@ -2444,6 +2444,10 @@ function MasterDash({onLogout,onSub}){
   const [masterQuotaFormRecId,setMasterQuotaFormRecId]=useState(null);
   const [masterQuotaForm,setMasterQuotaForm]=useState({docType:"Invoice",purpose:"TREASURY",recipientId:"",amount:"",validFrom:"",validTo:"",file:null});
   const [masterExpandedQuotaRecId,setMasterExpandedQuotaRecId]=useState(null);
+  const [masterOrderStF,setMasterOrderStF]=useState("All");
+  const [masterOrderTypeF,setMasterOrderTypeF]=useState("All");
+  const [masterOrderDateFrom,setMasterOrderDateFrom]=useState("");
+  const [masterOrderDateTo,setMasterOrderDateTo]=useState("");
 
   const T=m=>{setToast(m);setTimeout(()=>setToast(null),2500);};
   useEffect(()=>{
@@ -3634,22 +3638,69 @@ function MasterDash({onLogout,onSub}){
             </div>
           )}
 
-          {menu==="All Orders"&&(
-            <div>
-              <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
-                <Btn t="📥 Export" sm onClick={()=>{
-                  const rows=TX_DATA.map(r=>{
-                    let feeUsd="";
-                    if(r.fxFee&&r.fxFee.includes("총")){const m=r.fxFee.match(/총 ([\d.]+)/);if(m)feeUsd=m[1]+" USD";}
-                    else if(r.type==="Payout"&&(r.network==="SWIFT"||r.network==="Local Bank"))feeUsd="35.00 USD";
-                    return {...r,feeUsd};
-                  });
-                  exportCSV(rows,[{l:"TX ID",k:"id"},{l:"Date",k:"date"},{l:"Account",k:"acct"},{l:"Type",k:"type"},{l:"Recipient",k:"recipientName"},{l:"From Cur",k:"fromCur"},{l:"From Amt",k:"fromAmt"},{l:"To Cur",k:"cur"},{l:"To Amt",k:"amt"},{l:"Network",k:"network"},{l:"Fee (USD)",k:"feeUsd"},{l:"Status",k:"st"}],"all_orders.csv");
-                }}/>
+          {menu==="All Orders"&&(()=>{
+            const masterOrderFiltered=TX_DATA
+              .filter(r=>masterOrderStF==="All"||r.st===masterOrderStF)
+              .filter(r=>masterOrderTypeF==="All"||r.type===masterOrderTypeF);
+            const handleMasterExport=()=>{
+              let rows=TX_DATA;
+              if(masterOrderDateFrom) rows=rows.filter(r=>r.date>=masterOrderDateFrom);
+              if(masterOrderDateTo)   rows=rows.filter(r=>r.date<=(masterOrderDateTo+" 23:59"));
+              if(!masterOrderDateFrom&&!masterOrderDateTo) rows=masterOrderFiltered;
+              rows=rows.map(r=>{
+                let feeUsd="";
+                if(r.fxFee&&r.fxFee.includes("총")){const m=r.fxFee.match(/총 ([\d.]+)/);if(m)feeUsd=m[1]+" USD";}
+                else if(r.type==="Payout"&&(r.network==="SWIFT"||r.network==="Local Bank"))feeUsd="35.00 USD";
+                return {...r,feeUsd};
+              });
+              const suffix=masterOrderDateFrom||masterOrderDateTo?`_${masterOrderDateFrom||"start"}_${masterOrderDateTo||"end"}`:"";
+              exportCSV(rows,[{l:"TX ID",k:"id"},{l:"Date",k:"date"},{l:"Account",k:"acct"},{l:"Type",k:"type"},{l:"Recipient",k:"recipientName"},{l:"From Cur",k:"fromCur"},{l:"From Amt",k:"fromAmt"},{l:"To Cur",k:"cur"},{l:"To Amt",k:"amt"},{l:"Network",k:"network"},{l:"Fee (USD)",k:"feeUsd"},{l:"Status",k:"st"}],`all_orders${suffix}.csv`);
+            };
+            return(
+              <div>
+                {/* 필터 + Export 행 */}
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",marginBottom:10}}>
+                  {/* 상태 필터 */}
+                  <div style={{display:"flex",gap:4}}>
+                    {["All","Completed","Pending","Failed"].map(f=>(
+                      <button key={f} onClick={()=>setMasterOrderStF(f)}
+                        style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${masterOrderStF===f?G.green:G.border}`,background:masterOrderStF===f?G.greenLight:G.white,color:masterOrderStF===f?G.greenDark:G.textMid,fontWeight:masterOrderStF===f?700:400,cursor:"pointer",fontSize:11,whiteSpace:"nowrap"}}>
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                  {/* 구분선 */}
+                  <div style={{width:1,height:20,background:G.border}}/>
+                  {/* 타입 필터 */}
+                  <div style={{display:"flex",gap:4}}>
+                    {["All","Payout","Deposit","Convert"].map(t=>(
+                      <button key={t} onClick={()=>setMasterOrderTypeF(t)}
+                        style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${masterOrderTypeF===t?G.blue:G.border}`,background:masterOrderTypeF===t?"#EEF6FF":G.white,color:masterOrderTypeF===t?G.blue:G.textMid,fontWeight:masterOrderTypeF===t?700:400,cursor:"pointer",fontSize:11,whiteSpace:"nowrap"}}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  {/* 날짜별 Export */}
+                  <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                    <span style={{fontSize:10,color:G.textLight,whiteSpace:"nowrap"}}>날짜별 Export</span>
+                    <input type="date" value={masterOrderDateFrom} onChange={e=>setMasterOrderDateFrom(e.target.value)}
+                      style={{padding:"3px 6px",borderRadius:5,border:`1px solid ${G.border}`,fontSize:10,color:G.textDark,outline:"none",cursor:"pointer"}}/>
+                    <span style={{fontSize:10,color:G.textLight}}>~</span>
+                    <input type="date" value={masterOrderDateTo} onChange={e=>setMasterOrderDateTo(e.target.value)}
+                      style={{padding:"3px 6px",borderRadius:5,border:`1px solid ${G.border}`,fontSize:10,color:G.textDark,outline:"none",cursor:"pointer"}}/>
+                    <Btn t="📥 Export" sm onClick={handleMasterExport}/>
+                  </div>
+                </div>
+                {/* 건수 표시 */}
+                <div style={{fontSize:10,color:G.textLight,marginBottom:6}}>
+                  {masterOrderFiltered.length}건
+                  {masterOrderStF!=="All"&&` · ${masterOrderStF}`}
+                  {masterOrderTypeF!=="All"&&` · ${masterOrderTypeF}`}
+                </div>
+                <TxTable rows={masterOrderFiltered} showAcct={true} onSelect={setSelectedTx}/>
               </div>
-              <TxTable rows={TX_DATA} showAcct={true} onSelect={setSelectedTx}/>
-            </div>
-          )}
+            );
+          })()}
 
           {menu==="Sub KYB"&&(()=>{
             const KYB_ENT_TYPES=["주식회사","유한회사","합명회사","합자회사","기타"];
