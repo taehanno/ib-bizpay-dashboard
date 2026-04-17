@@ -525,7 +525,7 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
                       <span style={{fontSize:11,color:G.textMid}}>환율</span>
                       <span style={{fontSize:11,fontWeight:600,color:G.textDark}}>{tx.fxRate||"—"}</span>
                     </div>
-                    <div style={{fontSize:10,color:G.textLight,marginTop:4}}>예치 잔액에서 USD 기준 자동 차감 · 네트워크 수수료 없음</div>
+                    <div style={{fontSize:10,color:G.textLight,marginTop:4}}>예치 잔액에서 USD 기준 자동 차감</div>
                   </div>
                 );
               })()}
@@ -1725,18 +1725,10 @@ function SubDash({acctName,onLogout,onMaster}){
                     <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
                       <div style={{fontSize:12,fontWeight:700,color:"#2B6CB0",marginBottom:10}}>수수료 미리보기</div>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
-                        <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% + IB Markup (예치 잔액 차감)</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
                         <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
                         <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
                           {isLargeAmt?"면제 ($100K 이상)":"$35 / 건 (예치 잔액 차감)"}
                         </span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
-                        <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
                       </div>
                       <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #BEE3F8"}}>
                         <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
@@ -1746,23 +1738,24 @@ function SubDash({acctName,onLogout,onMaster}){
                     </div>
                   )}
                   {/* Crypto 수수료 블록 */}
-                  {poType==="Crypto"&&poAmt&&poNet&&(
+                  {poType==="Crypto"&&poAmt&&poNet&&(()=>{
+                    const NET_GAS_USD={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
+                    const gasUsd=NET_GAS_USD[poNet]||"—";
+                    return(
                     <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
                       <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>수수료 미리보기</div>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
-                        <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% + IB Markup (예치 잔액 차감)</span>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
                         <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
-                        <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{gasUsd} USD <span style={{fontWeight:400,color:G.textLight}}>(OSL 실시간 고시)</span></span>
                       </div>
                       <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A"}}>
                         <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
                         <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
                       </div>
+                      <div style={{fontSize:10,color:"#92400E",marginTop:6}}>※ 네트워크 수수료는 예치 잔액(USD)에서 차감됩니다.</div>
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 {/* Payout 실행 버튼 */}
@@ -1793,7 +1786,8 @@ function SubDash({acctName,onLogout,onMaster}){
                 <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:14}}>
                   {(()=>{
                     const amtN=parseFloat((poAmt||"0").replace(/,/g,""))||0;
-                    const fee=poType==="Fiat"?(amtN>=100000?"Wire Fee: 면제":"Wire Fee: USD 35.00 + Off-ramp Fee"):"Off-ramp Fee: OSL 0.2% + IB Markup";
+                    const NET_GAS_USD_OTP={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
+                    const fee=poType==="Fiat"?(amtN>=100000?"Wire Fee: 면제 ($100K 이상)":"Wire Fee: $35 / 건"):`네트워크 수수료: ${NET_GAS_USD_OTP[poNet]||"—"} USD (OSL 실시간 고시)`;
                     return [["수취인",poRecName],[`금액`,`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${poCur}`],["수수료",fee],["수취인 수령",`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${poCur}`],["네트워크",poNetDisplay]];
                   })().map(([k,v],i,arr)=>(
                     <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:i<arr.length-1?`1px solid ${G.border}`:"none"}}>
@@ -2495,8 +2489,6 @@ function MasterDash({onLogout,onSub}){
                       {[
                         ["환율", mcvLoading?"계산 중...": `1 ${mcvFrom} = 0.9998 ${mcvTo} (실시간 OSL fetch-rate)`],
                         [isOnRamp?"On-ramp Fee":"Off-ramp Fee", isOnRamp?"OSL 0% + IB Markup (USD → Crypto)":"OSL 0.2% + IB Markup (Crypto → USD)"],
-                        ["수수료 차감 방식","예치 잔액에서 USD 기준 자동 차감"],
-                        ["네트워크 수수료","없음 (OSL 내부 처리)"],
                       ].map(([k,v])=>(
                         <div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:5,gap:8}}>
                           <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>{k}</span>
@@ -2746,14 +2738,11 @@ function MasterDash({onLogout,onSub}){
                   {(()=>{
                     const mpoAmtNum=parseFloat((mpoAmt||"0").replace(/,/g,""))||0;
                     const isLargeAmt=mpoAmtNum>=100000;
+                    const NET_GAS_USD={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
                     if(mpoAmt){
                       return(
                         <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
                           <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>수수료 미리보기</div>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                            <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
-                            <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% (IB Markup 미적용)</span>
-                          </div>
                           {mpoType==="Fiat"&&(
                             <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
                               <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
@@ -2762,16 +2751,18 @@ function MasterDash({onLogout,onSub}){
                               </span>
                             </div>
                           )}
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                            <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
-                            <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
-                          </div>
+                          {mpoType==="Crypto"&&mpoNet&&(
+                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                              <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
+                              <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{NET_GAS_USD[mpoNet]||"—"} USD <span style={{fontWeight:400,color:G.textLight}}>(OSL 실시간 고시)</span></span>
+                            </div>
+                          )}
                           <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A"}}>
                             <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
                             <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{mpoAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
                           </div>
                           {mpoType==="Fiat"&&<div style={{fontSize:10,color:"#92400E",marginTop:6}}>⏱ 환율 고정: Confirm 시점에 10분간 고정됩니다.</div>}
-                          <div style={{fontSize:9,color:G.textLight,marginTop:4}}>※ Master 직접 Payout — IB Markup 미적용, OSL Base Fee만 적용</div>
+                          {mpoType==="Crypto"&&<div style={{fontSize:10,color:"#92400E",marginTop:6}}>※ 네트워크 수수료는 예치 잔액(USD)에서 차감됩니다.</div>}
                         </div>
                       );
                     }
@@ -2805,7 +2796,8 @@ function MasterDash({onLogout,onSub}){
                 <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:14}}>
                   {(()=>{
                     const amtN=parseFloat((mpoAmt||"0").replace(/,/g,""))||0;
-                    const fee=mpoType==="Fiat"?(amtN>=100000?"Wire Fee: 면제":"Wire Fee: USD 35.00 + Off-ramp Fee"):"Off-ramp Fee: OSL 0.2% + IB Markup";
+                    const NET_GAS_USD_OTP={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
+                    const fee=mpoType==="Fiat"?(amtN>=100000?"Wire Fee: 면제 ($100K 이상)":"Wire Fee: $35 / 건"):`네트워크 수수료: ${NET_GAS_USD_OTP[mpoNet]||"—"} USD (OSL 실시간 고시)`;
                     return [["수취인",mpoRecName],[`금액`,`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${mpoCur}`],["수수료",fee],["수취인 수령",`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${mpoCur}`],["네트워크",mpoNetDisplay]].map(([k,v])=>(
                       <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${G.border}`}}>
                         <span style={{color:G.textMid,fontSize:12}}>{k}</span>
