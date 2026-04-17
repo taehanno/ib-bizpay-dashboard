@@ -44,8 +44,9 @@ const TX_DATA = [
     amt:"-1,200", cur:"USD", network:"SWIFT", st:"Completed",
     txid:"0xABCD...1234",
     fromName:"Hanpass Corp.", fromAccount:"SGB Bank **** 9901", fromBank:"SGB Bank",
-    fromAmt:null, fromCur:null, fromNet:null,
+    fromAmt:"1,200", fromCur:"USD", fromNet:null,
     fxRate:null, fxFee:null,
+    purpose:"TREASURY",
   },
   {
     id:"TX-040", date:"2026-03-28 09:15", type:"Convert", acct:"Sentbe",
@@ -62,8 +63,9 @@ const TX_DATA = [
     amt:"-800", cur:"USDC", network:"Base", st:"Pending",
     txid:"Pending...",
     fromName:"MOIN Corp.", fromAccount:"SGB Bank **** 7712", fromBank:"SGB Bank",
-    fromAmt:null, fromCur:null, fromNet:null,
+    fromAmt:"800", fromCur:"USDC", fromNet:null,
     fxRate:null, fxFee:null,
+    purpose:"GOODS_SERVICES",
   },
   {
     id:"TX-038", date:"2026-03-26 11:20", type:"Deposit", acct:"Hanpass",
@@ -73,6 +75,7 @@ const TX_DATA = [
     fromName:"Hanpass Corp.", fromAccount:"하나은행 **** 3310", fromBank:"하나은행",
     fromAmt:"3,000", fromCur:"USD", fromNet:"",
     fxRate:null, fxFee:null,
+    reference:"ID:17615-HNP",
   },
   {
     id:"TX-037", date:"2026-03-25 08:44", type:"Payout", acct:"Sentbe",
@@ -80,8 +83,9 @@ const TX_DATA = [
     amt:"-2,500", cur:"USD", network:"SWIFT", st:"Failed",
     txid:"FAILED",
     fromName:"Sentbe Corp.", fromAccount:"SGB Bank **** 4455", fromBank:"SGB Bank",
-    fromAmt:null, fromCur:null, fromNet:null,
+    fromAmt:"2,500", fromCur:"USD", fromNet:null,
     fxRate:null, fxFee:null,
+    purpose:"COMMISSION",
   },
   {
     id:"TX-036", date:"2026-03-24 13:05", type:"Payout", acct:"MOIN",
@@ -89,8 +93,10 @@ const TX_DATA = [
     amt:"-400", cur:"USDT", network:"TRC-20", st:"Completed",
     txid:"0x1122...AABB",
     fromName:"MOIN Corp.", fromAccount:"SGB Bank **** 7712", fromBank:"SGB Bank",
-    fromAmt:null, fromCur:null, fromNet:null,
+    fromAmt:"400", fromCur:"USDT", fromNet:null,
     fxRate:null, fxFee:null,
+    purpose:"TREASURY",
+    txHash:"0x11223344556677889900AABBCCDDEEFF11223344556677889900AABBCCDDEEFF",
   },
   {
     id:"TX-035", date:"2026-03-23 10:30", type:"Convert", acct:"Hanpass",
@@ -109,6 +115,7 @@ const TX_DATA = [
     fromName:"Sentbe Corp.", fromAccount:"신한은행 **** 7788", fromBank:"신한은행",
     fromAmt:"1,800", fromCur:"USD", fromNet:"",
     fxRate:null, fxFee:null,
+    reference:"ID:17616-STB",
   },
   {
     id:"TX-033", date:"2026-03-21 09:55", type:"Deposit", acct:"MOIN",
@@ -118,6 +125,7 @@ const TX_DATA = [
     fromName:"MOIN Corp.", fromAccount:"국민은행 **** 5599", fromBank:"국민은행",
     fromAmt:"2,500", fromCur:"USD", fromNet:"",
     fxRate:null, fxFee:null,
+    reference:"ID:17617-MON",
   },
   {
     id:"TX-032", date:"2026-03-20 14:20", type:"Convert", acct:"MOIN",
@@ -445,196 +453,274 @@ function AmtChip({amt,cur,net,color,size=13}){
 }
 
 // ── ORDER SIDE PANEL ────────────────────────────────────────────────
-function SidePanelRow({label,value,sub,mono}){
+function PanelStBadge({st}){
+  const MAP={
+    "Completed":{bg:"#EBF8E1",text:"#276749"},
+    "Processing":{bg:"#DBEAFE",text:"#1D4ED8"},
+    "Pending":{bg:"#FFFBEB",text:"#B45309"},
+    "Review":{bg:"#FEE2E2",text:"#991B1B"},
+    "Frozen":{bg:"#FEE2E2",text:"#991B1B"},
+    "Failed":{bg:"#F3F4F6",text:"#6B7280"},
+    "Expired":{bg:"#F3F4F6",text:"#6B7280"},
+  };
+  const s=MAP[st]||{bg:"#F3F4F6",text:"#6B7280"};
+  return <span style={{background:s.bg,color:s.text,borderRadius:20,padding:"2px 10px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>{st}</span>;
+}
+
+function CopyBtn({text,disabled=false}){
+  const [copied,setCopied]=useState(false);
+  const copy=()=>{
+    if(disabled)return;
+    navigator.clipboard.writeText(text||"").then(()=>{setCopied(true);setTimeout(()=>setCopied(false),1500);});
+  };
   return(
-    <div style={{marginBottom:12}}>
-      <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",letterSpacing:0.4,marginBottom:3}}>{label}</div>
-      <div style={{fontWeight:600,fontSize:12,color:G.textDark,wordBreak:"break-all",...(mono?{fontFamily:"monospace",fontSize:11}:{})}}>{value}</div>
-      {sub&&<div style={{fontSize:11,color:G.textMid,marginTop:2}}>{sub}</div>}
-    </div>
+    <button onClick={copy} disabled={disabled}
+      style={{flexShrink:0,fontSize:9,padding:"2px 7px",borderRadius:4,
+        border:`1px solid ${copied?"#4CAF2A":"#E2EFD9"}`,
+        background:copied?"#EBF8E1":"#FFFFFF",
+        color:copied?"#4CAF2A":disabled?"#ccc":"#999",
+        cursor:disabled?"default":"pointer",fontWeight:600,whiteSpace:"nowrap"}}>
+      {copied?"✓ 복사됨":"복사"}
+    </button>
   );
 }
 
 function OrderSidePanel({tx,onClose,isMaster=false}){
   if(!tx) return null;
-  const isConvert = tx.type==="Convert";
-  const isPayout  = tx.type==="Payout";
-  const isDeposit = tx.type==="Deposit";
-  const stC = stColor(tx.st);
+  const isConvert=tx.type==="Convert";
+  const isPayout =tx.type==="Payout";
+  const isDeposit=tx.type==="Deposit";
+  const isCrypto=EXPLORER_URL[tx.network]!=null;
+  const NET_GAS={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
+  const rawAmt=parseFloat((tx.amt||"0").replace(/,/g,"").replace(/-/g,""))||0;
+  const hashReady=tx.txHash&&tx.st!=="Pending"&&tx.st!=="Processing";
 
   return(
     <>
-      {/* 오버레이 */}
       <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.25)",zIndex:200}}/>
-      {/* 패널 */}
-      <div style={{
-        position:"fixed",top:0,right:0,bottom:0,width:360,
-        background:G.white,boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
-        zIndex:201,display:"flex",flexDirection:"column",
-        animation:"slideIn 0.22s ease"
-      }}>
+      <div style={{position:"fixed",top:0,right:0,bottom:0,width:360,background:"#FFFFFF",
+        boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",zIndex:201,display:"flex",flexDirection:"column",
+        animation:"slideIn 0.22s ease"}}>
         <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
 
         {/* 헤더 */}
-        <div style={{padding:"16px 20px",borderBottom:`1px solid ${G.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{padding:"14px 18px",borderBottom:"1px solid #E2EFD9",display:"flex",alignItems:"center",
+          justifyContent:"space-between",flexShrink:0,gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
             <TypeBadge type={tx.type}/>
-            <span style={{fontWeight:700,fontSize:13,color:G.textDark}}>{tx.id}</span>
+            {isMaster&&tx.acct&&(
+              <span style={{fontSize:10,fontWeight:700,color:"#555",background:"#F7FBF4",borderRadius:10,padding:"2px 8px"}}>{tx.acct}</span>
+            )}
+            <PanelStBadge st={tx.st}/>
           </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",fontSize:18,cursor:"pointer",color:G.textLight,lineHeight:1}}>✕</button>
+          <button onClick={onClose} style={{background:"transparent",border:"none",fontSize:18,
+            cursor:"pointer",color:"#999",lineHeight:1,flexShrink:0}}>✕</button>
         </div>
 
-        {/* 바디 스크롤 */}
-        <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
+        <div style={{flex:1,overflowY:"auto",padding:"16px",display:"flex",flexDirection:"column",gap:10}}>
 
-          {/* ── CONVERT 상세 ── */}
+          {/* ── CONVERT ── */}
           {isConvert&&(
             <>
-              {/* From */}
-              <div style={{background:"#FFF8F0",border:"1px solid #FDE8C8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#92400E",textTransform:"uppercase",marginBottom:8}}>From</div>
-                <AmtChip amt={`-${tx.fromAmt}`} cur={tx.fromCur} net={tx.fromNet||undefined} color={G.red} size={15}/>
+              {/* FROM */}
+              <div style={{background:"#FFF8F0",border:"1px solid #FDE8C8",borderRadius:10,padding:"14px 16px"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#92400E",textTransform:"uppercase",marginBottom:8}}>FROM</div>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+                  <CIcon c={tx.fromCur} size={16}/>
+                  <span style={{fontWeight:700,fontSize:13,color:"#1A1A1A"}}>{tx.fromCur}</span>
+                  {tx.fromNet&&<NetBadge net={tx.fromNet}/>}
+                </div>
+                <div style={{fontSize:18,fontWeight:700,color:"#E53E3E"}}>-{tx.fromAmt} {tx.fromCur}</div>
               </div>
 
-              {/* Fee Info */}
+              {/* 환율 */}
+              <div style={{textAlign:"center",fontSize:11,color:"#555",fontWeight:600,padding:"2px 0"}}>
+                ↓ &nbsp;{tx.fxRate||"—"}
+              </div>
+
+              {/* TO */}
+              <div style={{background:"#EBF8E1",border:"1px solid #E2EFD9",borderRadius:10,padding:"14px 16px"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#4CAF2A",textTransform:"uppercase",marginBottom:8}}>TO</div>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+                  <CIcon c={tx.cur} size={16}/>
+                  <span style={{fontWeight:700,fontSize:13,color:"#1A1A1A"}}>{tx.cur}</span>
+                  {tx.network&&<NetBadge net={tx.network}/>}
+                </div>
+                <div style={{fontSize:18,fontWeight:700,color:"#4CAF2A"}}>{tx.amt} {tx.cur}</div>
+              </div>
+
+              {/* 수수료 */}
               {(()=>{
                 const isOnRamp=["USD","HKD"].includes(tx.fromCur)&&["USDC","USDT"].includes(tx.cur);
-                const feeType=isOnRamp?"On-ramp":"Off-ramp";
-                const feeBase=isOnRamp?"OSL 0%":"OSL 0.2%";
-                let feePctStr="—"; let feeUsdStr="—";
-                if(tx.fxFee&&tx.fxFee.includes("총")){
-                  const [r,t]=tx.fxFee.split("(총");
-                  feePctStr=r.trim();
-                  feeUsdStr=t?.replace(")","").trim()||"—";
-                }
+                const feeLabel=isOnRamp?"On-ramp Fee":"Off-ramp Fee";
+                let feeUsdStr="—";
+                if(tx.fxFee&&tx.fxFee.includes("총")){const m=tx.fxFee.match(/총 ([\d.]+)/);if(m)feeUsdStr=`$${m[1]} USD`;}
                 return(
-                  <div style={{background:G.sidebar,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
-                    <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:8}}>Fee</div>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                      <span style={{fontSize:11,color:G.textMid}}>유형</span>
-                      <span style={{fontSize:11,fontWeight:700,color:G.textDark}}>{feeType} · {feeBase}</span>
+                  <div style={{background:"#F7FBF4",border:"1px solid #E2EFD9",borderRadius:10,padding:"12px 16px"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:8}}>수수료</div>
+                    <div style={{display:"flex",justifyContent:"space-between"}}>
+                      <span style={{fontSize:11,color:"#555"}}>{feeLabel}</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"#F5A623"}}>{feeUsdStr}</span>
                     </div>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                      <span style={{fontSize:11,color:G.textMid}}>수수료율</span>
-                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feePctStr}</span>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                      <span style={{fontSize:11,color:G.textMid}}>차감 금액 (USD)</span>
-                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feeUsdStr}</span>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                      <span style={{fontSize:11,color:G.textMid}}>환율</span>
-                      <span style={{fontSize:11,fontWeight:600,color:G.textDark}}>{tx.fxRate||"—"}</span>
-                    </div>
-                    <div style={{fontSize:10,color:G.textLight,marginTop:4}}>예치 잔액에서 USD 기준 자동 차감</div>
                   </div>
                 );
               })()}
-
-              {/* To */}
-              <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:16}}>
-                <div style={{fontSize:10,fontWeight:700,color:G.greenDark,textTransform:"uppercase",marginBottom:8}}>To</div>
-                <AmtChip amt={tx.amt} cur={tx.cur} net={tx.network||undefined} color={G.greenDark} size={15}/>
-              </div>
             </>
           )}
 
-          {/* ── PAYOUT 상세 ── */}
+          {/* ── PAYOUT ── */}
           {isPayout&&(
             <>
-              {/* 수취인 */}
-              <div style={{background:"#F8F4FF",border:"1px solid #E9D8FD",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#6B21A8",textTransform:"uppercase",marginBottom:10}}>수취인 (Recipient)</div>
-                <SidePanelRow label="이름 / 법인명" value={tx.recipientName}/>
+              {/* RECIPIENT */}
+              <div style={{background:"#F8F4FF",border:"1px solid #E9D8FD",borderRadius:10,padding:"14px 16px"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#6B21A8",textTransform:"uppercase",marginBottom:10}}>Recipient (수취인)</div>
+                <div style={{fontWeight:700,fontSize:13,color:"#1A1A1A",marginBottom:6}}>{tx.recipientName}</div>
+                <div style={{marginBottom:8}}>
+                  {tx.recipientBank
+                    ?<span style={{fontSize:10,background:"#DBEAFE",color:"#1D4ED8",borderRadius:10,padding:"2px 8px",fontWeight:700}}>Bank</span>
+                    :<span style={{fontSize:10,background:"#F0FDF4",color:"#166534",borderRadius:10,padding:"2px 8px",fontWeight:700}}>Crypto</span>
+                  }
+                </div>
                 {tx.recipientBank?(
-                  <SidePanelRow label="계좌" value={tx.recipientAccount} sub={tx.recipientBank}/>
+                  <div style={{fontSize:11,color:"#555",marginBottom:8}}>{tx.recipientBank} | {tx.recipientAccount}</div>
                 ):(
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${G.border}`}}>
-                    <span style={{color:G.textLight,fontSize:11,flexShrink:0,minWidth:110}}>지갑 주소</span>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
-                      <AddressChip address={tx.recipientAccount||""}/>
-                      <NetBadge net={tx.network}/>
-                    </div>
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11,fontFamily:"monospace",color:"#1A1A1A",fontWeight:600}}>{shortAddr(tx.recipientAccount||"")}</span>
+                    <CopyBtn text={tx.recipientAccount||""}/>
+                    <NetBadge net={tx.network}/>
                   </div>
                 )}
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{fontSize:10,color:G.textMid}}>금액</span>
-                  <AmtChip amt={tx.amt} cur={tx.cur} net={tx.network||undefined} color={G.red} size={14}/>
+                <div style={{fontSize:15,fontWeight:700,color:"#E53E3E"}}>{tx.amt} {tx.cur}</div>
+              </div>
+
+              {/* FROM */}
+              <div style={{background:"#F7FBF4",border:"1px solid #E2EFD9",borderRadius:10,padding:"14px 16px"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:8}}>From (송금인)</div>
+                <div style={{fontWeight:700,fontSize:12,color:"#1A1A1A",marginBottom:4}}>{tx.fromName}</div>
+                <div style={{fontSize:11,color:"#555",marginBottom:8}}>{tx.fromAccount}{tx.fromBank?` (${tx.fromBank})`:""}</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#1A1A1A"}}>{tx.fromAmt||tx.amt.replace("-","")} {tx.fromCur||tx.cur}</div>
+              </div>
+
+              {/* 송금 목적 */}
+              {tx.purpose&&(
+                <div style={{background:"#FFFFFF",border:"1px solid #E2EFD9",borderRadius:10,padding:"12px 16px"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:6}}>송금 목적</div>
+                  <span style={{fontSize:11,fontWeight:700,color:"#1A1A1A",background:"#F7FBF4",borderRadius:6,padding:"3px 8px"}}>{tx.purpose}</span>
                 </div>
-              </div>
+              )}
 
-              {/* Fee — Fiat일 때만 Wire Fee 표시, Failed는 제외 */}
-              {tx.st!=="Failed"&&(()=>{
-                const isFiat=tx.network==="SWIFT"||tx.network==="Local Bank"||!EXPLORER_URL[tx.network];
-                const rawAmt=parseFloat((tx.amt||"0").replace(/,/g,"").replace(/-/g,""))||0;
-                const wireFee=rawAmt>=100000?0:35;
-                if(!isFiat) return null;
-                return(
-                  <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:10}}>Fee</div>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                      <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
-                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
-                        {wireFee===0?"면제 ($100K 이상)":`USD ${wireFee}.00`}
-                      </span>
+              {/* 수수료 */}
+              {tx.st!=="Failed"&&(
+                <div style={{background:"#EEF6FF",border:"1px solid #BEE3F8",borderRadius:10,padding:"12px 16px"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:8}}>수수료</div>
+                  {isCrypto?(
+                    <div style={{display:"flex",justifyContent:"space-between"}}>
+                      <span style={{fontSize:11,color:"#555"}}>네트워크 수수료</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"#F5A623"}}>{NET_GAS[tx.network]||"—"} USD <span style={{fontWeight:400,color:"#999",fontSize:10}}>(OSL 실시간)</span></span>
                     </div>
-                    <div style={{fontSize:10,color:G.textLight,marginTop:6,paddingTop:6,borderTop:"1px solid #BEE3F8"}}>예치 잔액에서 USD 기준 자동 차감</div>
-                  </div>
-                );
-              })()}
-
-              {/* From */}
-              <div style={{background:G.sidebar,border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:16}}>
-                <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:10}}>From (송금인)</div>
-                <SidePanelRow label="이름 / 법인명" value={tx.fromName}/>
-                <SidePanelRow label="계좌" value={tx.fromAccount} sub={tx.fromBank}/>
-              </div>
+                  ):(
+                    <div style={{display:"flex",justifyContent:"space-between"}}>
+                      <span style={{fontSize:11,color:"#555"}}>Wire Fee</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"#F5A623"}}>{rawAmt>=100000?"면제 ($100K 이상)":"$35.00 USD"}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
 
-          {/* ── DEPOSIT 상세 ── */}
+          {/* ── DEPOSIT ── */}
           {isDeposit&&(
             <>
-              {/* 수취인 */}
-              <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                <div style={{fontSize:10,fontWeight:700,color:G.blue,textTransform:"uppercase",marginBottom:10}}>수취인 (To)</div>
-                <SidePanelRow label="이름 / 법인명" value={tx.recipientName}/>
-                <SidePanelRow label="계좌" value={tx.recipientAccount} sub={tx.recipientBank}/>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{fontSize:10,color:G.textMid}}>입금액</span>
-                  <AmtChip amt={tx.amt} cur={tx.cur} net={tx.network||undefined} color={G.greenDark} size={14}/>
-                </div>
+              {/* TO */}
+              <div style={{background:"#EEF6FF",border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#2775CA",textTransform:"uppercase",marginBottom:10}}>TO (입금 계좌)</div>
+                <div style={{fontWeight:700,fontSize:13,color:"#1A1A1A",marginBottom:6}}>{tx.recipientName}</div>
+                {tx.recipientBank?(
+                  <div style={{fontSize:11,color:"#555",marginBottom:8}}>{tx.recipientBank} | {tx.recipientAccount}</div>
+                ):(
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11,fontFamily:"monospace",fontWeight:600}}>{shortAddr(tx.recipientAccount||"")}</span>
+                    <CopyBtn text={tx.recipientAccount||""}/>
+                    <NetBadge net={tx.network}/>
+                  </div>
+                )}
+                <div style={{fontSize:15,fontWeight:700,color:"#4CAF2A"}}>{tx.amt} {tx.cur}</div>
               </div>
 
-              {/* From */}
-              <div style={{background:G.sidebar,border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:16}}>
-                <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:10}}>From (송금인)</div>
-                <SidePanelRow label="이름 / 법인명" value={tx.fromName}/>
-                <SidePanelRow label="계좌" value={tx.fromAccount} sub={tx.fromBank}/>
-                <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
-                  <span style={{fontSize:10,color:G.textMid}}>출금액</span>
-                  <AmtChip amt={`-${tx.fromAmt}`} cur={tx.fromCur||tx.cur} color={G.red} size={14}/>
-                </div>
+              {/* FROM */}
+              <div style={{background:"#F7FBF4",border:"1px solid #E2EFD9",borderRadius:10,padding:"14px 16px"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:8}}>FROM (송금인)</div>
+                <div style={{fontWeight:700,fontSize:12,color:"#1A1A1A",marginBottom:4}}>{tx.fromName}</div>
+                {tx.fromBank?(
+                  <div style={{fontSize:11,color:"#555",marginBottom:8}}>{tx.fromAccount} ({tx.fromBank})</div>
+                ):(
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11,fontFamily:"monospace"}}>{shortAddr(tx.fromAccount||"")}</span>
+                    <CopyBtn text={tx.fromAccount||""}/>
+                    <NetBadge net={tx.fromNet||tx.network}/>
+                  </div>
+                )}
+                <div style={{fontSize:13,fontWeight:700,color:"#1A1A1A"}}>{tx.fromAmt} {tx.fromCur||tx.cur}</div>
               </div>
             </>
           )}
 
-          {/* ── 공통: 상태 + TXID + 시간 ── */}
-          <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px"}}>
-            <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:10}}>거래 정보</div>
+          {/* ── 공통: 거래 정보 ── */}
+          <div style={{background:"#FFFFFF",border:"1px solid #E2EFD9",borderRadius:10,padding:"14px 16px"}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:10}}>거래 정보</div>
+
+            {/* 상태 */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <span style={{fontSize:11,color:G.textMid}}>상태</span>
-              <Badge t={tx.st} color={stC}/>
+              <span style={{fontSize:11,color:"#555"}}>상태</span>
+              <PanelStBadge st={tx.st}/>
             </div>
+
+            {/* TX ID */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <span style={{fontSize:11,color:G.textMid}}>TX ID</span>
-              <span style={{fontSize:10,fontWeight:600,color:G.textDark,fontFamily:"monospace"}}>{tx.id}</span>
+              <span style={{fontSize:11,color:"#555",flexShrink:0}}>TX ID</span>
+              <div style={{display:"flex",alignItems:"center",gap:5}}>
+                <span style={{fontSize:11,fontWeight:600,color:"#1A1A1A",fontFamily:"monospace"}}>{tx.id}</span>
+                <CopyBtn text={tx.id}/>
+              </div>
             </div>
+
+            {/* TX Hash (Crypto Payout/Deposit만) */}
+            {isCrypto&&(isPayout||isDeposit)&&(
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <span style={{fontSize:11,color:"#555",flexShrink:0}}>TX Hash</span>
+                <div style={{display:"flex",alignItems:"center",gap:4}}>
+                  <span style={{fontSize:10,fontFamily:"monospace",color:hashReady?"#1A1A1A":"#ccc",fontWeight:600}}>
+                    {tx.txHash?shortAddr(tx.txHash):(tx.st==="Pending"||tx.st==="Processing")?"대기 중...":"—"}
+                  </span>
+                  <CopyBtn text={tx.txHash||""} disabled={!hashReady}/>
+                  {EXPLORER_URL[tx.network]&&(
+                    hashReady?(
+                      <a href={EXPLORER_URL[tx.network]+tx.txHash} target="_blank" rel="noopener noreferrer"
+                        style={{fontSize:13,textDecoration:"none"}}>🔗</a>
+                    ):(
+                      <span style={{fontSize:13,opacity:0.3}}>🔗</span>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Reference (Fiat Deposit만) */}
+            {isDeposit&&!isCrypto&&tx.reference&&(
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <span style={{fontSize:11,color:"#555"}}>Reference</span>
+                <span style={{fontSize:11,fontWeight:600,color:"#1A1A1A",fontFamily:"monospace"}}>{tx.reference}</span>
+              </div>
+            )}
+
+            {/* 거래 시간 */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span style={{fontSize:11,color:G.textMid}}>시간</span>
-              <span style={{fontSize:11,color:G.textDark,fontWeight:600}}>{tx.date}</span>
+              <span style={{fontSize:11,color:"#555"}}>거래 시간</span>
+              <span style={{fontSize:11,color:"#1A1A1A",fontWeight:600}}>{tx.date}</span>
             </div>
           </div>
+
         </div>
       </div>
     </>
@@ -828,6 +914,7 @@ const EXPLORER_URL={
   "ERC-20":"https://etherscan.io/tx/",
   "Base":"https://basescan.org/tx/",
   "TRC-20":"https://tronscan.org/#/transaction/",
+  "SPL":"https://solscan.io/tx/",
 };
 function ExplorerLink({txid,network}){
   const [show,setShow]=useState(false);
