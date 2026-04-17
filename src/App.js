@@ -2179,8 +2179,8 @@ function SubDash({acctName,onLogout,onMaster}){
                     );
                     return recGroups.map(group=>{
                       const totalApproved=group.items.filter(q=>q.status==="ACTIVE").reduce((s,q)=>s+q.totalApproved,0);
-                      const usedAmount=group.items.reduce((s,q)=>s+q.usedAmount,0);
-                      const frozenAmount=group.items.reduce((s,q)=>s+q.frozenAmount,0);
+                      const usedAmount=group.items.filter(q=>q.status!=="PENDING").reduce((s,q)=>s+q.usedAmount,0);
+                      const frozenAmount=group.items.filter(q=>q.status!=="PENDING").reduce((s,q)=>s+q.frozenAmount,0);
                       const avail=Math.max(0,totalApproved-usedAmount+frozenAmount);
                       const pct=totalApproved>0?Math.round(avail/totalApproved*100):0;
                       const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
@@ -3269,8 +3269,8 @@ function MasterDash({onLogout,onSub}){
                     );
                     return recGroups.map(group=>{
                       const totalApproved=group.items.filter(q=>q.status==="ACTIVE").reduce((s,q)=>s+q.totalApproved,0);
-                      const usedAmount=group.items.reduce((s,q)=>s+q.usedAmount,0);
-                      const frozenAmount=group.items.reduce((s,q)=>s+q.frozenAmount,0);
+                      const usedAmount=group.items.filter(q=>q.status!=="PENDING").reduce((s,q)=>s+q.usedAmount,0);
+                      const frozenAmount=group.items.filter(q=>q.status!=="PENDING").reduce((s,q)=>s+q.frozenAmount,0);
                       const avail=Math.max(0,totalApproved-usedAmount+frozenAmount);
                       const pct=totalApproved>0?Math.round(avail/totalApproved*100):0;
                       const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
