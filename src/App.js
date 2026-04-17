@@ -2305,6 +2305,18 @@ function MasterDash({onLogout,onSub}){
   const [mpoFeeLoading,setMpoFeeLoading]=useState(false);
   const [mpoGasFee,setMpoGasFee]=useState(null);
   const [mpoFeeError,setMpoFeeError]=useState(false);
+  const [mpoPurpose,setMpoPurpose]=useState("TREASURY");
+  const [masterRecTab,setMasterRecTab]=useState(0);
+  const [masterQuotas,setMasterQuotas]=useState(INIT_QUOTA);
+  const [showAddMasterRec,setShowAddMasterRec]=useState(false);
+  const [masterRecStep,setMasterRecStep]=useState(1);
+  const [masterNr,setMasterNr]=useState({name:"",type:"Bank",detail:"",cur:"USD",network:"",registrationNo:"",country:"",address:"",alias:"",bankName:"",swiftCode:""});
+  const [masterNrQuota,setMasterNrQuota]=useState({docType:"Invoice",purpose:"TREASURY",amount:"",validFrom:"",validTo:"",file:null});
+  const [masterEditRecId,setMasterEditRecId]=useState(null);
+  const [masterEr,setMasterEr]=useState({name:"",type:"Bank",detail:"",cur:"USD",network:"",alias:""});
+  const [masterDeleteConfirmId,setMasterDeleteConfirmId]=useState(null);
+  const [masterQuotaFormRecId,setMasterQuotaFormRecId]=useState(null);
+  const [masterQuotaForm,setMasterQuotaForm]=useState({docType:"Invoice",purpose:"TREASURY",recipientId:"",amount:"",validFrom:"",validTo:"",file:null});
 
   const T=m=>{setToast(m);setTimeout(()=>setToast(null),2500);};
   useEffect(()=>{
@@ -2327,8 +2339,8 @@ function MasterDash({onLogout,onSub}){
   },[mcvAmt,mcvFrom,mcvTo]);
   const allTr=trF==="All"?TR:TR.filter(t=>t.st===trF);
   const mcvFiltered=mcvFilter==="All"?mcvHistory:mcvHistory.filter(t=>t.st===mcvFilter);
-  const nav=[{g:"Overview",items:["Overview"]},{g:"Operations",items:["Transfer","Deposit","Convert","Payout"]},{g:"Management",items:["Clients","All Transfers","All Orders","Fee Settings","Sub KYB"]}];
-  const menuLabel={Overview:"Master Overview",Transfer:"Master Transfer",Deposit:"Deposit Instructions",Convert:"Convert",Payout:"Create Payout",Clients:"Sub Accounts",["All Transfers"]:"All Transfers",["All Orders"]:"All Orders",["Fee Settings"]:"Fee Settings",["Sub KYB"]:"Sub Account KYB"};
+  const nav=[{g:"Overview",items:["Overview"]},{g:"Operations",items:["Transfer","Deposit","Convert","Payout","Recipients"]},{g:"Management",items:["Clients","All Transfers","All Orders","Fee Settings","Sub KYB"]}];
+  const menuLabel={Overview:"Master Overview",Transfer:"Master Transfer",Deposit:"Deposit Instructions",Convert:"Convert",Payout:"Create Payout",Recipients:"Recipients",Clients:"Sub Accounts",["All Transfers"]:"All Transfers",["All Orders"]:"All Orders",["Fee Settings"]:"Fee Settings",["Sub KYB"]:"Sub Account KYB"};
 
   const mpoRecObj=masterRecs.find(r=>String(r.id)===String(mpoRec));
   const mpoRecName=mpoRecObj?.name||"—";
@@ -2623,90 +2635,174 @@ function MasterDash({onLogout,onSub}){
           })()}
 
           {menu==="Payout"&&(
-            <div style={{maxWidth:440}}>
+            <div style={{maxWidth:480}}>
               <Card>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                {/* 헤더 + 스텝 상태 */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
                   <div style={{fontWeight:700,fontSize:13}}>Create Payout</div>
-                  <div style={{fontSize:10,background:G.greenLight,borderRadius:20,padding:"2px 9px",fontWeight:600,color:G.greenDark}}>Step 1 / 2</div>
+                  <div style={{display:"flex",gap:4}}>
+                    {["수취인","송금인","금액"].map((s,i)=>{
+                      const done=[!!mpoRec,true,!!mpoAmt];
+                      return(
+                        <span key={i} style={{fontSize:9,padding:"2px 8px",borderRadius:10,background:done[i]?G.green:G.border,color:done[i]?"#fff":G.textMid,fontWeight:700,transition:"background 0.2s"}}>
+                          Step {i+1}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{fontSize:11,color:G.textLight,marginBottom:14}}>송금 정보를 입력하세요.</div>
-                <div style={{display:"flex",gap:7,marginBottom:12}}>
+
+                {/* 송금 유형 토글 */}
+                <div style={{display:"flex",gap:7,marginBottom:18}}>
                   {["Fiat","Crypto"].map(tp=>(
-                    <button key={tp} onClick={()=>{setMpoType(tp);setMpoCur(tp==="Fiat"?"USD":"USDC");setMpoNet("");setMpoRec("");}} style={{flex:1,padding:"9px",borderRadius:8,border:`2px solid ${mpoType===tp?G.green:G.border}`,background:mpoType===tp?G.greenLight:G.white,fontWeight:700,cursor:"pointer",color:mpoType===tp?G.greenDark:G.textMid,fontSize:12}}>{tp==="Fiat"?"🏦 Fiat (Bank)":"🔗 Crypto"}</button>
+                    <button key={tp} onClick={()=>{setMpoType(tp);setMpoCur(tp==="Fiat"?"USD":"USDC");setMpoNet("");setMpoRec("");}}
+                      style={{flex:1,padding:"9px",borderRadius:8,border:`2px solid ${mpoType===tp?G.green:G.border}`,background:mpoType===tp?G.greenLight:G.white,fontWeight:700,cursor:"pointer",color:mpoType===tp?G.greenDark:G.textMid,fontSize:12}}>
+                      {tp==="Fiat"?"🏦 Fiat (Bank)":"🔗 Crypto"}
+                    </button>
                   ))}
                 </div>
-                <Lbl t="수취인"/>
-                <select value={mpoRec} onChange={e=>setMpoRec(e.target.value)} style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
-                  <option value="">— 수취인 선택 —</option>
-                  {masterRecs.filter(r=>mpoType==="Fiat"?r.type==="Bank":r.type==="Crypto").map(r=>(
-                    <option key={r.id} value={r.id}>{r.name} · {r.cur}{r.network?" ("+r.network+")":""}</option>
-                  ))}
-                </select>
-                <Lbl t="통화"/><Sel v={mpoCur} set={v=>{setMpoCur(v);setMpoNet("");setMpoGasFee(null);}} opts={mpoType==="Fiat"?["USD","HKD"]:["USDC","USDT"]}/>
-                {mpoType==="Crypto"&&<NetSelector cur={mpoCur} net={mpoNet} setNet={v=>{setMpoNet(v);setMpoGasFee(null);}}/>}
-                <Lbl t="금액"/><Inp v={mpoAmt} set={v=>{setMpoAmt(v);setMpoGasFee(null);}} ph="숫자 입력"/>
-                {(()=>{
-                  const mpoAmtNum=parseFloat((mpoAmt||"0").replace(/,/g,""))||0;
-                  const isLargeAmt=mpoAmtNum>=100000;
-                  if(mpoType==="Fiat"&&mpoAmt){
-                    const swiftFee=isLargeAmt?0:35;
-                    return(
-                      <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                        <div style={{fontSize:10,fontWeight:700,color:"#92400E",textTransform:"uppercase",marginBottom:10}}>출금 수수료</div>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                          <span style={{fontSize:11,color:G.textMid}}>네트워크</span><NetBadge net="SWIFT"/>
+
+                {/* ── Step 1: 수취인 ── */}
+                <div style={{borderTop:`1px solid ${G.border}`,paddingTop:14,marginBottom:14}}>
+                  <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 1 — 수취인 (Beneficiary)</div>
+                  {masterRecs.filter(r=>mpoType==="Fiat"?r.type==="Bank":r.type==="Crypto").length===0?(
+                    <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:8,padding:"12px 14px",fontSize:11,color:"#92400E"}}>
+                      등록된 수취인이 없습니다.
+                      <button onClick={()=>setMenu("Recipients")} style={{marginLeft:8,fontSize:11,color:G.green,background:"none",border:"none",cursor:"pointer",fontWeight:700,textDecoration:"underline"}}>
+                        Recipients에서 먼저 등록하세요 →
+                      </button>
+                    </div>
+                  ):(
+                    <>
+                      <Lbl t="수취인 선택"/>
+                      <select value={mpoRec} onChange={e=>setMpoRec(e.target.value)}
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                        <option value="">— 수취인 선택 —</option>
+                        {masterRecs.filter(r=>mpoType==="Fiat"?r.type==="Bank":r.type==="Crypto").map(r=>(
+                          <option key={r.id} value={r.id}>{r.name} · {r.cur}{r.network?" ("+r.network+")":""}</option>
+                        ))}
+                      </select>
+                      {mpoRecObj&&(
+                        <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:8,padding:"12px 14px",marginBottom:4}}>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                            <span style={{fontSize:11,color:G.textMid}}>법인명</span>
+                            <span style={{fontSize:11,fontWeight:700}}>{mpoRecObj.name}</span>
+                          </div>
+                          {mpoRecObj.type==="Bank"?(
+                            <>
+                              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                                <span style={{fontSize:11,color:G.textMid}}>은행</span>
+                                <span style={{fontSize:11,fontWeight:600}}>{mpoRecObj.bankName||"—"}</span>
+                              </div>
+                              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                                <span style={{fontSize:11,color:G.textMid}}>계좌번호</span>
+                                <span style={{fontSize:11,fontWeight:600,fontFamily:"monospace"}}>{mpoRecObj.detail}</span>
+                              </div>
+                              <div style={{display:"flex",justifyContent:"space-between"}}>
+                                <span style={{fontSize:11,color:G.textMid}}>SWIFT</span>
+                                <span style={{fontSize:11,fontWeight:600}}>{mpoRecObj.swiftCode||"—"}</span>
+                              </div>
+                            </>
+                          ):(
+                            <>
+                              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                                <span style={{fontSize:11,color:G.textMid}}>지갑주소</span>
+                                <span style={{fontSize:10,fontWeight:600,fontFamily:"monospace",wordBreak:"break-all",textAlign:"right",maxWidth:200}}>{mpoRecObj.detail}</span>
+                              </div>
+                              <div style={{display:"flex",justifyContent:"space-between"}}>
+                                <span style={{fontSize:11,color:G.textMid}}>네트워크</span>
+                                <NetBadge net={mpoRecObj.network}/>
+                              </div>
+                            </>
+                          )}
+                          {mpoRecObj.counterpartyStatus!=="ACTIVE"&&(
+                            <div style={{marginTop:8,fontSize:10,color:G.orange,background:"#FFF8EE",border:"1px solid #FED7AA",borderRadius:5,padding:"5px 8px"}}>
+                              ⚠️ Counterparty 상태: {mpoRecObj.counterpartyStatus}. Payout 실행 시 거부될 수 있습니다.
+                            </div>
+                          )}
                         </div>
-                        {isLargeAmt?(
-                          <div style={{fontSize:11,color:G.orange,fontWeight:600,padding:"8px 0"}}>100,000 USD 이상 — 수수료 별도 문의</div>
-                        ):(
-                          <>
-                            <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:"1px solid #FDE68A",marginBottom:8}}>
-                              <span style={{fontSize:11,color:G.textMid}}>SWIFT 수수료</span>
-                              <span style={{fontSize:11,fontWeight:700,color:G.orange}}>USD {swiftFee}.00</span>
-                            </div>
-                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-                              <span style={{fontSize:10,color:G.textMid}}>송금 요청액</span>
-                              <span style={{fontSize:10,fontWeight:600}}>{mpoAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
-                            </div>
-                            <div style={{display:"flex",justifyContent:"space-between",background:G.greenLight,borderRadius:6,padding:"6px 10px",marginTop:4}}>
-                              <span style={{fontSize:11,fontWeight:700,color:G.textDark}}>총 차감액</span>
-                              <span style={{fontSize:14,fontWeight:700,color:G.textDark}}>{(mpoAmtNum+swiftFee).toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
-                            </div>
-                          </>
-                        )}
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* ── Step 2: 송금인 (자동 표시, 읽기 전용) ── */}
+                <div style={{borderTop:`1px solid ${G.border}`,paddingTop:14,marginBottom:14}}>
+                  <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 2 — 송금인 (Originator)</div>
+                  <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:8,padding:"12px 14px"}}>
+                    <div style={{fontSize:10,color:G.textLight,marginBottom:8}}>Master KYB 완료 — 자동 입력 (읽기 전용)</div>
+                    {[["법인명","Infiniteblock Corp."],["사업자등록번호","306-88-02374"],["국가","KR"],["주소","IB 법인 주소"]].map(([k,v])=>(
+                      <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${G.border}`}}>
+                        <span style={{fontSize:11,color:G.textMid}}>{k}</span>
+                        <span style={{fontSize:11,fontWeight:600,color:G.textDark}}>{v}</span>
                       </div>
-                    );
-                  }
-                  if(mpoType==="Crypto"&&mpoAmt&&mpoNet){
-                    return(
-                      <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                        <div style={{fontSize:10,fontWeight:700,color:"#92400E",textTransform:"uppercase",marginBottom:10}}>수수료 미리보기</div>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                          <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
-                          <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% + IB Markup (예치 잔액 차감)</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── Step 3: 금액 및 통화 ── */}
+                <div style={{borderTop:`1px solid ${G.border}`,paddingTop:14,marginBottom:14}}>
+                  <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 3 — 금액 및 통화</div>
+                  <Lbl t="송금 목적 (Purpose)"/>
+                  <select value={mpoPurpose} onChange={e=>setMpoPurpose(e.target.value)}
+                    style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                    <option value="TREASURY">TREASURY — 내부 자금 이동</option>
+                    <option value="GOODS_SERVICES">GOODS_SERVICES — 재화/서비스 대금</option>
+                    <option value="COMMISSION">COMMISSION — 수수료 정산</option>
+                    <option value="OTHERS">OTHERS — 기타</option>
+                  </select>
+                  <Lbl t="통화"/><Sel v={mpoCur} set={v=>{setMpoCur(v);setMpoNet("");}} opts={mpoType==="Fiat"?["USD","HKD"]:["USDC","USDT"]}/>
+                  {mpoType==="Crypto"&&<NetSelector cur={mpoCur} net={mpoNet} setNet={setMpoNet}/>}
+                  <Lbl t="금액"/><Inp v={mpoAmt} set={setMpoAmt} ph={mpoType==="Fiat"?"숫자 입력 (소수점 2자리)":"숫자 입력 (소수점 6자리)"}/>
+                  {(()=>{
+                    const mpoAmtNum=parseFloat((mpoAmt||"0").replace(/,/g,""))||0;
+                    const isLargeAmt=mpoAmtNum>=100000;
+                    if(mpoAmt){
+                      return(
+                        <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+                          <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>수수료 미리보기</div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                            <span style={{fontSize:11,color:G.textMid}}>Off-ramp Fee</span>
+                            <span style={{fontSize:11,fontWeight:600,color:G.orange}}>OSL 0.2% (IB Markup 미적용)</span>
+                          </div>
+                          {mpoType==="Fiat"&&(
+                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                              <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
+                              <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
+                                {isLargeAmt?"면제 ($100K 이상)":"$35 / 건 (예치 잔액 차감)"}
+                              </span>
+                            </div>
+                          )}
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                            <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
+                            <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A"}}>
+                            <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
+                            <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{mpoAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
+                          </div>
+                          {mpoType==="Fiat"&&<div style={{fontSize:10,color:"#92400E",marginTop:6}}>⏱ 환율 고정: Confirm 시점에 10분간 고정됩니다.</div>}
+                          <div style={{fontSize:9,color:G.textLight,marginTop:4}}>※ Master 직접 Payout — IB Markup 미적용, OSL Base Fee만 적용</div>
                         </div>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                          <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
-                          <span style={{fontSize:11,fontWeight:600,color:"#276749"}}>없음 (OSL 내부 처리)</span>
-                        </div>
-                        <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A"}}>
-                          <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
-                          <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{mpoAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-                <button
-                  disabled={!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet)}
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+
+                {/* 실행 버튼 */}
+                <button disabled={!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet)}
                   onClick={()=>{
                     if(!mpoRec||!mpoAmt){T("⚠️ 수취인/금액 입력");return;}
                     if(mpoType==="Crypto"&&!mpoNet){T("⚠️ 네트워크를 선택하세요");return;}
                     setShowMpoOtp(true);setMpoOtp(["","","","","",""]);setMpoOtpFail(0);setMpoCooldown(0);setMpoSubmitting(false);
                   }}
-                  style={{width:"100%",padding:"11px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,cursor:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"not-allowed":"pointer",background:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"#ccc":G.green,color:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?G.textLight:"#fff",transition:"background 0.15s"}}>
-                  다음 — OTP 인증으로 →
+                  style={{width:"100%",padding:"12px",borderRadius:9,border:"none",fontWeight:700,fontSize:13,
+                    background:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"#ccc":G.green,
+                    color:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?G.textLight:"#fff",
+                    cursor:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"not-allowed":"pointer",
+                    transition:"background 0.15s"}}>
+                  🚀 Payout 실행
                 </button>
               </Card>
             </div>
@@ -2759,6 +2855,363 @@ function MasterDash({onLogout,onSub}){
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {menu==="Recipients"&&(
+            <div>
+              {/* 탭 헤더 */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <div style={{fontWeight:700,fontSize:13}}>
+                  {masterRecTab===0?`Recipients 등록된 수취인 (${masterRecs.length})`:"Quota 한도 현황"}
+                </div>
+                {masterRecTab===0&&<Btn t="+ 새 수취인" sm onClick={()=>{setShowAddMasterRec(v=>{const next=!v;if(next){setMasterRecStep(1);setMasterNr({name:"",type:"Bank",detail:"",cur:"USD",network:"",registrationNo:"",country:"",address:"",alias:"",bankName:"",swiftCode:""});setMasterNrQuota({docType:"Invoice",purpose:"TREASURY",amount:"",validFrom:"",validTo:"",file:null});}setMasterEditRecId(null);return next;});}}/>}
+                {masterRecTab===1&&<Btn t="+ 한도 신청" sm onClick={()=>{setMasterQuotaFormRecId("new");setMasterQuotaForm({docType:"Invoice",purpose:"TREASURY",recipientId:"",amount:"",validFrom:"",validTo:"",file:null});}}/>}
+              </div>
+              <div style={{display:"flex",gap:0,marginBottom:16,borderBottom:`1px solid ${G.border}`}}>
+                {["수취인 목록 (Recipients)","한도 관리 (Quota)"].map((label,i)=>(
+                  <button key={i} onClick={()=>setMasterRecTab(i)} style={{padding:"8px 16px",background:"transparent",border:"none",cursor:"pointer",fontSize:12,
+                    borderBottom:masterRecTab===i?`2px solid ${G.green}`:"2px solid transparent",
+                    fontWeight:masterRecTab===i?700:400,color:masterRecTab===i?G.greenDark:G.textMid,
+                    marginBottom:-1}}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab 1 — 수취인 목록 */}
+              {masterRecTab===0&&(
+                <div>
+                  {/* 새 수취인 등록 폼 */}
+                  {showAddMasterRec&&(
+                    <Card style={{marginBottom:14,border:`1.5px solid ${G.green}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <div style={{fontWeight:700,fontSize:12,color:G.greenDark}}>
+                          새 수취인 등록 — {masterRecStep===1?"Step 1: 기본 정보":"Step 2: 한도 신청 (Quota)"}
+                        </div>
+                        <div style={{display:"flex",gap:4}}>
+                          {[1,2].map(s=>(
+                            <span key={s} style={{fontSize:9,padding:"2px 8px",borderRadius:10,background:masterRecStep>=s?G.green:G.border,color:masterRecStep>=s?"#fff":G.textMid,fontWeight:700}}>Step {s}</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {masterRecStep===1&&(
+                        <>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                            <div style={{gridColumn:"1/-1"}}><Lbl t="법인명 (Legal Name) *"/><Inp v={masterNr.name} set={v=>setMasterNr(c=>({...c,name:v}))} ph="e.g. Infiniteblock Corp."/></div>
+                            <div>
+                              <Lbl t="유형 (Bank / Crypto) *"/>
+                              <div style={{display:"flex",gap:7,marginBottom:10}}>
+                                {["Bank","Crypto"].map(tp=>(
+                                  <button key={tp} onClick={()=>setMasterNr(c=>({...c,type:tp,detail:"",network:"",bankName:"",swiftCode:""}))}
+                                    style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${masterNr.type===tp?G.green:G.border}`,background:masterNr.type===tp?G.greenLight:G.white,fontWeight:masterNr.type===tp?700:400,color:masterNr.type===tp?G.greenDark:G.textMid,cursor:"pointer",fontSize:11}}>
+                                    {tp==="Bank"?"🏦 Bank":"🔗 Crypto"}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div><Lbl t="사업자등록번호 *"/><Inp v={masterNr.registrationNo} set={v=>setMasterNr(c=>({...c,registrationNo:v}))} ph="e.g. 306-88-02374"/></div>
+                            <div><Lbl t="국가 (ISO alpha-2) *"/><Inp v={masterNr.country} set={v=>setMasterNr(c=>({...c,country:v}))} ph="e.g. KR"/></div>
+                            <div style={{gridColumn:"1/-1"}}><Lbl t="주소 *"/><Inp v={masterNr.address} set={v=>setMasterNr(c=>({...c,address:v}))} ph="법인 주소 입력"/></div>
+                            <div><Lbl t="별칭 (Alias)"/><Inp v={masterNr.alias} set={v=>setMasterNr(c=>({...c,alias:v}))} ph="선택 입력"/></div>
+                            <div>
+                              <Lbl t="통화 *"/>
+                              <select value={masterNr.cur} onChange={e=>setMasterNr(c=>({...c,cur:e.target.value,network:""}))}
+                                style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                                {(masterNr.type==="Bank"?["USD","HKD"]:["USDC","USDT"]).map(c=><option key={c}>{c}</option>)}
+                              </select>
+                            </div>
+                            {masterNr.type==="Crypto"&&(
+                              <div style={{gridColumn:"1/-1"}}>
+                                <Lbl t="네트워크 *"/>
+                                <div style={{display:"flex",gap:7,marginBottom:10}}>
+                                  {(NETWORKS[masterNr.cur]||[]).map(n=>{const {bg,text}=NET_COLOR[n];return(
+                                    <button key={n} onClick={()=>setMasterNr(c=>({...c,network:n}))}
+                                      style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${masterNr.network===n?text:G.border}`,background:masterNr.network===n?bg:G.white,color:masterNr.network===n?text:G.textMid,fontWeight:masterNr.network===n?700:400,fontSize:12,cursor:"pointer"}}>
+                                      {n}
+                                    </button>
+                                  );})}
+                                </div>
+                              </div>
+                            )}
+                            <div style={{gridColumn:"1/-1"}}>
+                              <Lbl t={masterNr.type==="Bank"?"계좌번호 *":"지갑주소 *"}/>
+                              <Inp v={masterNr.detail} set={v=>setMasterNr(c=>({...c,detail:v}))} ph={masterNr.type==="Bank"?"계좌번호 입력":"지갑주소 입력"}/>
+                            </div>
+                            {masterNr.type==="Bank"&&(
+                              <>
+                                <div><Lbl t="은행명 *"/><Inp v={masterNr.bankName} set={v=>setMasterNr(c=>({...c,bankName:v}))} ph="e.g. 한국 거래 은행"/></div>
+                                <div><Lbl t="SWIFT 코드 *"/><Inp v={masterNr.swiftCode} set={v=>setMasterNr(c=>({...c,swiftCode:v}))} ph="e.g. HNBNKRSE"/></div>
+                              </>
+                            )}
+                          </div>
+                          <div style={{display:"flex",gap:8,marginTop:4}}>
+                            <Btn t="다음 → 한도 신청" onClick={()=>{
+                              if(!masterNr.name||!masterNr.detail||!masterNr.registrationNo||!masterNr.country||!masterNr.address){T("⚠️ 필수 항목을 입력하세요");return;}
+                              if(masterNr.type==="Crypto"&&!masterNr.network){T("⚠️ 네트워크를 선택하세요");return;}
+                              if(masterNr.type==="Bank"&&(!masterNr.bankName||!masterNr.swiftCode)){T("⚠️ 은행 정보를 입력하세요");return;}
+                              setMasterRecs(rs=>[...rs,{id:rs.length+1,name:masterNr.name,type:masterNr.type,detail:masterNr.detail,cur:masterNr.cur,network:masterNr.network,counterpartyStatus:"PENDING",registrationNo:masterNr.registrationNo,country:masterNr.country,address:masterNr.address,alias:masterNr.alias,bankName:masterNr.bankName,swiftCode:masterNr.swiftCode}]);
+                              T("✅ 수취인 등록 완료. Counterparty 상태: PENDING");
+                              setMasterRecStep(2);
+                            }}/>
+                            <button onClick={()=>setShowAddMasterRec(false)} style={{background:"none",border:`1px solid ${G.border}`,borderRadius:6,padding:"10px 16px",fontSize:12,color:G.textMid,cursor:"pointer"}}>취소</button>
+                          </div>
+                        </>
+                      )}
+
+                      {masterRecStep===2&&(()=>{
+                        const newRec=masterRecs[masterRecs.length-1];
+                        const isTreasury=masterNrQuota.purpose==="TREASURY";
+                        return(
+                          <>
+                            <div style={{background:"#F0FDF4",border:"1px solid #C3E6CB",borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:11,color:"#276749"}}>
+                              ✅ <b>{newRec?.name}</b> 등록 완료 (PENDING). 한도를 신청하세요.
+                            </div>
+                            {isTreasury&&(
+                              <div style={{background:"#EBF4FF",border:"1px solid #BEE3F8",borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:11,color:"#2B6CB0"}}>
+                                💡 본인 계좌 이체(TREASURY)의 경우 내부 자금 이동 근거 문서(이사회 결의서, 내부 이체 승인서 등)를 첨부하세요. OSL 확인 후 계약서/인보이스 대체 가능 여부가 결정됩니다.
+                              </div>
+                            )}
+                            <div>
+                              <Lbl t="송금 목적 *"/>
+                              <select value={masterNrQuota.purpose} onChange={e=>setMasterNrQuota(c=>({...c,purpose:e.target.value}))}
+                                style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                                <option value="TREASURY">TREASURY — 내부 자금 이동</option>
+                                <option value="GOODS_SERVICES">GOODS_SERVICES — 재화/서비스 대금</option>
+                                <option value="COMMISSION">COMMISSION — 수수료 정산</option>
+                                <option value="OTHERS">OTHERS — 기타</option>
+                              </select>
+                              <Lbl t="서류 유형 *"/>
+                              <div style={{display:"flex",gap:7,marginBottom:10}}>
+                                {["Invoice","Contract"].map(dt=>(
+                                  <button key={dt} onClick={()=>setMasterNrQuota(c=>({...c,docType:dt}))}
+                                    style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${masterNrQuota.docType===dt?G.green:G.border}`,background:masterNrQuota.docType===dt?G.greenLight:G.white,fontWeight:masterNrQuota.docType===dt?700:400,color:masterNrQuota.docType===dt?G.greenDark:G.textMid,cursor:"pointer",fontSize:11}}>
+                                    {dt}
+                                  </button>
+                                ))}
+                              </div>
+                              <Lbl t="신청 한도 (USD) *"/><Inp v={masterNrQuota.amount} set={v=>setMasterNrQuota(c=>({...c,amount:v}))} ph="0.01 ~ 999,999,999.99" type="number"/>
+                              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                                <div><Lbl t="유효 시작일"/><Inp v={masterNrQuota.validFrom} set={v=>setMasterNrQuota(c=>({...c,validFrom:v}))} ph="yyyy-MM-dd"/></div>
+                                <div><Lbl t="유효 종료일"/><Inp v={masterNrQuota.validTo} set={v=>setMasterNrQuota(c=>({...c,validTo:v}))} ph="yyyy-MM-dd"/></div>
+                              </div>
+                              <Lbl t="서류 업로드 * (PDF/JPG/PNG, max 10MB)"/>
+                              <div style={{border:`2px dashed ${G.border}`,borderRadius:8,padding:"16px",textAlign:"center",marginBottom:10,cursor:"pointer",background:G.sidebar}}>
+                                <div style={{fontSize:12,color:G.textMid}}>{masterNrQuota.file?`📄 ${masterNrQuota.file}`:"클릭하여 파일 업로드"}</div>
+                                <input type="file" accept=".pdf,.jpg,.png" onChange={e=>setMasterNrQuota(c=>({...c,file:e.target.files?.[0]?.name||null}))} style={{display:"none"}} id="master-quota-file"/>
+                                <label htmlFor="master-quota-file" style={{fontSize:11,color:G.green,cursor:"pointer",textDecoration:"underline"}}>파일 선택</label>
+                              </div>
+                            </div>
+                            <div style={{display:"flex",gap:8,marginTop:4}}>
+                              <Btn t="한도 신청 완료" onClick={()=>{
+                                if(!masterNrQuota.amount){T("⚠️ 한도 금액을 입력하세요");return;}
+                                if(!masterNrQuota.file){T("⚠️ 서류를 업로드하세요");return;}
+                                setMasterQuotas(qs=>[...qs,{id:qs.length+1,recipientId:newRec?.id,recipientName:newRec?.name||"",registrationNo:newRec?.registrationNo||"",docType:masterNrQuota.docType,totalApproved:parseFloat(masterNrQuota.amount)||0,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:masterNrQuota.validFrom,validTo:masterNrQuota.validTo}]);
+                                T("✅ 한도 신청 제출 완료.");
+                                setShowAddMasterRec(false);setMasterRecStep(1);
+                              }}/>
+                              <button onClick={()=>{T("ℹ️ 한도 미설정 — Payout 실행 시 경고가 표시됩니다.");setShowAddMasterRec(false);setMasterRecStep(1);}}
+                                style={{background:"none",border:`1px solid ${G.border}`,borderRadius:6,padding:"10px 16px",fontSize:12,color:G.textMid,cursor:"pointer"}}>
+                                나중에 신청
+                              </button>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </Card>
+                  )}
+
+                  {/* 수취인 카드 목록 */}
+                  {masterRecs.length===0?(
+                    <div style={{textAlign:"center",padding:"30px",color:G.textLight,fontSize:12}}>등록된 수취인이 없습니다.</div>
+                  ):(
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
+                      {masterRecs.map(r=>{
+                        const stC=r.counterpartyStatus==="ACTIVE"?"#276749":r.counterpartyStatus==="PENDING"?"#B45309":"#991B1B";
+                        const stBg=r.counterpartyStatus==="ACTIVE"?"#EBF8E1":r.counterpartyStatus==="PENDING"?"#FFFBEB":"#FEE2E2";
+                        return(
+                          <div key={r.id} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                              <div>
+                                <div style={{fontWeight:700,fontSize:13,color:G.textDark,marginBottom:4}}>{r.name}</div>
+                                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                                  <span style={{background:r.type==="Bank"?"#DBEAFE":"#EDE9FE",color:r.type==="Bank"?"#1D4ED8":"#7C3AED",borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{r.type==="Bank"?"🏦 Bank":"🔗 Crypto"}</span>
+                                  <span style={{background:stBg,color:stC,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{r.counterpartyStatus}</span>
+                                  {r.network&&<NetBadge net={r.network}/>}
+                                </div>
+                              </div>
+                              <div style={{display:"flex",gap:4}}>
+                                <button onClick={()=>{setMasterEditRecId(r.id);setMasterEr({name:r.name,type:r.type,detail:r.detail,cur:r.cur,network:r.network,alias:r.alias||""});}}
+                                  style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
+                                <button onClick={()=>setMasterDeleteConfirmId(r.id)}
+                                  style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.red}`,background:"#FFF5F5",cursor:"pointer",color:G.red,fontWeight:600}}>삭제</button>
+                              </div>
+                            </div>
+                            <div style={{fontSize:11,color:G.textMid,marginBottom:3}}>
+                              {r.type==="Bank"?(
+                                <><span style={{color:G.textLight}}>계좌</span> {r.detail} · {r.bankName}</>
+                              ):(
+                                <><span style={{color:G.textLight}}>주소</span> <span style={{fontFamily:"monospace",fontSize:10}}>{r.detail.length>30?r.detail.slice(0,16)+"..."+r.detail.slice(-8):r.detail}</span></>
+                              )}
+                            </div>
+                            <div style={{display:"flex",gap:6}}>
+                              <CIcon c={r.cur} size={14}/>
+                              <span style={{fontSize:11,fontWeight:600}}>{r.cur}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* 수취인 수정 모달 */}
+                  {masterEditRecId&&(()=>{
+                    return(
+                      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998}}>
+                        <div style={{background:G.white,borderRadius:14,padding:28,maxWidth:400,width:"90%",boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}}>
+                          <div style={{fontWeight:700,fontSize:14,marginBottom:14}}>수취인 정보 수정</div>
+                          <Lbl t="법인명"/><Inp v={masterEr.name} set={v=>setMasterEr(c=>({...c,name:v}))} ph="법인명"/>
+                          <Lbl t="별칭 (Alias)"/><Inp v={masterEr.alias} set={v=>setMasterEr(c=>({...c,alias:v}))} ph="별칭"/>
+                          <Lbl t={masterEr.type==="Bank"?"계좌번호":"지갑주소"}/><Inp v={masterEr.detail} set={v=>setMasterEr(c=>({...c,detail:v}))} ph="정보 입력"/>
+                          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:8}}>
+                            <Btn t="취소" sm color={G.textMid} onClick={()=>setMasterEditRecId(null)}/>
+                            <Btn t="저장" sm onClick={()=>{
+                              setMasterRecs(rs=>rs.map(x=>x.id===masterEditRecId?{...x,name:masterEr.name,detail:masterEr.detail,alias:masterEr.alias}:x));
+                              setMasterEditRecId(null);T("✅ 수취인 정보 수정 완료");
+                            }}/>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* 수취인 삭제 확인 모달 */}
+                  {masterDeleteConfirmId&&(()=>{
+                    const target=masterRecs.find(r=>r.id===masterDeleteConfirmId);
+                    return(
+                      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998}}>
+                        <div style={{background:G.white,borderRadius:14,padding:28,maxWidth:340,width:"90%",boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}}>
+                          <div style={{fontWeight:700,fontSize:14,marginBottom:10}}>수취인 삭제</div>
+                          <div style={{fontSize:12,color:G.textMid,marginBottom:6}}>'{target?.name}' 수취인을 삭제하시겠습니까?</div>
+                          <div style={{fontSize:11,color:G.red,marginBottom:20}}>이 작업은 되돌릴 수 없습니다.</div>
+                          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                            <Btn t="취소" sm color={G.textMid} onClick={()=>setMasterDeleteConfirmId(null)}/>
+                            <Btn t="삭제" sm color={G.red} onClick={()=>{
+                              setMasterRecs(rs=>rs.filter(r=>r.id!==masterDeleteConfirmId));
+                              setMasterDeleteConfirmId(null);T(`🗑 ${target?.name} 삭제`);
+                            }}/>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Tab 2 — 한도 관리 */}
+              {masterRecTab===1&&(
+                <div>
+                  {/* 한도 신청 폼 */}
+                  {masterQuotaFormRecId&&(
+                    <Card style={{marginBottom:14,border:`1.5px solid ${G.green}`}}>
+                      <div style={{fontWeight:700,fontSize:12,marginBottom:12,color:G.greenDark}}>한도 신청</div>
+                      {masterQuotaForm.purpose==="TREASURY"&&(
+                        <div style={{background:"#EBF4FF",border:"1px solid #BEE3F8",borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:11,color:"#2B6CB0"}}>
+                          💡 본인 계좌 이체(TREASURY)의 경우 내부 자금 이동 근거 문서를 첨부하세요.
+                        </div>
+                      )}
+                      <Lbl t="수취인 선택 *"/>
+                      <select value={masterQuotaForm.recipientId} onChange={e=>setMasterQuotaForm(c=>({...c,recipientId:e.target.value}))}
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                        <option value="">— 수취인 선택 —</option>
+                        {masterRecs.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                      <Lbl t="송금 목적 *"/>
+                      <select value={masterQuotaForm.purpose} onChange={e=>setMasterQuotaForm(c=>({...c,purpose:e.target.value}))}
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                        <option value="TREASURY">TREASURY</option>
+                        <option value="GOODS_SERVICES">GOODS_SERVICES</option>
+                        <option value="COMMISSION">COMMISSION</option>
+                        <option value="OTHERS">OTHERS</option>
+                      </select>
+                      <Lbl t="서류 유형 *"/>
+                      <div style={{display:"flex",gap:7,marginBottom:10}}>
+                        {["Invoice","Contract"].map(dt=>(
+                          <button key={dt} onClick={()=>setMasterQuotaForm(c=>({...c,docType:dt}))}
+                            style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${masterQuotaForm.docType===dt?G.green:G.border}`,background:masterQuotaForm.docType===dt?G.greenLight:G.white,fontWeight:masterQuotaForm.docType===dt?700:400,color:masterQuotaForm.docType===dt?G.greenDark:G.textMid,cursor:"pointer",fontSize:11}}>
+                            {dt}
+                          </button>
+                        ))}
+                      </div>
+                      <Lbl t="신청 한도 (USD) *"/><Inp v={masterQuotaForm.amount} set={v=>setMasterQuotaForm(c=>({...c,amount:v}))} ph="금액 입력" type="number"/>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        <div><Lbl t="유효 시작일"/><Inp v={masterQuotaForm.validFrom} set={v=>setMasterQuotaForm(c=>({...c,validFrom:v}))} ph="yyyy-MM-dd"/></div>
+                        <div><Lbl t="유효 종료일"/><Inp v={masterQuotaForm.validTo} set={v=>setMasterQuotaForm(c=>({...c,validTo:v}))} ph="yyyy-MM-dd"/></div>
+                      </div>
+                      <Lbl t="서류 업로드 * (PDF/JPG/PNG, max 10MB)"/>
+                      <div style={{border:`2px dashed ${G.border}`,borderRadius:8,padding:"14px",textAlign:"center",marginBottom:12,background:G.sidebar}}>
+                        {masterQuotaForm.file?<div style={{fontSize:11,color:G.greenDark}}>📄 {masterQuotaForm.file}</div>:<div style={{fontSize:11,color:G.textLight}}>파일을 여기에 드래그하거나</div>}
+                        <input type="file" accept=".pdf,.jpg,.png" onChange={e=>setMasterQuotaForm(c=>({...c,file:e.target.files?.[0]?.name||null}))} style={{display:"none"}} id="master-quota-apply-file"/>
+                        <label htmlFor="master-quota-apply-file" style={{fontSize:11,color:G.green,cursor:"pointer",textDecoration:"underline"}}>파일 선택</label>
+                      </div>
+                      <div style={{display:"flex",gap:8}}>
+                        <Btn t="한도 신청 완료" onClick={()=>{
+                          if(!masterQuotaForm.recipientId||!masterQuotaForm.amount){T("⚠️ 필수 항목을 입력하세요");return;}
+                          if(!masterQuotaForm.file){T("⚠️ 서류를 업로드하세요");return;}
+                          const rec=masterRecs.find(r=>String(r.id)===String(masterQuotaForm.recipientId));
+                          setMasterQuotas(qs=>[...qs,{id:qs.length+1,recipientId:masterQuotaForm.recipientId,recipientName:rec?.name||"",registrationNo:rec?.registrationNo||"",docType:masterQuotaForm.docType,totalApproved:parseFloat(masterQuotaForm.amount)||0,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:masterQuotaForm.validFrom,validTo:masterQuotaForm.validTo}]);
+                          T("✅ 한도 신청 제출 완료.");setMasterQuotaFormRecId(null);
+                        }}/>
+                        <button onClick={()=>setMasterQuotaFormRecId(null)} style={{background:"none",border:`1px solid ${G.border}`,borderRadius:6,padding:"10px 16px",fontSize:12,color:G.textMid,cursor:"pointer"}}>취소</button>
+                      </div>
+                    </Card>
+                  )}
+                  <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,overflow:"hidden"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                      <thead>
+                        <tr style={{background:G.sidebar}}>
+                          {["수취인명","사업자번호","송금 목적","서류 유형","승인 한도","사용액","처리 중","잔여 한도","상태","유효기간","Actions"].map(h=>(
+                            <th key={h} style={{padding:"9px 10px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {masterQuotas.length===0&&(
+                          <tr><td colSpan={11} style={{padding:"20px",textAlign:"center",color:G.textLight}}>등록된 한도가 없습니다.</td></tr>
+                        )}
+                        {masterQuotas.map((q,i)=>{
+                          const avail=Math.max(0,q.totalApproved-q.usedAmount-q.frozenAmount);
+                          const pct=q.totalApproved>0?Math.round(avail/q.totalApproved*100):0;
+                          const barC=pct>=50?G.green:pct>=20?G.orange:G.red;
+                          const stC=q.status==="ACTIVE"?"#276749":q.status==="PENDING"?"#B45309":"#991B1B";
+                          const stBg=q.status==="ACTIVE"?"#EBF8E1":q.status==="PENDING"?"#FFFBEB":"#FEE2E2";
+                          return(
+                            <tr key={q.id} style={{background:i%2===0?G.white:"#FAFBF8"}}>
+                              <td style={{padding:"9px 10px",fontWeight:700}}>{q.recipientName}</td>
+                              <td style={{padding:"9px 10px",color:G.textMid,fontSize:10}}>{q.registrationNo}</td>
+                              <td style={{padding:"9px 10px",color:G.textMid,fontSize:10}}>—</td>
+                              <td style={{padding:"9px 10px"}}><span style={{background:"#EEF2FF",color:"#6366F1",borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700}}>{q.docType}</span></td>
+                              <td style={{padding:"9px 10px",fontWeight:700}}>${q.totalApproved.toLocaleString()}</td>
+                              <td style={{padding:"9px 10px",color:G.textMid}}>${q.usedAmount.toLocaleString()}</td>
+                              <td style={{padding:"9px 10px",color:G.orange}}>${q.frozenAmount.toLocaleString()}</td>
+                              <td style={{padding:"9px 10px"}}>
+                                <QuotaBar total={q.totalApproved} used={q.usedAmount} frozen={q.frozenAmount}/>
+                              </td>
+                              <td style={{padding:"9px 10px"}}><span style={{background:stBg,color:stC,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{q.status}</span></td>
+                              <td style={{padding:"9px 10px",color:G.textLight,fontSize:10,whiteSpace:"nowrap"}}>{q.validFrom&&q.validTo?`${q.validFrom} ~ ${q.validTo}`:"—"}</td>
+                              <td style={{padding:"9px 10px"}}>
+                                <button onClick={()=>{setMasterQuotaFormRecId("new");setMasterQuotaForm({docType:"Invoice",purpose:"TREASURY",recipientId:String(q.recipientId),amount:"",validFrom:"",validTo:"",file:null});setMasterRecTab(1);}}
+                                  style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.green}`,background:G.greenLight,cursor:"pointer",color:G.greenDark,fontWeight:600,whiteSpace:"nowrap"}}>추가 신청</button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
