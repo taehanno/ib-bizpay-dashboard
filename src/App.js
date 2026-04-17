@@ -2962,7 +2962,15 @@ function MasterDash({onLogout,onSub}){
           {menu==="All Orders"&&(
             <div>
               <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
-                <Btn t="📥 Export" sm onClick={()=>exportCSV(TX_DATA,[{l:"TX ID",k:"id"},{l:"Date",k:"date"},{l:"Account",k:"acct"},{l:"Type",k:"type"},{l:"Recipient",k:"recipientName"},{l:"From Cur",k:"fromCur"},{l:"From Amt",k:"fromAmt"},{l:"To Cur",k:"cur"},{l:"To Amt",k:"amt"},{l:"Network",k:"network"},{l:"TXID",k:"txid"},{l:"Status",k:"st"}],"all_orders.csv")}/>
+                <Btn t="📥 Export" sm onClick={()=>{
+                  const rows=TX_DATA.map(r=>{
+                    let feeUsd="";
+                    if(r.fxFee&&r.fxFee.includes("총")){const m=r.fxFee.match(/총 ([\d.]+)/);if(m)feeUsd=m[1]+" USD";}
+                    else if(r.type==="Payout"&&(r.network==="SWIFT"||r.network==="Local Bank"))feeUsd="35.00 USD";
+                    return {...r,feeUsd};
+                  });
+                  exportCSV(rows,[{l:"TX ID",k:"id"},{l:"Date",k:"date"},{l:"Account",k:"acct"},{l:"Type",k:"type"},{l:"Recipient",k:"recipientName"},{l:"From Cur",k:"fromCur"},{l:"From Amt",k:"fromAmt"},{l:"To Cur",k:"cur"},{l:"To Amt",k:"amt"},{l:"Network",k:"network"},{l:"Fee (USD)",k:"feeUsd"},{l:"Status",k:"st"}],"all_orders.csv");
+                }}/>
               </div>
               <TxTable rows={TX_DATA} showAcct={true} onSelect={setSelectedTx}/>
             </div>
@@ -3323,56 +3331,129 @@ function MasterDash({onLogout,onSub}){
           })()}
 
           {menu==="Fee Settings"&&(
-            <div style={{maxWidth:640}}>
-              <div style={{background:"#EBF8E1",border:"1px solid #C3E6CB",borderRadius:10,padding:"14px 18px",marginBottom:16}}>
-                <div style={{fontWeight:700,fontSize:12,marginBottom:8,color:"#276749"}}>수수료 정책 원칙</div>
-                <ul style={{margin:"0 0 10px 0",padding:"0 0 0 16px",fontSize:11,color:"#276749",lineHeight:1.8}}>
-                  <li>블록체인 네트워크 수수료(Gas fee)는 사용자에게 별도 청구하지 않는다.</li>
-                  <li>모든 수수료는 OSL이 정한 기준에 따라 <b>예치된 계정 잔액(USD/USDC/USDT)에서 자동 차감</b>된다.</li>
-                  <li>IB Markup은 IB 서버에서 계산하여 OSL Base Fee에 합산 적용한다.</li>
-                </ul>
+            <div style={{maxWidth:720}}>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:14}}>Fee Markup Settings</div>
+
+              {/* OSL 기본 수수료 정보 박스 (읽기 전용) */}
+              <div style={{background:"#EBF8E1",border:"1px solid #C3E6CB",borderRadius:10,padding:"14px 18px",marginBottom:18}}>
+                <div style={{fontWeight:700,fontSize:12,marginBottom:10,color:"#276749"}}>OSL 기본 수수료 (읽기 전용)</div>
                 <div style={{background:"white",borderRadius:7,overflow:"hidden",border:"1px solid #C3E6CB"}}>
                   <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                     <thead><tr style={{background:"rgba(39,103,73,0.08)"}}>
-                      {["수수료 항목","기준","차감 방식"].map(h=><th key={h} style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:"#276749"}}>{h}</th>)}
+                      {["항목","수수료","비고"].map(h=><th key={h} style={{padding:"7px 12px",textAlign:"left",fontWeight:700,color:"#276749"}}>{h}</th>)}
                     </tr></thead>
                     <tbody>
-                      {[["On-ramp Fee","OSL 0% + IB Markup","예치 잔액 차감"],["Off-ramp Fee","OSL 0.2% + IB Markup","예치 잔액 차감"],["Wire Fee (Fiat Payout)","$35 / 건 ($100K 이상 면제)","예치 잔액 차감"],["네트워크 수수료 (Gas)","OSL 내부 흡수","별도 청구 없음"]].map(([a,b,c])=>(
-                        <tr key={a}><td style={{padding:"6px 10px",borderTop:"1px solid #C3E6CB",color:"#276749"}}>{a}</td><td style={{padding:"6px 10px",borderTop:"1px solid #C3E6CB",color:"#276749"}}>{b}</td><td style={{padding:"6px 10px",borderTop:"1px solid #C3E6CB",color:"#276749"}}>{c}</td></tr>
+                      {[
+                        ["On-ramp Base Fee","0%","USD → USDC/USDT (OSL 고정)"],
+                        ["Off-ramp Base Fee","0.2%","USDC/USDT → USD (OSL 고정)"],
+                        ["Wire Fee","$35 / 건","$100K 이상 면제"],
+                        ["네트워크 수수료","없음","OSL 내부 처리"],
+                      ].map(([a,b,c])=>(
+                        <tr key={a}>
+                          <td style={{padding:"7px 12px",borderTop:"1px solid #C3E6CB",color:"#276749",fontWeight:600}}>{a}</td>
+                          <td style={{padding:"7px 12px",borderTop:"1px solid #C3E6CB",color:"#276749",fontWeight:700}}>{b}</td>
+                          <td style={{padding:"7px 12px",borderTop:"1px solid #C3E6CB",color:"#276749"}}>{c}</td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-              <Card>
-                <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>Convert 수수료 설정</div>
-                <div style={{fontSize:11,color:G.textLight,marginBottom:14}}>Sub Account 화면에는 합산 수수료만 표시됩니다. OSL/IB 내역 미노출.</div>
-                <div style={{background:"#F8F8F8",borderRadius:8,overflow:"hidden",border:`1px solid ${G.border}`}}>
-                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-                    <thead>
-                      <tr style={{background:"#EFEFED"}}>
-                        <th style={{padding:"10px 14px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`,width:110}}></th>
-                        <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:G.textDark,borderBottom:`1px solid ${G.border}`}}>On-ramp<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>Fiat → Crypto</span></th>
-                        <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:G.textDark,borderBottom:`1px solid ${G.border}`}}>Off-ramp<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>Crypto → Fiat</span></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr style={{background:"#FAFAFA",borderBottom:`1px solid ${G.border}`}}>
-                        <td style={{padding:"10px 14px",fontWeight:700,color:G.textMid}}>OSL 도매가</td>
-                        <td style={{padding:"10px 14px",textAlign:"center"}}><span style={{background:"#EBEBEB",borderRadius:6,padding:"4px 12px",fontWeight:700,fontSize:11,color:G.textMid}}>0% (고정)</span></td>
-                        <td style={{padding:"10px 14px",textAlign:"center"}}><span style={{background:"#EBEBEB",borderRadius:6,padding:"4px 12px",fontWeight:700,fontSize:11,color:G.textMid}}>0.2% (고정)</span></td>
-                      </tr>
-                      {clients.filter(c=>c.st==="Active").map((c,i,arr)=>(
-                        <ConvertFeeRow key={c.id} c={c} isLast={i===arr.length-1}
-                          editState={editFee?.id===c.id?editFee.dir:null}
-                          onEdit={dir=>setEditFee(dir?{id:c.id,dir}:null)}
-                          onSave={(dir,val)=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,[dir==='on'?'muOn':'muOff']:parseFloat(val)/100}:x));setEditFee(null);T(`✅ ${c.name} ${dir==='on'?'On-ramp':'Off-ramp'} markup updated`);}}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+
+              {/* 고객사별 Markup 테이블 */}
+              <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>고객사별 Markup 설정</div>
+              <div style={{fontSize:11,color:G.textLight,marginBottom:12}}>KYB ACTIVE + 이메일 초대 완료 · Active 계정만 표시. Sub Account에는 합산 수수료만 노출됩니다.</div>
+              <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,overflow:"hidden"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                  <thead>
+                    <tr style={{background:"#F7F7F5"}}>
+                      <th style={{padding:"10px 14px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`}}>고객사명</th>
+                      <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:G.textDark,borderBottom:`1px solid ${G.border}`}}>On-ramp Markup (%)<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>Fiat → Crypto</span></th>
+                      <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:"#276749",borderBottom:`1px solid ${G.border}`}}>On-ramp 최종<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>OSL 0% + Markup</span></th>
+                      <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:G.textDark,borderBottom:`1px solid ${G.border}`}}>Off-ramp Markup (%)<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>Crypto → Fiat</span></th>
+                      <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:"#1D4ED8",borderBottom:`1px solid ${G.border}`}}>Off-ramp 최종<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>OSL 0.2% + Markup</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clients.filter(c=>c.kybStatus==="ACTIVE"&&c.email&&c.st!=="Suspended").length===0&&(
+                      <tr><td colSpan={5} style={{padding:"20px",textAlign:"center",color:G.textLight}}>KYB 승인 및 이메일 초대 완료 계정이 없습니다.</td></tr>
+                    )}
+                    {clients.filter(c=>c.kybStatus==="ACTIVE"&&c.email&&c.st!=="Suspended").map((c,i,arr)=>{
+                      const isEditOn=editFee?.id===c.id&&editFee?.dir==="on";
+                      const isEditOff=editFee?.id===c.id&&editFee?.dir==="off";
+                      const onFinal=(c.muOn*100).toFixed(2);
+                      const offFinal=(0.20+c.muOff*100).toFixed(2);
+                      return(
+                        <tr key={c.id} style={{background:i%2===0?G.white:"#FAFBF8",borderBottom:i<arr.length-1?`1px solid ${G.border}`:"none"}}>
+                          <td style={{padding:"11px 14px",fontWeight:700,color:G.textDark}}>{c.name}</td>
+                          {/* On-ramp Markup */}
+                          <td style={{padding:"11px 14px",textAlign:"center"}}>
+                            {isEditOn?(
+                              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                                <input type="number" defaultValue={(c.muOn*100).toFixed(2)} id={`fs-muOn-${c.id}`} step="0.01"
+                                  style={{width:60,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
+                                <span style={{fontSize:10,color:G.textMid}}>%</span>
+                                <button onClick={()=>{
+                                  const val=parseFloat(document.getElementById(`fs-muOn-${c.id}`).value)/100;
+                                  setClients(cs=>cs.map(x=>x.id===c.id?{...x,muOn:val,mu:val}:x));
+                                  setEditFee(null);T(`✅ ${c.name} On-ramp markup updated`);
+                                }} style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:`1px solid ${G.green}`,background:G.greenLight,color:G.greenDark,cursor:"pointer",fontWeight:700}}>저장</button>
+                                <button onClick={()=>setEditFee(null)} style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer"}}>취소</button>
+                              </div>
+                            ):(
+                              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                                <span style={{background:G.greenLight,color:G.greenDark,borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}
+                                  title="OSL Base 0% + IB Markup = 고객사 최종 On-ramp 수수료">
+                                  +{(c.muOn*100).toFixed(2)}%
+                                </span>
+                                <button onClick={()=>setEditFee({id:c.id,dir:"on"})} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
+                              </div>
+                            )}
+                          </td>
+                          {/* On-ramp 최종 */}
+                          <td style={{padding:"11px 14px",textAlign:"center"}}>
+                            <span style={{background:"#EBF8E1",color:"#276749",borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}>
+                              {isEditOn
+                                ? `${(parseFloat((document.getElementById(`fs-muOn-${c.id}`)?.value||c.muOn*100))).toFixed(2)}%`
+                                : `${onFinal}%`}
+                            </span>
+                          </td>
+                          {/* Off-ramp Markup */}
+                          <td style={{padding:"11px 14px",textAlign:"center"}}>
+                            {isEditOff?(
+                              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                                <input type="number" defaultValue={(c.muOff*100).toFixed(2)} id={`fs-muOff-${c.id}`} step="0.01"
+                                  style={{width:60,padding:"4px 6px",borderRadius:6,border:`1.5px solid #1D4ED8`,fontSize:11,outline:"none",textAlign:"right"}}/>
+                                <span style={{fontSize:10,color:G.textMid}}>%</span>
+                                <button onClick={()=>{
+                                  const val=parseFloat(document.getElementById(`fs-muOff-${c.id}`).value)/100;
+                                  setClients(cs=>cs.map(x=>x.id===c.id?{...x,muOff:val}:x));
+                                  setEditFee(null);T(`✅ ${c.name} Off-ramp markup updated`);
+                                }} style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:"1px solid #1D4ED8",background:"#DBEAFE",color:"#1D4ED8",cursor:"pointer",fontWeight:700}}>저장</button>
+                                <button onClick={()=>setEditFee(null)} style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer"}}>취소</button>
+                              </div>
+                            ):(
+                              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                                <span style={{background:"#DBEAFE",color:"#1D4ED8",borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}
+                                  title="OSL Base 0.2% + IB Markup = 고객사 최종 Off-ramp 수수료">
+                                  +{(c.muOff*100).toFixed(2)}%
+                                </span>
+                                <button onClick={()=>setEditFee({id:c.id,dir:"off"})} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
+                              </div>
+                            )}
+                          </td>
+                          {/* Off-ramp 최종 */}
+                          <td style={{padding:"11px 14px",textAlign:"center"}}>
+                            <span style={{background:"#DBEAFE",color:"#1D4ED8",borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}>
+                              {offFinal}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
