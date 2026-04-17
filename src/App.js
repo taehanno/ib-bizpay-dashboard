@@ -2182,15 +2182,17 @@ function SubDash({acctName,onLogout,onMaster}){
                       const usedAmount=group.items.filter(q=>q.status!=="PENDING").reduce((s,q)=>s+q.usedAmount,0);
                       const frozenAmount=group.items.filter(q=>q.status!=="PENDING").reduce((s,q)=>s+q.frozenAmount,0);
                       const avail=Math.max(0,totalApproved-usedAmount+frozenAmount);
-                      const pct=totalApproved>0?Math.round(avail/totalApproved*100):0;
-                      const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
+                      const usedPct=totalApproved>0?Math.min(100,Math.round(usedAmount/totalApproved*100)):0;
+                      const availPct=totalApproved>0?Math.round(avail/totalApproved*100):0;
+                      const barColor=availPct>=50?G.green:availPct>=20?G.orange:G.red;
                       const isExpanded=expandedQuotaRecId===group.recipientId;
                       const isFormOpen=quotaFormRecId===group.recipientId;
                       const isFirstApp=group.items.length===0;
                       const newAmt=parseFloat(quotaForm.amount)||0;
+                      const stMap={ACTIVE:{icon:"✅",label:"승인",bg:"#EBF8E1",text:"#276749"},PENDING:{icon:"⏳",label:"심사 중",bg:"#FFFBEB",text:"#B45309"},INACTIVE:{icon:"⬛",label:"만료",bg:"#F3F4F6",text:"#6B7280"},REJECTED:{icon:"❌",label:"거절",bg:"#FEE2E2",text:"#991B1B"}};
                       return(
                         <div key={group.recipientId} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,marginBottom:12,overflow:"hidden"}}>
-                          {/* 카드 헤더 (클릭 시 이력 Accordion) */}
+                          {/* 카드 헤더 */}
                           <div style={{padding:"16px 18px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}
                             onClick={()=>setExpandedQuotaRecId(isExpanded?null:group.recipientId)}>
                             <div>
@@ -2209,10 +2211,10 @@ function SubDash({acctName,onLogout,onMaster}){
                           {/* 요약 통계 + 프로그레스 바 */}
                           <div style={{padding:"0 18px 14px",borderBottom:`1px solid ${G.border}`}}>
                             <div style={{height:6,background:"#F3F4F6",borderRadius:4,overflow:"hidden",marginBottom:8}}>
-                              <div style={{height:"100%",width:`${pct}%`,background:barColor,borderRadius:4,transition:"width 0.3s"}}/>
+                              <div style={{height:"100%",width:`${usedPct}%`,background:barColor,borderRadius:4,transition:"width 0.3s"}}/>
                             </div>
-                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:10}}>
-                              {[["총 승인 한도",`$${totalApproved.toLocaleString()}`],["사용액",`$${usedAmount.toLocaleString()}`],["처리 중",`$${frozenAmount.toLocaleString()}`],["잔여 한도",`$${avail.toLocaleString()}`]].map(([lbl,val])=>(
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+                              {[["총 승인 한도",`$${totalApproved.toLocaleString()}`],["사용액",`$${usedAmount.toLocaleString()}`]].map(([lbl,val])=>(
                                 <div key={lbl}>
                                   <div style={{fontSize:9,color:G.textLight,marginBottom:2}}>{lbl}</div>
                                   <div style={{fontSize:12,fontWeight:700,color:G.textDark}}>{val}</div>
@@ -2227,7 +2229,7 @@ function SubDash({acctName,onLogout,onMaster}){
                             </div>
                           </div>
 
-                          {/* Accordion: 신청 이력 서브 테이블 */}
+                          {/* Accordion: 신청 이력 */}
                           {isExpanded&&(
                             <div style={{padding:"12px 16px",background:"#FAFBF8"}}>
                               <div style={{fontSize:11,fontWeight:700,color:G.textMid,marginBottom:8}}>신청 이력</div>
@@ -2235,26 +2237,22 @@ function SubDash({acctName,onLogout,onMaster}){
                                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                                   <thead>
                                     <tr style={{background:G.sidebar}}>
-                                      {["신청 번호","서류 유형","신청 한도","승인 한도","사용액","잔여","유효기간","상태","서류"].map(h=>(
+                                      {["신청 번호","서류 유형","승인 한도","사용액","유효기간","상태","서류"].map(h=>(
                                         <th key={h} style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:G.textMid,fontSize:10,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
                                       ))}
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {group.items.map((q,qi)=>{
-                                      const itemAvail=q.status==="PENDING"?null:Math.max(0,q.totalApproved-q.usedAmount+q.frozenAmount);
-                                      const stC=q.status==="ACTIVE"?"#276749":q.status==="PENDING"?"#B45309":"#6B7280";
-                                      const stBg=q.status==="ACTIVE"?"#EBF8E1":q.status==="PENDING"?"#FFFBEB":"#F3F4F6";
+                                      const sm=stMap[q.status]||stMap.INACTIVE;
                                       return(
                                         <tr key={q.id} style={{borderBottom:`1px solid ${G.border}`,background:qi%2===0?G.white:"#FAFBF8"}}>
                                           <td style={{padding:"8px 10px",fontWeight:600,color:G.textMid,fontFamily:"monospace"}}>QA-{String(q.id).padStart(3,"0")}</td>
                                           <td style={{padding:"8px 10px"}}><span style={{background:"#EEF2FF",color:"#6366F1",borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700}}>{q.docType}</span></td>
-                                          <td style={{padding:"8px 10px",color:G.textMid}}>${(q.requestedAmount||q.totalApproved).toLocaleString()}</td>
                                           <td style={{padding:"8px 10px",fontWeight:700}}>{q.status==="PENDING"?<span style={{color:G.orange,fontSize:10}}>심사 중</span>:`$${q.totalApproved.toLocaleString()}`}</td>
                                           <td style={{padding:"8px 10px",color:G.textMid}}>${q.usedAmount.toLocaleString()}</td>
-                                          <td style={{padding:"8px 10px",fontWeight:600}}>{itemAvail==null?"—":`$${itemAvail.toLocaleString()}`}</td>
                                           <td style={{padding:"8px 10px",color:G.textLight,fontSize:10,whiteSpace:"nowrap"}}>{q.validFrom&&q.validTo?`${q.validFrom} ~ ${q.validTo}`:"—"}</td>
-                                          <td style={{padding:"8px 10px"}}><span style={{background:stBg,color:stC,borderRadius:20,padding:"2px 7px",fontWeight:700,fontSize:10}}>{q.status}</span></td>
+                                          <td style={{padding:"8px 10px"}}><span style={{background:sm.bg,color:sm.text,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>{sm.icon} {sm.label}</span></td>
                                           <td style={{padding:"8px 10px"}}>
                                             <button onClick={()=>T("📄 서류 미리보기 (Mock)")} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer"}}>📄 보기</button>
                                           </td>
@@ -2265,11 +2263,11 @@ function SubDash({acctName,onLogout,onMaster}){
                                   <tfoot>
                                     <tr style={{background:"#F7FBF4",fontWeight:700}}>
                                       <td colSpan={2} style={{padding:"8px 10px",fontSize:11,color:G.textMid}}>합계</td>
-                                      <td style={{padding:"8px 10px"}}/>
                                       <td style={{padding:"8px 10px",fontWeight:700}}>${totalApproved.toLocaleString()}</td>
                                       <td style={{padding:"8px 10px",fontWeight:700}}>${usedAmount.toLocaleString()}</td>
+                                      <td/>
                                       <td style={{padding:"8px 10px",fontWeight:700,color:barColor}}>${avail.toLocaleString()}</td>
-                                      <td colSpan={3}/>
+                                      <td/>
                                     </tr>
                                   </tfoot>
                                 </table>
@@ -2280,7 +2278,6 @@ function SubDash({acctName,onLogout,onMaster}){
                           {/* Accordion: 한도 신청 폼 */}
                           {isFormOpen&&(
                             <div style={{padding:"14px 16px",background:G.greenLight,borderTop:`1px solid ${G.border}`}} onClick={e=>e.stopPropagation()}>
-                              {/* 최초 / 추가 배너 */}
                               {isFirstApp?(
                                 <div style={{background:"#EBF4FF",border:"1px solid #BEE3F8",borderRadius:7,padding:"8px 12px",marginBottom:12,fontSize:11,color:"#2B6CB0"}}>
                                   📋 이 수취인에 대한 첫 번째 한도 신청입니다.
@@ -2290,7 +2287,6 @@ function SubDash({acctName,onLogout,onMaster}){
                                   ➕ 기존 한도에 추가 승인됩니다. 승인 시 총 승인 한도가 증가합니다.
                                 </div>
                               )}
-                              {/* 추가 신청 시 현재 한도 요약 */}
                               {!isFirstApp&&(
                                 <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:7,padding:"10px 14px",marginBottom:12}}>
                                   {[["현재 총 승인 한도",`$${totalApproved.toLocaleString()} USD`],["잔여 한도",`$${avail.toLocaleString()} USD`],["이번 신청 후 예상 총 한도",`$${(totalApproved+newAmt).toLocaleString()} USD`]].map(([k,v],ki)=>(
@@ -2301,12 +2297,11 @@ function SubDash({acctName,onLogout,onMaster}){
                                   ))}
                                 </div>
                               )}
-                              {/* 폼 필드 */}
                               <Lbl t="서류 유형 *"/>
                               <div style={{display:"flex",gap:7,marginBottom:10}}>
                                 {["Invoice","Contract"].map(dt=>(
                                   <button key={dt} onClick={()=>setQuotaForm(q=>({...q,docType:dt}))}
-                                    style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${quotaForm.docType===dt?G.green:G.border}`,background:quotaForm.docType===dt?G.white:G.white,fontWeight:quotaForm.docType===dt?700:400,cursor:"pointer",color:quotaForm.docType===dt?G.greenDark:G.textMid,fontSize:12}}>
+                                    style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${quotaForm.docType===dt?G.green:G.border}`,background:quotaForm.docType===dt?G.greenLight:G.white,fontWeight:quotaForm.docType===dt?700:400,cursor:"pointer",color:quotaForm.docType===dt?G.greenDark:G.textMid,fontSize:12}}>
                                     {dt}
                                   </button>
                                 ))}
@@ -2331,7 +2326,7 @@ function SubDash({acctName,onLogout,onMaster}){
                                   const nAmt=parseFloat(quotaForm.amount)||0;
                                   setQuotas(qs=>[...qs,{id:Date.now(),recipientId:group.recipientId,recipientName:group.recipientName,registrationNo:group.registrationNo,docType:quotaForm.docType,requestedAmount:nAmt,totalApproved:nAmt,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:quotaForm.validFrom,validTo:quotaForm.validTo}]);
                                   setQuotaFormRecId(null);
-                                  T("✅ 한도 신청이 제출되었습니다. 승인 후 총 한도에 합산됩니다.");
+                                  T("✅ 한도 신청 완료. 승인 시 총 한도에 합산됩니다.");
                                 }}/>
                                 <Btn t="취소" sm color={G.textLight} onClick={()=>setQuotaFormRecId(null)}/>
                               </div>
@@ -3276,12 +3271,14 @@ function MasterDash({onLogout,onSub}){
                       const usedAmount=group.items.filter(q=>q.status!=="PENDING").reduce((s,q)=>s+q.usedAmount,0);
                       const frozenAmount=group.items.filter(q=>q.status!=="PENDING").reduce((s,q)=>s+q.frozenAmount,0);
                       const avail=Math.max(0,totalApproved-usedAmount+frozenAmount);
-                      const pct=totalApproved>0?Math.round(avail/totalApproved*100):0;
-                      const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
+                      const usedPct=totalApproved>0?Math.min(100,Math.round(usedAmount/totalApproved*100)):0;
+                      const availPct=totalApproved>0?Math.round(avail/totalApproved*100):0;
+                      const barColor=availPct>=50?G.green:availPct>=20?G.orange:G.red;
                       const isExpanded=masterExpandedQuotaRecId===group.recipientId;
                       const isFormOpen=masterQuotaFormRecId===group.recipientId;
                       const isFirstApp=group.items.length===0;
                       const newAmt=parseFloat(masterQuotaForm.amount)||0;
+                      const stMap={ACTIVE:{icon:"✅",label:"승인",bg:"#EBF8E1",text:"#276749"},PENDING:{icon:"⏳",label:"심사 중",bg:"#FFFBEB",text:"#B45309"},INACTIVE:{icon:"⬛",label:"만료",bg:"#F3F4F6",text:"#6B7280"},REJECTED:{icon:"❌",label:"거절",bg:"#FEE2E2",text:"#991B1B"}};
                       return(
                         <div key={group.recipientId} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,marginBottom:12,overflow:"hidden"}}>
                           {/* 카드 헤더 */}
@@ -3303,10 +3300,10 @@ function MasterDash({onLogout,onSub}){
                           {/* 요약 통계 + 프로그레스 바 */}
                           <div style={{padding:"0 18px 14px",borderBottom:`1px solid ${G.border}`}}>
                             <div style={{height:6,background:"#F3F4F6",borderRadius:4,overflow:"hidden",marginBottom:8}}>
-                              <div style={{height:"100%",width:`${pct}%`,background:barColor,borderRadius:4,transition:"width 0.3s"}}/>
+                              <div style={{height:"100%",width:`${usedPct}%`,background:barColor,borderRadius:4,transition:"width 0.3s"}}/>
                             </div>
-                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:10}}>
-                              {[["총 승인 한도",`$${totalApproved.toLocaleString()}`],["사용액",`$${usedAmount.toLocaleString()}`],["처리 중",`$${frozenAmount.toLocaleString()}`],["잔여 한도",`$${avail.toLocaleString()}`]].map(([lbl,val])=>(
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+                              {[["총 승인 한도",`$${totalApproved.toLocaleString()}`],["사용액",`$${usedAmount.toLocaleString()}`]].map(([lbl,val])=>(
                                 <div key={lbl}>
                                   <div style={{fontSize:9,color:G.textLight,marginBottom:2}}>{lbl}</div>
                                   <div style={{fontSize:12,fontWeight:700,color:G.textDark}}>{val}</div>
@@ -3321,7 +3318,7 @@ function MasterDash({onLogout,onSub}){
                             </div>
                           </div>
 
-                          {/* Accordion: 신청 이력 서브 테이블 */}
+                          {/* Accordion: 신청 이력 */}
                           {isExpanded&&(
                             <div style={{padding:"12px 16px",background:"#FAFBF8"}}>
                               <div style={{fontSize:11,fontWeight:700,color:G.textMid,marginBottom:8}}>신청 이력</div>
@@ -3329,27 +3326,23 @@ function MasterDash({onLogout,onSub}){
                                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                                   <thead>
                                     <tr style={{background:G.sidebar}}>
-                                      {["신청 번호","서류 유형","신청 한도","승인 한도","사용액","잔여","유효기간","상태","서류"].map(h=>(
+                                      {["신청 번호","서류 유형","승인 한도","사용액","유효기간","상태","서류"].map(h=>(
                                         <th key={h} style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:G.textMid,fontSize:10,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
                                       ))}
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {group.items.map((q,qi)=>{
-                                      const itemAvail=q.status==="PENDING"?null:Math.max(0,q.totalApproved-q.usedAmount+q.frozenAmount);
-                                      const stC=q.status==="ACTIVE"?"#276749":q.status==="PENDING"?"#B45309":"#6B7280";
-                                      const stBg=q.status==="ACTIVE"?"#EBF8E1":q.status==="PENDING"?"#FFFBEB":"#F3F4F6";
+                                      const sm=stMap[q.status]||stMap.INACTIVE;
                                       const docLabel=q.purpose==="TREASURY"?"내부 자금 이동 근거":q.docType;
                                       return(
                                         <tr key={q.id} style={{borderBottom:`1px solid ${G.border}`,background:qi%2===0?G.white:"#FAFBF8"}}>
                                           <td style={{padding:"8px 10px",fontWeight:600,color:G.textMid,fontFamily:"monospace"}}>QA-{String(q.id).padStart(3,"0")}</td>
                                           <td style={{padding:"8px 10px"}}><span style={{background:"#EEF2FF",color:"#6366F1",borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700}}>{docLabel}</span></td>
-                                          <td style={{padding:"8px 10px",color:G.textMid}}>${(q.requestedAmount||q.totalApproved).toLocaleString()}</td>
                                           <td style={{padding:"8px 10px",fontWeight:700}}>{q.status==="PENDING"?<span style={{color:G.orange,fontSize:10}}>심사 중</span>:`$${q.totalApproved.toLocaleString()}`}</td>
                                           <td style={{padding:"8px 10px",color:G.textMid}}>${q.usedAmount.toLocaleString()}</td>
-                                          <td style={{padding:"8px 10px",fontWeight:600}}>{itemAvail==null?"—":`$${itemAvail.toLocaleString()}`}</td>
                                           <td style={{padding:"8px 10px",color:G.textLight,fontSize:10,whiteSpace:"nowrap"}}>{q.validFrom&&q.validTo?`${q.validFrom} ~ ${q.validTo}`:"—"}</td>
-                                          <td style={{padding:"8px 10px"}}><span style={{background:stBg,color:stC,borderRadius:20,padding:"2px 7px",fontWeight:700,fontSize:10}}>{q.status}</span></td>
+                                          <td style={{padding:"8px 10px"}}><span style={{background:sm.bg,color:sm.text,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>{sm.icon} {sm.label}</span></td>
                                           <td style={{padding:"8px 10px"}}>
                                             <button onClick={()=>T("📄 서류 미리보기 (Mock)")} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer"}}>📄 보기</button>
                                           </td>
@@ -3360,11 +3353,11 @@ function MasterDash({onLogout,onSub}){
                                   <tfoot>
                                     <tr style={{background:"#F7FBF4",fontWeight:700}}>
                                       <td colSpan={2} style={{padding:"8px 10px",fontSize:11,color:G.textMid}}>합계</td>
-                                      <td style={{padding:"8px 10px"}}/>
                                       <td style={{padding:"8px 10px",fontWeight:700}}>${totalApproved.toLocaleString()}</td>
                                       <td style={{padding:"8px 10px",fontWeight:700}}>${usedAmount.toLocaleString()}</td>
+                                      <td/>
                                       <td style={{padding:"8px 10px",fontWeight:700,color:barColor}}>${avail.toLocaleString()}</td>
-                                      <td colSpan={3}/>
+                                      <td/>
                                     </tr>
                                   </tfoot>
                                 </table>
@@ -3423,7 +3416,7 @@ function MasterDash({onLogout,onSub}){
                                   const nAmt=parseFloat(masterQuotaForm.amount)||0;
                                   setMasterQuotas(qs=>[...qs,{id:Date.now(),recipientId:group.recipientId,recipientName:group.recipientName,registrationNo:group.registrationNo,docType:masterQuotaForm.docType,purpose:masterQuotaForm.purpose||"TREASURY",requestedAmount:nAmt,totalApproved:nAmt,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:masterQuotaForm.validFrom,validTo:masterQuotaForm.validTo}]);
                                   setMasterQuotaFormRecId(null);
-                                  T("✅ 한도 신청이 제출되었습니다. 승인 후 총 한도에 합산됩니다.");
+                                  T("✅ 한도 신청 완료. 승인 시 총 한도에 합산됩니다.");
                                 }}/>
                                 <Btn t="취소" sm color={G.textLight} onClick={()=>setMasterQuotaFormRecId(null)}/>
                               </div>
