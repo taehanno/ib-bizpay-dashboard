@@ -187,7 +187,7 @@ const TR = [
 const INIT_CLIENTS = [
   {id:"SUB-001",name:"Hanpass",  email:"admin@hanpass.com",st:"Active",   created:"2026-01-10",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:false, kybStatus:"ACTIVE"},
   {id:"SUB-002",name:"Sentbe",   email:"admin@sentbe.com", st:"Active",   created:"2026-02-03",mu:0.15,muOn:0.15,muOff:0.15,otpReq:true, locked:false, kybStatus:"INACTIVE"},
-  {id:"SUB-003",name:"MOIN",     email:"admin@moin.money", st:"Active",   created:"2026-02-20",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:true,  kybStatus:"ACTIVE"},
+  {id:"SUB-003",name:"MOIN",     email:null,               st:"Active",   created:"2026-02-20",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:false, kybStatus:"ACTIVE"},
   {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",mu:0.20,muOn:0.20,muOff:0.20,otpReq:false,locked:false, kybStatus:"REJECTED",
     kybData:{enterpriseName:"와이어코리아 주식회사",enterpriseNameEn:"WireKorea Corp.",registrationNumber:"220-81-44321",enterpriseType:"주식회사",establishmentDate:"2021-06-15",officeCountry:"KR",officialAddress:"서울시 강남구 테헤란로 123",registrationAddress:"서울시 강남구 테헤란로 123",registrationCity:"Seoul",industry:"핀테크/송금",fundsSource:"영업 수익",accountPurpose:"해외 송금",tradingFrequency:"월 6~20회",transactionAmount:"$10,001 ~ $50,000",bearerShare:"N",email:"admin@wirek.com",ip:"203.0.113.55",deviceId:"DEV-WK9988"}},
   {id:"SUB-005",name:"PayTech",  email:"admin@paytech.com",st:"Active",   created:"2026-04-01",mu:0.12,muOn:0.12,muOff:0.12,otpReq:false,locked:false, kybStatus:"PROCESSING"},
