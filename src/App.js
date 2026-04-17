@@ -202,9 +202,10 @@ const INIT_RECIP = [
 ];
 
 const INIT_QUOTA = [
-  {id:1,recipientId:1,recipientName:"Kim Jae-won",       registrationNo:"110-81-12345",docType:"Invoice",  totalApproved:500000,usedAmount:320000,frozenAmount:50000, status:"ACTIVE",  validFrom:"2025-01-01",validTo:"2025-12-31"},
-  {id:2,recipientId:2,recipientName:"Tokyo Trading Ltd", registrationNo:"1234567890",  docType:"Contract", totalApproved:200000,usedAmount:180000,frozenAmount:10000, status:"PENDING", validFrom:"2025-03-01",validTo:"2025-09-30"},
-  {id:3,recipientId:3,recipientName:"USDC ERC-20 Wallet",registrationNo:"US123456",    docType:"Invoice",  totalApproved:100000,usedAmount:10000, frozenAmount:5000,  status:"ACTIVE",  validFrom:"2025-01-01",validTo:"2025-12-31"},
+  {id:1,recipientId:1,recipientName:"Kim Jae-won",       registrationNo:"110-81-12345",docType:"Invoice",  requestedAmount:500000,totalApproved:500000,usedAmount:320000,frozenAmount:50000, status:"ACTIVE",  validFrom:"2025-01-01",validTo:"2025-12-31"},
+  {id:2,recipientId:2,recipientName:"Tokyo Trading Ltd", registrationNo:"1234567890",  docType:"Contract", requestedAmount:200000,totalApproved:200000,usedAmount:180000,frozenAmount:10000, status:"PENDING", validFrom:"2025-03-01",validTo:"2025-09-30"},
+  {id:3,recipientId:3,recipientName:"USDC ERC-20 Wallet",registrationNo:"US123456",    docType:"Invoice",  requestedAmount:100000,totalApproved:100000,usedAmount:10000, frozenAmount:5000,  status:"ACTIVE",  validFrom:"2025-01-01",validTo:"2025-12-31"},
+  {id:4,recipientId:1,recipientName:"Kim Jae-won",       registrationNo:"110-81-12345",docType:"Contract", requestedAmount:300000,totalApproved:300000,usedAmount:150000,frozenAmount:0,     status:"INACTIVE",validFrom:"2024-01-01",validTo:"2024-12-31"},
 ];
 
 // ── 입금 계좌 정보 ────────────────────────────────────────────────────
@@ -1403,6 +1404,7 @@ function SubDash({acctName,onLogout,onMaster}){
   const [quotas,setQuotas]=useState(INIT_QUOTA);
   const [quotaFormRecId,setQuotaFormRecId]=useState(null);
   const [quotaForm,setQuotaForm]=useState({docType:"Invoice",recipientId:"",amount:"",validFrom:"",validTo:"",file:null});
+  const [expandedQuotaRecId,setExpandedQuotaRecId]=useState(null);
   const [deleteConfirmId,setDeleteConfirmId]=useState(null);
   const [showSec,setShowSec]=useState(false);
   const [curPw,setCurPw]=useState("");const [newPw,setNewPw]=useState("");const [confPw,setConfPw]=useState("");
@@ -2140,152 +2142,205 @@ function SubDash({acctName,onLogout,onMaster}){
               {/* ── TAB 2: 한도 관리 ── */}
               {recTab===1&&(
                 <div>
-                  {/* 한도 신청 폼 (인라인) */}
-                  {quotaFormRecId&&(
-                    <Card style={{marginBottom:16,border:`1.5px solid ${G.green}`}}>
-                      <div style={{fontWeight:700,fontSize:12,color:G.greenDark,marginBottom:12}}>➕ 한도 신청</div>
-                      <Lbl t="수취인 선택*"/>
+                  {/* 헤더 버튼으로 신규 신청 폼 */}
+                  {quotaFormRecId==="new"&&(
+                    <div style={{background:G.white,border:`1.5px solid ${G.green}`,borderRadius:10,padding:"16px",marginBottom:16}}>
+                      <div style={{fontWeight:700,fontSize:12,color:G.greenDark,marginBottom:12}}>한도 신청 — 수취인 선택</div>
+                      <Lbl t="수취인 *"/>
                       <select value={quotaForm.recipientId} onChange={e=>setQuotaForm(q=>({...q,recipientId:e.target.value}))}
                         style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
-                        <option value="">수취인 선택...</option>
+                        <option value="">— 수취인 선택 —</option>
                         {recs.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
                       </select>
-                      <Lbl t="서류 유형*"/>
-                      <div style={{display:"flex",gap:7,marginBottom:10}}>
-                        {["Invoice","Contract"].map(dt=>(
-                          <button key={dt} onClick={()=>setQuotaForm(q=>({...q,docType:dt}))}
-                            style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${quotaForm.docType===dt?G.green:G.border}`,background:quotaForm.docType===dt?G.greenLight:G.white,fontWeight:quotaForm.docType===dt?700:400,cursor:"pointer",color:quotaForm.docType===dt?G.greenDark:G.textMid,fontSize:12}}>
-                            {dt}
-                          </button>
-                        ))}
-                      </div>
-                      <Lbl t="통화"/>
-                      <div style={{padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:"#F9FAFB",color:G.textMid}}>USD (고정)</div>
-                      <Lbl t="신청 한도 금액 (USD)*"/>
-                      <Inp v={quotaForm.amount} set={v=>setQuotaForm(q=>({...q,amount:v}))} ph="0.01 ~ 999,999,999.99"/>
-                      <div style={{display:"flex",gap:8}}>
-                        <div style={{flex:1}}><Lbl t="유효 시작일"/><Inp v={quotaForm.validFrom} set={v=>setQuotaForm(q=>({...q,validFrom:v}))} ph="yyyy-MM-dd"/></div>
-                        <div style={{flex:1}}><Lbl t="유효 종료일"/><Inp v={quotaForm.validTo} set={v=>setQuotaForm(q=>({...q,validTo:v}))} ph="yyyy-MM-dd"/></div>
-                      </div>
-                      <Lbl t="서류 업로드 (PDF / JPG / PNG, max 10MB)*"/>
-                      <div style={{border:`1.5px dashed ${G.border}`,borderRadius:7,padding:"16px",textAlign:"center",marginBottom:12,background:"#FAFAFA",fontSize:11,color:G.textMid,cursor:"pointer"}}
-                        onClick={()=>document.getElementById("q2-file").click()}>
-                        {quotaForm.file?`📎 ${quotaForm.file}`:"파일 선택 또는 드래그 앤 드롭"}
-                        <input id="q2-file" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
-                          onChange={e=>{if(e.target.files[0])setQuotaForm(q=>({...q,file:e.target.files[0].name}));}}/>
-                      </div>
                       <div style={{display:"flex",gap:7}}>
-                        <Btn t="한도 신청 완료" sm onClick={()=>{
+                        <Btn t="이동" sm onClick={()=>{
                           if(!quotaForm.recipientId){T("⚠️ 수취인을 선택하세요");return;}
-                          if(!quotaForm.amount){T("⚠️ 한도 금액을 입력하세요");return;}
-                          if(!quotaForm.file){T("⚠️ 서류를 업로드하세요");return;}
-                          const rec=recs.find(r=>String(r.id)===String(quotaForm.recipientId));
-                          const newQ={id:Date.now(),recipientId:Number(quotaForm.recipientId),recipientName:rec?.name||"",registrationNo:rec?.registrationNo||"",docType:quotaForm.docType,totalApproved:parseFloat(quotaForm.amount)||0,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:quotaForm.validFrom,validTo:quotaForm.validTo};
-                          setQuotas(qs=>[...qs,newQ]);setQuotaFormRecId(null);
-                          T("✅ 한도 신청이 제출되었습니다. 승인 후 해당 수취인으로 송금이 가능합니다.");
+                          setQuotaFormRecId(Number(quotaForm.recipientId));
+                          setExpandedQuotaRecId(Number(quotaForm.recipientId));
+                          setQuotaForm(q=>({...q,amount:"",validFrom:"",validTo:"",file:null}));
                         }}/>
                         <Btn t="취소" sm color={G.textLight} onClick={()=>setQuotaFormRecId(null)}/>
                       </div>
-                    </Card>
+                    </div>
                   )}
 
-                  {/* 한도 현황 테이블 */}
-                  <div style={{overflowX:"auto"}}>
-                    <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-                      <thead>
-                        <tr style={{background:G.sidebar,borderBottom:`1.5px solid ${G.border}`}}>
-                          {["수취인명","사업자번호","서류 유형","승인 한도","사용액","처리 중","잔여 한도","상태","유효기간",""].map((h,i)=>(
-                            <th key={i} style={{padding:"10px 12px",textAlign:"left",fontWeight:700,fontSize:10,color:G.textMid,whiteSpace:"nowrap"}}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {quotas.map((q,qi)=>{
-                          const showInlineForm=quotaFormRecId===q.id;
-                          return(
-                            <>
-                              <tr key={q.id} style={{borderBottom:`1px solid ${G.border}`,background:qi%2===0?G.white:"#FAFAFA"}}>
-                                <td style={{padding:"12px 12px",fontWeight:600}}>{q.recipientName}</td>
-                                <td style={{padding:"12px 12px",color:G.textMid}}>{q.registrationNo}</td>
-                                <td style={{padding:"12px 12px"}}><span style={{background:"#F3F4F6",color:G.textMid,borderRadius:4,padding:"2px 7px",fontWeight:600,fontSize:10}}>{q.docType}</span></td>
-                                <td style={{padding:"12px 12px",fontWeight:600}}>${q.totalApproved.toLocaleString()}</td>
-                                <td style={{padding:"12px 12px",color:G.textMid}}>${q.usedAmount.toLocaleString()}</td>
-                                <td style={{padding:"12px 12px",color:G.orange}}>${q.frozenAmount.toLocaleString()}</td>
-                                <td style={{padding:"12px 12px"}}><QuotaBar total={q.totalApproved} used={q.usedAmount} frozen={q.frozenAmount}/></td>
-                                <td style={{padding:"12px 12px"}}><CounterpartyStatusBadge status={q.status}/></td>
-                                <td style={{padding:"12px 12px",color:G.textMid,fontSize:10,whiteSpace:"nowrap"}}>{q.validFrom||"—"}{q.validTo?` ~ ${q.validTo}`:""}</td>
-                                <td style={{padding:"12px 12px"}}>
-                                  <button onClick={()=>{if(quotaFormRecId===q.id){setQuotaFormRecId(null);}else{setQuotaFormRecId(q.id);setQuotaForm({docType:"Invoice",recipientId:q.recipientId,amount:"",validFrom:"",validTo:"",file:null});}}}
-                                    style={{fontSize:10,padding:"4px 9px",borderRadius:5,border:`1px solid ${G.green}`,background:showInlineForm?G.greenLight:G.white,color:G.greenDark,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>
-                                    {showInlineForm?"접기":"추가 신청"}
-                                  </button>
-                                </td>
-                              </tr>
-                              {showInlineForm&&(
-                                <tr key={`${q.id}-form`}>
-                                  <td colSpan={10} style={{padding:0}}>
-                                    <div style={{background:G.greenLight,borderBottom:`1px solid ${G.border}`,padding:"14px 16px"}}>
-                                      <div style={{fontWeight:700,fontSize:11,color:G.greenDark,marginBottom:10}}>➕ {q.recipientName} — 추가 한도 신청</div>
-                                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                                        <div style={{minWidth:120}}>
-                                          <Lbl t="서류 유형*"/>
-                                          <div style={{display:"flex",gap:6,marginBottom:10}}>
-                                            {["Invoice","Contract"].map(dt=>(
-                                              <button key={dt} onClick={()=>setQuotaForm(qf=>({...qf,docType:dt}))}
-                                                style={{padding:"5px 10px",borderRadius:6,border:`1.5px solid ${quotaForm.docType===dt?G.green:G.border}`,background:quotaForm.docType===dt?G.white:G.white,fontWeight:quotaForm.docType===dt?700:400,cursor:"pointer",color:quotaForm.docType===dt?G.greenDark:G.textMid,fontSize:11}}>
-                                                {dt}
-                                              </button>
-                                            ))}
-                                          </div>
-                                        </div>
-                                        <div style={{minWidth:140}}>
-                                          <Lbl t="신청 금액 (USD)*"/>
-                                          <Inp v={quotaForm.amount} set={v=>setQuotaForm(qf=>({...qf,amount:v}))} ph="금액 입력"/>
-                                        </div>
-                                        <div style={{minWidth:110}}>
-                                          <Lbl t="유효 시작일"/>
-                                          <Inp v={quotaForm.validFrom} set={v=>setQuotaForm(qf=>({...qf,validFrom:v}))} ph="yyyy-MM-dd"/>
-                                        </div>
-                                        <div style={{minWidth:110}}>
-                                          <Lbl t="유효 종료일"/>
-                                          <Inp v={quotaForm.validTo} set={v=>setQuotaForm(qf=>({...qf,validTo:v}))} ph="yyyy-MM-dd"/>
-                                        </div>
-                                        <div style={{minWidth:160}}>
-                                          <Lbl t="서류 업로드*"/>
-                                          <div style={{border:`1.5px dashed ${G.border}`,borderRadius:6,padding:"8px 10px",fontSize:10,color:G.textMid,cursor:"pointer",background:"#fff",marginBottom:10}}
-                                            onClick={()=>document.getElementById(`qi-file-${q.id}`).click()}>
-                                            {quotaForm.file?`📎 ${quotaForm.file}`:"파일 선택"}
-                                            <input id={`qi-file-${q.id}`} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
-                                              onChange={e=>{if(e.target.files[0])setQuotaForm(qf=>({...qf,file:e.target.files[0].name}));}}/>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div style={{display:"flex",gap:7}}>
-                                        <Btn t="신청 완료" sm onClick={()=>{
-                                          if(!quotaForm.amount){T("⚠️ 금액을 입력하세요");return;}
-                                          if(!quotaForm.file){T("⚠️ 서류를 업로드하세요");return;}
-                                          const newQ={id:Date.now(),recipientId:q.recipientId,recipientName:q.recipientName,registrationNo:q.registrationNo,docType:quotaForm.docType,totalApproved:parseFloat(quotaForm.amount)||0,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:quotaForm.validFrom,validTo:quotaForm.validTo};
-                                          setQuotas(qs=>[...qs,newQ]);setQuotaFormRecId(null);
-                                          T("✅ 한도 신청이 제출되었습니다. 승인 후 해당 수취인으로 송금이 가능합니다.");
-                                        }}/>
-                                        <Btn t="취소" sm color={G.textLight} onClick={()=>setQuotaFormRecId(null)}/>
-                                      </div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
-                            </>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                    {quotas.length===0&&(
+                  {/* 수취인별 요약 카드 */}
+                  {(()=>{
+                    const recQuotaMap={};
+                    quotas.forEach(q=>{
+                      if(!recQuotaMap[q.recipientId]) recQuotaMap[q.recipientId]={recipientId:q.recipientId,recipientName:q.recipientName,registrationNo:q.registrationNo,items:[]};
+                      recQuotaMap[q.recipientId].items.push(q);
+                    });
+                    const recGroups=Object.values(recQuotaMap);
+                    if(recGroups.length===0) return(
                       <div style={{textAlign:"center",padding:"40px 20px",color:G.textLight,fontSize:12}}>
-                        신청된 한도가 없습니다.<br/>
-                        <span style={{fontSize:11}}>+ 한도 신청 버튼으로 추가하세요.</span>
+                        신청된 한도가 없습니다.<br/><span style={{fontSize:11}}>+ 한도 추가 신청 버튼으로 추가하세요.</span>
                       </div>
-                    )}
-                  </div>
+                    );
+                    return recGroups.map(group=>{
+                      const totalApproved=group.items.filter(q=>q.status==="ACTIVE").reduce((s,q)=>s+q.totalApproved,0);
+                      const usedAmount=group.items.reduce((s,q)=>s+q.usedAmount,0);
+                      const frozenAmount=group.items.reduce((s,q)=>s+q.frozenAmount,0);
+                      const avail=Math.max(0,totalApproved-usedAmount-frozenAmount);
+                      const pct=totalApproved>0?Math.round(avail/totalApproved*100):0;
+                      const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
+                      const isExpanded=expandedQuotaRecId===group.recipientId;
+                      const isFormOpen=quotaFormRecId===group.recipientId;
+                      const isFirstApp=group.items.length===0;
+                      const newAmt=parseFloat(quotaForm.amount)||0;
+                      return(
+                        <div key={group.recipientId} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,marginBottom:12,overflow:"hidden"}}>
+                          {/* 카드 헤더 (클릭 시 이력 Accordion) */}
+                          <div style={{padding:"16px 18px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}
+                            onClick={()=>setExpandedQuotaRecId(isExpanded?null:group.recipientId)}>
+                            <div>
+                              <div style={{fontWeight:700,fontSize:13,color:G.textDark,marginBottom:3}}>{group.recipientName}</div>
+                              <div style={{fontSize:10,color:G.textLight}}>{group.registrationNo} · USD</div>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{textAlign:"right"}}>
+                                <div style={{fontSize:10,color:G.textLight,marginBottom:1}}>잔여 한도</div>
+                                <div style={{fontSize:15,fontWeight:700,color:barColor}}>${avail.toLocaleString()}</div>
+                              </div>
+                              <span style={{color:G.textLight,fontSize:12}}>{isExpanded?"▲":"▼"}</span>
+                            </div>
+                          </div>
+
+                          {/* 요약 통계 + 프로그레스 바 */}
+                          <div style={{padding:"0 18px 14px",borderBottom:`1px solid ${G.border}`}}>
+                            <div style={{height:6,background:"#F3F4F6",borderRadius:4,overflow:"hidden",marginBottom:8}}>
+                              <div style={{height:"100%",width:`${pct}%`,background:barColor,borderRadius:4,transition:"width 0.3s"}}/>
+                            </div>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:10}}>
+                              {[["총 승인 한도",`$${totalApproved.toLocaleString()}`],["사용액",`$${usedAmount.toLocaleString()}`],["처리 중",`$${frozenAmount.toLocaleString()}`],["잔여 한도",`$${avail.toLocaleString()}`]].map(([lbl,val])=>(
+                                <div key={lbl}>
+                                  <div style={{fontSize:9,color:G.textLight,marginBottom:2}}>{lbl}</div>
+                                  <div style={{fontSize:12,fontWeight:700,color:G.textDark}}>{val}</div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{display:"flex",justifyContent:"flex-end"}}>
+                              <button onClick={e=>{e.stopPropagation();setQuotaFormRecId(isFormOpen?null:group.recipientId);if(!isFormOpen)setQuotaForm({docType:"Invoice",recipientId:group.recipientId,amount:"",validFrom:"",validTo:"",file:null});}}
+                                style={{fontSize:10,padding:"4px 12px",borderRadius:5,border:`1px solid ${G.green}`,background:isFormOpen?G.greenLight:G.white,color:G.greenDark,cursor:"pointer",fontWeight:600}}>
+                                {isFormOpen?"접기":"+ 한도 추가 신청"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Accordion: 신청 이력 서브 테이블 */}
+                          {isExpanded&&(
+                            <div style={{padding:"12px 16px",background:"#FAFBF8"}}>
+                              <div style={{fontSize:11,fontWeight:700,color:G.textMid,marginBottom:8}}>신청 이력</div>
+                              <div style={{overflowX:"auto"}}>
+                                <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                                  <thead>
+                                    <tr style={{background:G.sidebar}}>
+                                      {["신청 번호","서류 유형","신청 한도","승인 한도","사용액","잔여","유효기간","상태","서류"].map(h=>(
+                                        <th key={h} style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:G.textMid,fontSize:10,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {group.items.map((q,qi)=>{
+                                      const itemAvail=q.status==="PENDING"?null:Math.max(0,q.totalApproved-q.usedAmount-q.frozenAmount);
+                                      const stC=q.status==="ACTIVE"?"#276749":q.status==="PENDING"?"#B45309":"#6B7280";
+                                      const stBg=q.status==="ACTIVE"?"#EBF8E1":q.status==="PENDING"?"#FFFBEB":"#F3F4F6";
+                                      return(
+                                        <tr key={q.id} style={{borderBottom:`1px solid ${G.border}`,background:qi%2===0?G.white:"#FAFBF8"}}>
+                                          <td style={{padding:"8px 10px",fontWeight:600,color:G.textMid,fontFamily:"monospace"}}>QA-{String(q.id).padStart(3,"0")}</td>
+                                          <td style={{padding:"8px 10px"}}><span style={{background:"#EEF2FF",color:"#6366F1",borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700}}>{q.docType}</span></td>
+                                          <td style={{padding:"8px 10px",color:G.textMid}}>${(q.requestedAmount||q.totalApproved).toLocaleString()}</td>
+                                          <td style={{padding:"8px 10px",fontWeight:700}}>{q.status==="PENDING"?<span style={{color:G.orange,fontSize:10}}>심사 중</span>:`$${q.totalApproved.toLocaleString()}`}</td>
+                                          <td style={{padding:"8px 10px",color:G.textMid}}>${q.usedAmount.toLocaleString()}</td>
+                                          <td style={{padding:"8px 10px",fontWeight:600}}>{itemAvail==null?"—":`$${itemAvail.toLocaleString()}`}</td>
+                                          <td style={{padding:"8px 10px",color:G.textLight,fontSize:10,whiteSpace:"nowrap"}}>{q.validFrom&&q.validTo?`${q.validFrom} ~ ${q.validTo}`:"—"}</td>
+                                          <td style={{padding:"8px 10px"}}><span style={{background:stBg,color:stC,borderRadius:20,padding:"2px 7px",fontWeight:700,fontSize:10}}>{q.status}</span></td>
+                                          <td style={{padding:"8px 10px"}}>
+                                            <button onClick={()=>T("📄 서류 미리보기 (Mock)")} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer"}}>📄 보기</button>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                  <tfoot>
+                                    <tr style={{background:"#F7FBF4",fontWeight:700}}>
+                                      <td colSpan={2} style={{padding:"8px 10px",fontSize:11,color:G.textMid}}>합계</td>
+                                      <td style={{padding:"8px 10px"}}/>
+                                      <td style={{padding:"8px 10px",fontWeight:700}}>${totalApproved.toLocaleString()}</td>
+                                      <td style={{padding:"8px 10px",fontWeight:700}}>${usedAmount.toLocaleString()}</td>
+                                      <td style={{padding:"8px 10px",fontWeight:700,color:barColor}}>${avail.toLocaleString()}</td>
+                                      <td colSpan={3}/>
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Accordion: 한도 신청 폼 */}
+                          {isFormOpen&&(
+                            <div style={{padding:"14px 16px",background:G.greenLight,borderTop:`1px solid ${G.border}`}} onClick={e=>e.stopPropagation()}>
+                              {/* 최초 / 추가 배너 */}
+                              {isFirstApp?(
+                                <div style={{background:"#EBF4FF",border:"1px solid #BEE3F8",borderRadius:7,padding:"8px 12px",marginBottom:12,fontSize:11,color:"#2B6CB0"}}>
+                                  📋 이 수취인에 대한 첫 번째 한도 신청입니다.
+                                </div>
+                              ):(
+                                <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:7,padding:"8px 12px",marginBottom:12,fontSize:11,color:G.greenDark}}>
+                                  ➕ 기존 한도에 추가 승인됩니다. 승인 시 총 승인 한도가 증가합니다.
+                                </div>
+                              )}
+                              {/* 추가 신청 시 현재 한도 요약 */}
+                              {!isFirstApp&&(
+                                <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:7,padding:"10px 14px",marginBottom:12}}>
+                                  {[["현재 총 승인 한도",`$${totalApproved.toLocaleString()} USD`],["잔여 한도",`$${avail.toLocaleString()} USD`],["이번 신청 후 예상 총 한도",`$${(totalApproved+newAmt).toLocaleString()} USD`]].map(([k,v],ki)=>(
+                                    <div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:ki<2?4:0}}>
+                                      <span style={{fontSize:11,color:G.textMid}}>{k}</span>
+                                      <span style={{fontSize:11,fontWeight:ki===2?700:600,color:ki===2?G.greenDark:G.textDark}}>{v}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {/* 폼 필드 */}
+                              <Lbl t="서류 유형 *"/>
+                              <div style={{display:"flex",gap:7,marginBottom:10}}>
+                                {["Invoice","Contract"].map(dt=>(
+                                  <button key={dt} onClick={()=>setQuotaForm(q=>({...q,docType:dt}))}
+                                    style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${quotaForm.docType===dt?G.green:G.border}`,background:quotaForm.docType===dt?G.white:G.white,fontWeight:quotaForm.docType===dt?700:400,cursor:"pointer",color:quotaForm.docType===dt?G.greenDark:G.textMid,fontSize:12}}>
+                                    {dt}
+                                  </button>
+                                ))}
+                              </div>
+                              <Lbl t="신청 한도 (USD) *"/>
+                              <Inp v={quotaForm.amount} set={v=>setQuotaForm(q=>({...q,amount:v}))} ph="0.01 ~ 999,999,999.99"/>
+                              <div style={{display:"flex",gap:8}}>
+                                <div style={{flex:1}}><Lbl t="유효 시작일"/><Inp v={quotaForm.validFrom} set={v=>setQuotaForm(q=>({...q,validFrom:v}))} ph="yyyy-MM-dd"/></div>
+                                <div style={{flex:1}}><Lbl t="유효 종료일"/><Inp v={quotaForm.validTo} set={v=>setQuotaForm(q=>({...q,validTo:v}))} ph="yyyy-MM-dd"/></div>
+                              </div>
+                              <Lbl t="서류 업로드 (PDF/JPG/PNG, max 10MB) *"/>
+                              <div style={{border:`1.5px dashed ${G.border}`,borderRadius:7,padding:"14px",textAlign:"center",marginBottom:12,background:G.white,fontSize:11,color:G.textMid,cursor:"pointer"}}
+                                onClick={()=>document.getElementById(`qf-sub-${group.recipientId}`).click()}>
+                                {quotaForm.file?`📎 ${quotaForm.file}`:"파일 선택 또는 드래그 앤 드롭"}
+                                <input id={`qf-sub-${group.recipientId}`} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                                  onChange={e=>{if(e.target.files[0])setQuotaForm(q=>({...q,file:e.target.files[0].name}));}}/>
+                              </div>
+                              <div style={{display:"flex",gap:7}}>
+                                <Btn t="신청 완료" sm onClick={()=>{
+                                  if(!quotaForm.amount){T("⚠️ 한도 금액을 입력하세요");return;}
+                                  if(!quotaForm.file){T("⚠️ 서류를 업로드하세요");return;}
+                                  const nAmt=parseFloat(quotaForm.amount)||0;
+                                  setQuotas(qs=>[...qs,{id:Date.now(),recipientId:group.recipientId,recipientName:group.recipientName,registrationNo:group.registrationNo,docType:quotaForm.docType,requestedAmount:nAmt,totalApproved:nAmt,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:quotaForm.validFrom,validTo:quotaForm.validTo}]);
+                                  setQuotaFormRecId(null);
+                                  T("✅ 한도 신청이 제출되었습니다. 승인 후 총 한도에 합산됩니다.");
+                                }}/>
+                                <Btn t="취소" sm color={G.textLight} onClick={()=>setQuotaFormRecId(null)}/>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               )}
 
@@ -2388,6 +2443,7 @@ function MasterDash({onLogout,onSub}){
   const [masterDeleteConfirmId,setMasterDeleteConfirmId]=useState(null);
   const [masterQuotaFormRecId,setMasterQuotaFormRecId]=useState(null);
   const [masterQuotaForm,setMasterQuotaForm]=useState({docType:"Invoice",purpose:"TREASURY",recipientId:"",amount:"",validFrom:"",validTo:"",file:null});
+  const [masterExpandedQuotaRecId,setMasterExpandedQuotaRecId]=useState(null);
 
   const T=m=>{setToast(m);setTimeout(()=>setToast(null),2500);};
   useEffect(()=>{
@@ -3176,104 +3232,203 @@ function MasterDash({onLogout,onSub}){
               {/* Tab 2 — 한도 관리 */}
               {masterRecTab===1&&(
                 <div>
-                  {/* 한도 신청 폼 */}
-                  {masterQuotaFormRecId&&(
-                    <Card style={{marginBottom:14,border:`1.5px solid ${G.green}`}}>
-                      <div style={{fontWeight:700,fontSize:12,marginBottom:12,color:G.greenDark}}>한도 신청</div>
-                      {masterQuotaForm.purpose==="TREASURY"&&(
-                        <div style={{background:"#EBF4FF",border:"1px solid #BEE3F8",borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:11,color:"#2B6CB0"}}>
-                          💡 본인 계좌 이체(TREASURY)의 경우 내부 자금 이동 근거 문서를 첨부하세요.
-                        </div>
-                      )}
-                      <Lbl t="수취인 선택 *"/>
+                  {/* 헤더 버튼으로 신규 신청 폼 */}
+                  {masterQuotaFormRecId==="new"&&(
+                    <div style={{background:G.white,border:`1.5px solid ${G.green}`,borderRadius:10,padding:"16px",marginBottom:16}}>
+                      <div style={{fontWeight:700,fontSize:12,color:G.greenDark,marginBottom:12}}>한도 신청 — 수취인 선택</div>
+                      <Lbl t="수취인 *"/>
                       <select value={masterQuotaForm.recipientId} onChange={e=>setMasterQuotaForm(c=>({...c,recipientId:e.target.value}))}
                         style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
                         <option value="">— 수취인 선택 —</option>
                         {masterRecs.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
                       </select>
-                      <Lbl t="송금 목적 *"/>
-                      <select value={masterQuotaForm.purpose} onChange={e=>setMasterQuotaForm(c=>({...c,purpose:e.target.value}))}
-                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
-                        <option value="TREASURY">TREASURY</option>
-                        <option value="GOODS_SERVICES">GOODS_SERVICES</option>
-                        <option value="COMMISSION">COMMISSION</option>
-                        <option value="OTHERS">OTHERS</option>
-                      </select>
-                      <Lbl t="서류 유형 *"/>
-                      <div style={{display:"flex",gap:7,marginBottom:10}}>
-                        {["Invoice","Contract"].map(dt=>(
-                          <button key={dt} onClick={()=>setMasterQuotaForm(c=>({...c,docType:dt}))}
-                            style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${masterQuotaForm.docType===dt?G.green:G.border}`,background:masterQuotaForm.docType===dt?G.greenLight:G.white,fontWeight:masterQuotaForm.docType===dt?700:400,color:masterQuotaForm.docType===dt?G.greenDark:G.textMid,cursor:"pointer",fontSize:11}}>
-                            {dt}
-                          </button>
-                        ))}
-                      </div>
-                      <Lbl t="신청 한도 (USD) *"/><Inp v={masterQuotaForm.amount} set={v=>setMasterQuotaForm(c=>({...c,amount:v}))} ph="금액 입력" type="number"/>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                        <div><Lbl t="유효 시작일"/><Inp v={masterQuotaForm.validFrom} set={v=>setMasterQuotaForm(c=>({...c,validFrom:v}))} ph="yyyy-MM-dd"/></div>
-                        <div><Lbl t="유효 종료일"/><Inp v={masterQuotaForm.validTo} set={v=>setMasterQuotaForm(c=>({...c,validTo:v}))} ph="yyyy-MM-dd"/></div>
-                      </div>
-                      <Lbl t="서류 업로드 * (PDF/JPG/PNG, max 10MB)"/>
-                      <div style={{border:`2px dashed ${G.border}`,borderRadius:8,padding:"14px",textAlign:"center",marginBottom:12,background:G.sidebar}}>
-                        {masterQuotaForm.file?<div style={{fontSize:11,color:G.greenDark}}>📄 {masterQuotaForm.file}</div>:<div style={{fontSize:11,color:G.textLight}}>파일을 여기에 드래그하거나</div>}
-                        <input type="file" accept=".pdf,.jpg,.png" onChange={e=>setMasterQuotaForm(c=>({...c,file:e.target.files?.[0]?.name||null}))} style={{display:"none"}} id="master-quota-apply-file"/>
-                        <label htmlFor="master-quota-apply-file" style={{fontSize:11,color:G.green,cursor:"pointer",textDecoration:"underline"}}>파일 선택</label>
-                      </div>
-                      <div style={{display:"flex",gap:8}}>
-                        <Btn t="한도 신청 완료" onClick={()=>{
-                          if(!masterQuotaForm.recipientId||!masterQuotaForm.amount){T("⚠️ 필수 항목을 입력하세요");return;}
-                          if(!masterQuotaForm.file){T("⚠️ 서류를 업로드하세요");return;}
-                          const rec=masterRecs.find(r=>String(r.id)===String(masterQuotaForm.recipientId));
-                          setMasterQuotas(qs=>[...qs,{id:qs.length+1,recipientId:masterQuotaForm.recipientId,recipientName:rec?.name||"",registrationNo:rec?.registrationNo||"",docType:masterQuotaForm.docType,totalApproved:parseFloat(masterQuotaForm.amount)||0,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:masterQuotaForm.validFrom,validTo:masterQuotaForm.validTo}]);
-                          T("✅ 한도 신청 제출 완료.");setMasterQuotaFormRecId(null);
+                      <div style={{display:"flex",gap:7}}>
+                        <Btn t="이동" sm onClick={()=>{
+                          if(!masterQuotaForm.recipientId){T("⚠️ 수취인을 선택하세요");return;}
+                          setMasterQuotaFormRecId(Number(masterQuotaForm.recipientId));
+                          setMasterExpandedQuotaRecId(Number(masterQuotaForm.recipientId));
+                          setMasterQuotaForm(c=>({...c,amount:"",validFrom:"",validTo:"",file:null}));
                         }}/>
-                        <button onClick={()=>setMasterQuotaFormRecId(null)} style={{background:"none",border:`1px solid ${G.border}`,borderRadius:6,padding:"10px 16px",fontSize:12,color:G.textMid,cursor:"pointer"}}>취소</button>
+                        <Btn t="취소" sm color={G.textLight} onClick={()=>setMasterQuotaFormRecId(null)}/>
                       </div>
-                    </Card>
+                    </div>
                   )}
-                  <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,overflow:"hidden"}}>
-                    <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-                      <thead>
-                        <tr style={{background:G.sidebar}}>
-                          {["수취인명","사업자번호","송금 목적","서류 유형","승인 한도","사용액","처리 중","잔여 한도","상태","유효기간","Actions"].map(h=>(
-                            <th key={h} style={{padding:"9px 10px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {masterQuotas.length===0&&(
-                          <tr><td colSpan={11} style={{padding:"20px",textAlign:"center",color:G.textLight}}>등록된 한도가 없습니다.</td></tr>
-                        )}
-                        {masterQuotas.map((q,i)=>{
-                          const avail=Math.max(0,q.totalApproved-q.usedAmount-q.frozenAmount);
-                          const pct=q.totalApproved>0?Math.round(avail/q.totalApproved*100):0;
-                          const barC=pct>=50?G.green:pct>=20?G.orange:G.red;
-                          const stC=q.status==="ACTIVE"?"#276749":q.status==="PENDING"?"#B45309":"#991B1B";
-                          const stBg=q.status==="ACTIVE"?"#EBF8E1":q.status==="PENDING"?"#FFFBEB":"#FEE2E2";
-                          return(
-                            <tr key={q.id} style={{background:i%2===0?G.white:"#FAFBF8"}}>
-                              <td style={{padding:"9px 10px",fontWeight:700}}>{q.recipientName}</td>
-                              <td style={{padding:"9px 10px",color:G.textMid,fontSize:10}}>{q.registrationNo}</td>
-                              <td style={{padding:"9px 10px",color:G.textMid,fontSize:10}}>—</td>
-                              <td style={{padding:"9px 10px"}}><span style={{background:"#EEF2FF",color:"#6366F1",borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700}}>{q.docType}</span></td>
-                              <td style={{padding:"9px 10px",fontWeight:700}}>${q.totalApproved.toLocaleString()}</td>
-                              <td style={{padding:"9px 10px",color:G.textMid}}>${q.usedAmount.toLocaleString()}</td>
-                              <td style={{padding:"9px 10px",color:G.orange}}>${q.frozenAmount.toLocaleString()}</td>
-                              <td style={{padding:"9px 10px"}}>
-                                <QuotaBar total={q.totalApproved} used={q.usedAmount} frozen={q.frozenAmount}/>
-                              </td>
-                              <td style={{padding:"9px 10px"}}><span style={{background:stBg,color:stC,borderRadius:20,padding:"2px 8px",fontWeight:700,fontSize:10}}>{q.status}</span></td>
-                              <td style={{padding:"9px 10px",color:G.textLight,fontSize:10,whiteSpace:"nowrap"}}>{q.validFrom&&q.validTo?`${q.validFrom} ~ ${q.validTo}`:"—"}</td>
-                              <td style={{padding:"9px 10px"}}>
-                                <button onClick={()=>{setMasterQuotaFormRecId("new");setMasterQuotaForm({docType:"Invoice",purpose:"TREASURY",recipientId:String(q.recipientId),amount:"",validFrom:"",validTo:"",file:null});setMasterRecTab(1);}}
-                                  style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.green}`,background:G.greenLight,cursor:"pointer",color:G.greenDark,fontWeight:600,whiteSpace:"nowrap"}}>추가 신청</button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+
+                  {/* 수취인별 요약 카드 */}
+                  {(()=>{
+                    const recQuotaMap={};
+                    masterQuotas.forEach(q=>{
+                      if(!recQuotaMap[q.recipientId]) recQuotaMap[q.recipientId]={recipientId:q.recipientId,recipientName:q.recipientName,registrationNo:q.registrationNo,items:[]};
+                      recQuotaMap[q.recipientId].items.push(q);
+                    });
+                    const recGroups=Object.values(recQuotaMap);
+                    if(recGroups.length===0) return(
+                      <div style={{textAlign:"center",padding:"40px 20px",color:G.textLight,fontSize:12}}>
+                        신청된 한도가 없습니다.<br/><span style={{fontSize:11}}>+ 한도 추가 신청 버튼으로 추가하세요.</span>
+                      </div>
+                    );
+                    return recGroups.map(group=>{
+                      const totalApproved=group.items.filter(q=>q.status==="ACTIVE").reduce((s,q)=>s+q.totalApproved,0);
+                      const usedAmount=group.items.reduce((s,q)=>s+q.usedAmount,0);
+                      const frozenAmount=group.items.reduce((s,q)=>s+q.frozenAmount,0);
+                      const avail=Math.max(0,totalApproved-usedAmount-frozenAmount);
+                      const pct=totalApproved>0?Math.round(avail/totalApproved*100):0;
+                      const barColor=pct>=50?G.green:pct>=20?G.orange:G.red;
+                      const isExpanded=masterExpandedQuotaRecId===group.recipientId;
+                      const isFormOpen=masterQuotaFormRecId===group.recipientId;
+                      const isFirstApp=group.items.length===0;
+                      const newAmt=parseFloat(masterQuotaForm.amount)||0;
+                      return(
+                        <div key={group.recipientId} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,marginBottom:12,overflow:"hidden"}}>
+                          {/* 카드 헤더 */}
+                          <div style={{padding:"16px 18px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}
+                            onClick={()=>setMasterExpandedQuotaRecId(isExpanded?null:group.recipientId)}>
+                            <div>
+                              <div style={{fontWeight:700,fontSize:13,color:G.textDark,marginBottom:3}}>{group.recipientName}</div>
+                              <div style={{fontSize:10,color:G.textLight}}>{group.registrationNo} · USD</div>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{textAlign:"right"}}>
+                                <div style={{fontSize:10,color:G.textLight,marginBottom:1}}>잔여 한도</div>
+                                <div style={{fontSize:15,fontWeight:700,color:barColor}}>${avail.toLocaleString()}</div>
+                              </div>
+                              <span style={{color:G.textLight,fontSize:12}}>{isExpanded?"▲":"▼"}</span>
+                            </div>
+                          </div>
+
+                          {/* 요약 통계 + 프로그레스 바 */}
+                          <div style={{padding:"0 18px 14px",borderBottom:`1px solid ${G.border}`}}>
+                            <div style={{height:6,background:"#F3F4F6",borderRadius:4,overflow:"hidden",marginBottom:8}}>
+                              <div style={{height:"100%",width:`${pct}%`,background:barColor,borderRadius:4,transition:"width 0.3s"}}/>
+                            </div>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:10}}>
+                              {[["총 승인 한도",`$${totalApproved.toLocaleString()}`],["사용액",`$${usedAmount.toLocaleString()}`],["처리 중",`$${frozenAmount.toLocaleString()}`],["잔여 한도",`$${avail.toLocaleString()}`]].map(([lbl,val])=>(
+                                <div key={lbl}>
+                                  <div style={{fontSize:9,color:G.textLight,marginBottom:2}}>{lbl}</div>
+                                  <div style={{fontSize:12,fontWeight:700,color:G.textDark}}>{val}</div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{display:"flex",justifyContent:"flex-end"}}>
+                              <button onClick={e=>{e.stopPropagation();setMasterQuotaFormRecId(isFormOpen?null:group.recipientId);if(!isFormOpen)setMasterQuotaForm({docType:"Invoice",purpose:"TREASURY",recipientId:group.recipientId,amount:"",validFrom:"",validTo:"",file:null});}}
+                                style={{fontSize:10,padding:"4px 12px",borderRadius:5,border:`1px solid ${G.green}`,background:isFormOpen?G.greenLight:G.white,color:G.greenDark,cursor:"pointer",fontWeight:600}}>
+                                {isFormOpen?"접기":"+ 한도 추가 신청"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Accordion: 신청 이력 서브 테이블 */}
+                          {isExpanded&&(
+                            <div style={{padding:"12px 16px",background:"#FAFBF8"}}>
+                              <div style={{fontSize:11,fontWeight:700,color:G.textMid,marginBottom:8}}>신청 이력</div>
+                              <div style={{overflowX:"auto"}}>
+                                <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                                  <thead>
+                                    <tr style={{background:G.sidebar}}>
+                                      {["신청 번호","서류 유형","신청 한도","승인 한도","사용액","잔여","유효기간","상태","서류"].map(h=>(
+                                        <th key={h} style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:G.textMid,fontSize:10,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {group.items.map((q,qi)=>{
+                                      const itemAvail=q.status==="PENDING"?null:Math.max(0,q.totalApproved-q.usedAmount-q.frozenAmount);
+                                      const stC=q.status==="ACTIVE"?"#276749":q.status==="PENDING"?"#B45309":"#6B7280";
+                                      const stBg=q.status==="ACTIVE"?"#EBF8E1":q.status==="PENDING"?"#FFFBEB":"#F3F4F6";
+                                      const docLabel=q.purpose==="TREASURY"?"내부 자금 이동 근거":q.docType;
+                                      return(
+                                        <tr key={q.id} style={{borderBottom:`1px solid ${G.border}`,background:qi%2===0?G.white:"#FAFBF8"}}>
+                                          <td style={{padding:"8px 10px",fontWeight:600,color:G.textMid,fontFamily:"monospace"}}>QA-{String(q.id).padStart(3,"0")}</td>
+                                          <td style={{padding:"8px 10px"}}><span style={{background:"#EEF2FF",color:"#6366F1",borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700}}>{docLabel}</span></td>
+                                          <td style={{padding:"8px 10px",color:G.textMid}}>${(q.requestedAmount||q.totalApproved).toLocaleString()}</td>
+                                          <td style={{padding:"8px 10px",fontWeight:700}}>{q.status==="PENDING"?<span style={{color:G.orange,fontSize:10}}>심사 중</span>:`$${q.totalApproved.toLocaleString()}`}</td>
+                                          <td style={{padding:"8px 10px",color:G.textMid}}>${q.usedAmount.toLocaleString()}</td>
+                                          <td style={{padding:"8px 10px",fontWeight:600}}>{itemAvail==null?"—":`$${itemAvail.toLocaleString()}`}</td>
+                                          <td style={{padding:"8px 10px",color:G.textLight,fontSize:10,whiteSpace:"nowrap"}}>{q.validFrom&&q.validTo?`${q.validFrom} ~ ${q.validTo}`:"—"}</td>
+                                          <td style={{padding:"8px 10px"}}><span style={{background:stBg,color:stC,borderRadius:20,padding:"2px 7px",fontWeight:700,fontSize:10}}>{q.status}</span></td>
+                                          <td style={{padding:"8px 10px"}}>
+                                            <button onClick={()=>T("📄 서류 미리보기 (Mock)")} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer"}}>📄 보기</button>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                  <tfoot>
+                                    <tr style={{background:"#F7FBF4",fontWeight:700}}>
+                                      <td colSpan={2} style={{padding:"8px 10px",fontSize:11,color:G.textMid}}>합계</td>
+                                      <td style={{padding:"8px 10px"}}/>
+                                      <td style={{padding:"8px 10px",fontWeight:700}}>${totalApproved.toLocaleString()}</td>
+                                      <td style={{padding:"8px 10px",fontWeight:700}}>${usedAmount.toLocaleString()}</td>
+                                      <td style={{padding:"8px 10px",fontWeight:700,color:barColor}}>${avail.toLocaleString()}</td>
+                                      <td colSpan={3}/>
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Accordion: 한도 신청 폼 */}
+                          {isFormOpen&&(
+                            <div style={{padding:"14px 16px",background:G.greenLight,borderTop:`1px solid ${G.border}`}} onClick={e=>e.stopPropagation()}>
+                              {isFirstApp?(
+                                <div style={{background:"#EBF4FF",border:"1px solid #BEE3F8",borderRadius:7,padding:"8px 12px",marginBottom:12,fontSize:11,color:"#2B6CB0"}}>
+                                  📋 이 수취인에 대한 첫 번째 한도 신청입니다.
+                                </div>
+                              ):(
+                                <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:7,padding:"8px 12px",marginBottom:12,fontSize:11,color:G.greenDark}}>
+                                  ➕ 기존 한도에 추가 승인됩니다. 승인 시 총 승인 한도가 증가합니다.
+                                </div>
+                              )}
+                              {!isFirstApp&&(
+                                <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:7,padding:"10px 14px",marginBottom:12}}>
+                                  {[["현재 총 승인 한도",`$${totalApproved.toLocaleString()} USD`],["잔여 한도",`$${avail.toLocaleString()} USD`],["이번 신청 후 예상 총 한도",`$${(totalApproved+newAmt).toLocaleString()} USD`]].map(([k,v],ki)=>(
+                                    <div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:ki<2?4:0}}>
+                                      <span style={{fontSize:11,color:G.textMid}}>{k}</span>
+                                      <span style={{fontSize:11,fontWeight:ki===2?700:600,color:ki===2?G.greenDark:G.textDark}}>{v}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <Lbl t="서류 유형 *"/>
+                              <div style={{display:"flex",gap:7,marginBottom:10}}>
+                                {["Invoice","Contract"].map(dt=>(
+                                  <button key={dt} onClick={()=>setMasterQuotaForm(c=>({...c,docType:dt}))}
+                                    style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${masterQuotaForm.docType===dt?G.green:G.border}`,background:masterQuotaForm.docType===dt?G.greenLight:G.white,fontWeight:masterQuotaForm.docType===dt?700:400,cursor:"pointer",color:masterQuotaForm.docType===dt?G.greenDark:G.textMid,fontSize:12}}>
+                                    {dt}
+                                  </button>
+                                ))}
+                              </div>
+                              <Lbl t="신청 한도 (USD) *"/>
+                              <Inp v={masterQuotaForm.amount} set={v=>setMasterQuotaForm(c=>({...c,amount:v}))} ph="0.01 ~ 999,999,999.99"/>
+                              <div style={{display:"flex",gap:8}}>
+                                <div style={{flex:1}}><Lbl t="유효 시작일"/><Inp v={masterQuotaForm.validFrom} set={v=>setMasterQuotaForm(c=>({...c,validFrom:v}))} ph="yyyy-MM-dd"/></div>
+                                <div style={{flex:1}}><Lbl t="유효 종료일"/><Inp v={masterQuotaForm.validTo} set={v=>setMasterQuotaForm(c=>({...c,validTo:v}))} ph="yyyy-MM-dd"/></div>
+                              </div>
+                              <Lbl t="서류 업로드 (PDF/JPG/PNG, max 10MB) *"/>
+                              <div style={{border:`1.5px dashed ${G.border}`,borderRadius:7,padding:"14px",textAlign:"center",marginBottom:12,background:G.white,fontSize:11,color:G.textMid,cursor:"pointer"}}
+                                onClick={()=>document.getElementById(`qf-master-${group.recipientId}`).click()}>
+                                {masterQuotaForm.file?`📎 ${masterQuotaForm.file}`:"파일 선택 또는 드래그 앤 드롭"}
+                                <input id={`qf-master-${group.recipientId}`} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                                  onChange={e=>{if(e.target.files[0])setMasterQuotaForm(c=>({...c,file:e.target.files[0].name}));}}/>
+                              </div>
+                              <div style={{display:"flex",gap:7}}>
+                                <Btn t="신청 완료" sm onClick={()=>{
+                                  if(!masterQuotaForm.amount){T("⚠️ 한도 금액을 입력하세요");return;}
+                                  if(!masterQuotaForm.file){T("⚠️ 서류를 업로드하세요");return;}
+                                  const nAmt=parseFloat(masterQuotaForm.amount)||0;
+                                  setMasterQuotas(qs=>[...qs,{id:Date.now(),recipientId:group.recipientId,recipientName:group.recipientName,registrationNo:group.registrationNo,docType:masterQuotaForm.docType,purpose:masterQuotaForm.purpose||"TREASURY",requestedAmount:nAmt,totalApproved:nAmt,usedAmount:0,frozenAmount:0,status:"PENDING",validFrom:masterQuotaForm.validFrom,validTo:masterQuotaForm.validTo}]);
+                                  setMasterQuotaFormRecId(null);
+                                  T("✅ 한도 신청이 제출되었습니다. 승인 후 총 한도에 합산됩니다.");
+                                }}/>
+                                <Btn t="취소" sm color={G.textLight} onClick={()=>setMasterQuotaFormRecId(null)}/>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               )}
             </div>
