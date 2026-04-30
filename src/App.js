@@ -17,27 +17,38 @@ const G = {
   border:"#E2EFD9",red:"#E53E3E",orange:"#F5A623",blue:"#2775CA",blueLight:"#EEF6FF",
 };
 
-const NETWORKS = { USD:[], HKD:[], USDC:["ERC-20","Base","SPL"], USDT:["ERC-20","TRC-20","SPL"] };
+const NETWORKS = { USD:[], HKD:[], USDC:["ERC-20","SPL"], USDT:["ERC-20","TRC-20","SPL"] };
 const NET_COLOR = {
   "ERC-20":    { bg:"#EDE9FE", text:"#7C3AED" },
-  "Base":      { bg:"#DBEAFE", text:"#1D4ED8" },
   "TRC-20":    { bg:"#CCFBF1", text:"#0D9488" },
   "SPL":       { bg:"#FFF7ED", text:"#C2410C" },
-  "SWIFT":     { bg:"#F0FDF4", text:"#166634" },
+  "SWIFT":     { bg:"#F0FDF4", text:"#166534" },
   "Local Bank":{ bg:"#EFF6FF", text:"#1D4ED8" },
+  "RTGS":      { bg:"#EFF6FF", text:"#1D4ED8" },
+  "FPS":       { bg:"#FDF4FF", text:"#7E22CE" },
   "HKD Local": { bg:"#FDF4FF", text:"#7E22CE" },
   "":          { bg:"#F3F4F6", text:"#6B7280" },
 };
 
 const ACCOUNTS = {
-  Hanpass:{ id:"ID:17615-HNP", email:"admin@hanpass.com", kybStatus:"ACTIVE",   kybInfo:{name:"Hanpass Corp.",  registrationNo:"110-81-55000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:12450}, USDC:{"ERC-20":5200.50,"Base":3120.00,"SPL":1800.00}, USDT:{"ERC-20":2100.00,"TRC-20":3000.00,"SPL":950.00} } },
-  Sentbe: { id:"ID:17616-STB", email:"admin@sentbe.com",  kybStatus:"INACTIVE", kybInfo:null,                                                                                                    balances:{ USD:{total:3200},  USDC:{"ERC-20":900.75,"Base":600.00,"SPL":420.00},   USDT:{"ERC-20":480.00,"TRC-20":500.00,"SPL":210.00} } },
-  MOIN:   { id:"ID:17617-MON", email:"admin@moin.money",  kybStatus:"ACTIVE",   kybInfo:{name:"MOIN Corp.",     registrationNo:"110-81-77000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:7800},  USDC:{"ERC-20":2000.00,"Base":2200.00,"SPL":980.00}, USDT:{"ERC-20":1100.50,"TRC-20":1200.00,"SPL":630.00} } },
+  Hanpass:{ id:"ID:17615-HNP", email:"admin@hanpass.com", kybStatus:"ACTIVE",   kybInfo:{name:"Hanpass Corp.",  registrationNo:"110-81-55000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:12450}, USDC:{"ERC-20":5200.50,"SPL":1800.00}, USDT:{"ERC-20":2100.00,"TRC-20":3000.00,"SPL":950.00} } },
+  Sentbe: { id:"ID:17616-STB", email:"admin@sentbe.com",  kybStatus:"INACTIVE", kybInfo:null,                                                                                                    balances:{ USD:{total:3200},  USDC:{"ERC-20":900.75,"SPL":420.00},   USDT:{"ERC-20":480.00,"TRC-20":500.00,"SPL":210.00} } },
+  MOIN:   { id:"ID:17617-MON", email:"admin@moin.money",  kybStatus:"ACTIVE",   kybInfo:{name:"MOIN Corp.",     registrationNo:"110-81-77000", country:"KR", address:"Seoul, Republic of Korea"}, balances:{ USD:{total:7800},  USDC:{"ERC-20":2000.00,"SPL":980.00}, USDT:{"ERC-20":1100.50,"TRC-20":1200.00,"SPL":630.00} } },
 };
-const MASTER_BAL = { USD:{total:52340}, USDC:{"ERC-20":18600,"Base":12600,"SPL":3200}, USDT:{"ERC-20":9400,"TRC-20":9500,"SPL":2100} };
+const MASTER_BAL = { USD:{total:52340}, USDC:{"ERC-20":18600,"SPL":3200}, USDT:{"ERC-20":9400,"TRC-20":9500,"SPL":2100} };
 
 // ── TX_DATA (확장 필드 포함) ──────────────────────────────────────────
 const TX_DATA = [
+  {
+    id:"TX-042", date:"2026-04-30 09:05", type:"Deposit", acct:"Hanpass",
+    recipientName:"Hanpass Corp.", recipientAccount:"SGB Bank **** 9901", recipientBank:"SGB Bank",
+    amt:"+1,000", cur:"USD", network:"SWIFT", st:"Pending",
+    txid:"SWIFT-REF-998877",
+    fromName:"Hanpass Corp.", fromAccount:"하나은행 **** 3310", fromBank:"하나은행",
+    fromAmt:"1,000", fromCur:"USD", fromNet:"",
+    fxRate:null, fxFee:null,
+    reference:"ID:17615-HNP",
+  },
   {
     id:"TX-041", date:"2026-03-29 14:32", type:"Payout", acct:"Hanpass",
     recipientName:"Kim Jae-won", recipientAccount:"Citibank **** 4821", recipientBank:"Citibank",
@@ -46,7 +57,7 @@ const TX_DATA = [
     fromName:"Hanpass Corp.", fromAccount:"SGB Bank **** 9901", fromBank:"SGB Bank",
     fromAmt:"1,200", fromCur:"USD", fromNet:null,
     fxRate:null, fxFee:null,
-    purpose:"TREASURY",
+    purpose:"TREASURY", payMode:"RECIPIENT_BEAR",
   },
   {
     id:"TX-040", date:"2026-03-28 09:15", type:"Convert", acct:"Sentbe",
@@ -60,12 +71,12 @@ const TX_DATA = [
   {
     id:"TX-039", date:"2026-03-27 17:50", type:"Payout", acct:"MOIN",
     recipientName:"0xF3a...c91B", recipientAccount:"0xF3a9...c91B", recipientBank:null,
-    amt:"-800", cur:"USDC", network:"Base", st:"Pending",
+    amt:"-800", cur:"USDC", network:"ERC-20", st:"Pending",
     txid:"Pending...",
     fromName:"MOIN Corp.", fromAccount:"SGB Bank **** 7712", fromBank:"SGB Bank",
     fromAmt:"800", fromCur:"USDC", fromNet:null,
     fxRate:null, fxFee:null,
-    purpose:"GOODS_SERVICES",
+    purpose:"GOODS_SERVICES", payMode:"PAYER_BEAR",
   },
   {
     id:"TX-038", date:"2026-03-26 11:20", type:"Deposit", acct:"Hanpass",
@@ -85,7 +96,7 @@ const TX_DATA = [
     fromName:"Sentbe Corp.", fromAccount:"SGB Bank **** 4455", fromBank:"SGB Bank",
     fromAmt:"2,500", fromCur:"USD", fromNet:null,
     fxRate:null, fxFee:null,
-    purpose:"COMMISSION",
+    purpose:"COMMISSION", payMode:"RECIPIENT_BEAR",
   },
   {
     id:"TX-036", date:"2026-03-24 13:05", type:"Payout", acct:"MOIN",
@@ -130,7 +141,7 @@ const TX_DATA = [
   {
     id:"TX-032", date:"2026-03-20 14:20", type:"Convert", acct:"MOIN",
     recipientName:"—", recipientAccount:null, recipientBank:null,
-    amt:"+1,500", cur:"USDC", network:"Base", st:"Completed",
+    amt:"+1,500", cur:"USDC", network:"SPL", st:"Completed",
     txid:"0x8899...CCEE",
     fromName:null, fromAccount:null, fromBank:null,
     fromAmt:"1,500", fromCur:"USDT", fromNet:"ERC-20",
@@ -169,7 +180,7 @@ const MASTER_CV_DATA = [
   {
     id:"MCV-004", date:"2026-03-20 16:25", type:"Convert", acct:"Master",
     recipientName:"—", recipientAccount:null, recipientBank:null,
-    amt:"+1,996", cur:"USDC", network:"Base", st:"Pending",
+    amt:"+1,996", cur:"USDC", network:"SPL", st:"Pending",
     txid:"Pending...",
     fromName:null, fromAccount:null, fromBank:null,
     fromAmt:"2,000", fromCur:"USDT", fromNet:"ERC-20",
@@ -184,13 +195,14 @@ const TR = [
   {id:"TR-009",date:"2026-03-25",from:"Master", to:"Hanpass",amt:"1,000",cur:"USD", network:"",      st:"Completed",note:"Operational fund"},
 ];
 
+const PLAN_PRICE = { Starter: 1000000, Standard: 2000000, Enterprise: 5000000 };
 const INIT_CLIENTS = [
-  {id:"SUB-001",name:"Hanpass",  email:"admin@hanpass.com",st:"Active",   created:"2026-01-10",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:false, kybStatus:"ACTIVE"},
-  {id:"SUB-002",name:"Sentbe",   email:"admin@sentbe.com", st:"Active",   created:"2026-02-03",mu:0.15,muOn:0.15,muOff:0.15,otpReq:true, locked:false, kybStatus:"INACTIVE"},
-  {id:"SUB-003",name:"MOIN",     email:null,               st:"Active",   created:"2026-02-20",mu:0.10,muOn:0.10,muOff:0.10,otpReq:false,locked:false, kybStatus:"ACTIVE"},
-  {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",mu:0.20,muOn:0.20,muOff:0.20,otpReq:false,locked:false, kybStatus:"REJECTED",
+  {id:"SUB-001",name:"Hanpass",  email:"admin@hanpass.com",st:"Active",   created:"2026-01-10",otpReq:false,locked:false, kybStatus:"ACTIVE",   plan:"Standard",  monthlyFee:2000000, billStatus:"PAID",     contractStart:"2026-01-10", contractEnd:""},
+  {id:"SUB-002",name:"Sentbe",   email:"admin@sentbe.com", st:"Active",   created:"2026-02-03",otpReq:true, locked:false, kybStatus:"INACTIVE", plan:"Starter",   monthlyFee:1000000, billStatus:"PENDING",  contractStart:"2026-02-03", contractEnd:""},
+  {id:"SUB-003",name:"MOIN",     email:null,               st:"Active",   created:"2026-02-20",otpReq:false,locked:false, kybStatus:"ACTIVE",   plan:"Enterprise",monthlyFee:5000000, billStatus:"OVERDUE",  contractStart:"2026-02-20", contractEnd:""},
+  {id:"SUB-004",name:"WireKorea",email:"admin@wirek.com",  st:"Suspended",created:"2026-03-01",otpReq:false,locked:false, kybStatus:"REJECTED", plan:"Standard",  monthlyFee:2000000, billStatus:"NONE",     contractStart:"2026-03-01", contractEnd:"",
     kybData:{enterpriseName:"와이어코리아 주식회사",enterpriseNameEn:"WireKorea Corp.",registrationNumber:"220-81-44321",enterpriseType:"주식회사",establishmentDate:"2021-06-15",officeCountry:"KR",officialAddress:"서울시 강남구 테헤란로 123",registrationAddress:"서울시 강남구 테헤란로 123",registrationCity:"Seoul",industry:"핀테크/송금",fundsSource:"영업 수익",accountPurpose:"해외 송금",tradingFrequency:"월 6~20회",transactionAmount:"$10,001 ~ $50,000",bearerShare:"N",email:"admin@wirek.com",ip:"203.0.113.55",deviceId:"DEV-WK9988"}},
-  {id:"SUB-005",name:"PayTech",  email:"admin@paytech.com",st:"Active",   created:"2026-04-01",mu:0.12,muOn:0.12,muOff:0.12,otpReq:false,locked:false, kybStatus:"PROCESSING"},
+  {id:"SUB-005",name:"PayTech",  email:"admin@paytech.com",st:"Active",   created:"2026-04-01",otpReq:false,locked:false, kybStatus:"PROCESSING",plan:"Starter",   monthlyFee:1000000, billStatus:"NONE",     contractStart:"2026-04-01", contractEnd:""},
 ];
 
 const INIT_RECIP = [
@@ -198,7 +210,7 @@ const INIT_RECIP = [
   {id:2,name:"Tokyo Trading Ltd", type:"Bank",  detail:"MUFG **** 3390",                                         cur:"USD",  network:"SWIFT",  counterpartyStatus:"PENDING",  registrationNo:"1234567890",   country:"JP", address:"Tokyo, Japan",    alias:"Tokyo Trade",bankName:"MUFG Bank", swiftCode:"BOTKJPJT"},
   {id:3,name:"USDC ERC-20 Wallet",type:"Crypto",detail:"0xA3f9b2c7d1e8f6a5B4C3D2E1F0a9b8c7d6e5f4A3c91B",        cur:"USDC", network:"ERC-20", counterpartyStatus:"ACTIVE",   registrationNo:"US123456",     country:"US", address:"New York, USA",   alias:"",          bankName:"",          swiftCode:""},
   {id:4,name:"USDT TRC-20 Wallet",type:"Crypto",detail:"TRXbc1qxy2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8pz09w",      cur:"USDT", network:"TRC-20", counterpartyStatus:"INACTIVE", registrationNo:"SG987654",     country:"SG", address:"Singapore",       alias:"",          bankName:"",          swiftCode:""},
-  {id:5,name:"USDC Base Wallet",  type:"Crypto",detail:"0xB9d3e4f5a6b7c8d9E0F1A2B3C4D5E6F7A8B9C0D1E2F3f44A",    cur:"USDC", network:"Base",   counterpartyStatus:"PENDING",  registrationNo:"HK112233",     country:"HK", address:"Hong Kong",       alias:"",          bankName:"",          swiftCode:""},
+  {id:5,name:"USDC SPL Wallet",   type:"Crypto",detail:"7sP1XK9aB2cD3eF4gH5iJ6kL7mN8oP9qR0sT1uV2wX3yZ",          cur:"USDC", network:"SPL",    counterpartyStatus:"PENDING",  registrationNo:"HK112233",     country:"HK", address:"Hong Kong",       alias:"",          bankName:"",          swiftCode:""},
 ];
 
 const INIT_QUOTA = [
@@ -217,7 +229,6 @@ const MASTER_DEPOSIT = {
   crypto:{
     USDC:[
       {network:"ERC-20", address:"0x1A2B3C4D5E6F7890abcdef1234567890ABCDEF12"},
-      {network:"Base",   address:"0xBASE1234abcdef5678ABCDEF9012345678901234"},
       {network:"SPL",    address:"MSTRspl1111AAAAAAbbbbbbCCCCCCddddddEEEEEE"},
     ],
     USDT:[
@@ -237,7 +248,6 @@ const SUB_DEPOSIT = {
     crypto:{
       USDC:[
         {network:"ERC-20",address:"0xHNP_ERC20_usdc_1234567890abcdef12345678"},
-        {network:"Base",  address:"0xHNP_BASE_usdc_abcdef1234567890ABCDEF12"},
         {network:"SPL",   address:"HNPspl1111AAAAbbbbCCCCddddEEEEffffGGGGhh"},
       ],
       USDT:[
@@ -255,7 +265,6 @@ const SUB_DEPOSIT = {
     crypto:{
       USDC:[
         {network:"ERC-20",address:"0xSTB_ERC20_usdc_abcdef9876543210ABCDEF98"},
-        {network:"Base",  address:"0xSTB_BASE_usdc_9876543210abcdefABCDEF98"},
         {network:"SPL",   address:"STBspl1111QQQQrrrrSSSSttttuuuuVVVVwwwwXX"},
       ],
       USDT:[
@@ -273,7 +282,6 @@ const SUB_DEPOSIT = {
     crypto:{
       USDC:[
         {network:"ERC-20",address:"0xMON_ERC20_usdc_1111222233334444AAAABBBB"},
-        {network:"Base",  address:"0xMON_BASE_usdc_AAAABBBB1111222233334444"},
         {network:"SPL",   address:"MONspl1111DDDDeeeeFFFfggggHHHHiiii3333JJ"},
       ],
       USDT:[
@@ -285,7 +293,14 @@ const SUB_DEPOSIT = {
   },
 };
 
-const stColor = s => s==="Completed"||s==="Active"?"#4CAF2A":s==="Pending"||s==="Suspended"?"#F5A623":"#E53E3E";
+const stColor = s => {
+  if(s==="Completed"||s==="Active") return "#4CAF2A";
+  if(s==="Processing"||s==="Created"||s==="Confirmed"||s==="Reviewed") return "#1D4ED8";
+  if(s==="Pending"||s==="Suspended") return "#F5A623";
+  if(s==="Review"||s==="Frozen"||s==="Mismatch"||s==="Rejected") return "#991B1B";
+  if(s==="Reversed"||s==="Failed"||s==="Expired") return "#6B7280";
+  return "#E53E3E";
+};
 function totalBal(b){ return b.total!==undefined ? b.total : Object.values(b).reduce((a,v)=>a+v,0); }
 
 // ── UI ATOMS ──────────────────────────────────────────────────────
@@ -458,9 +473,15 @@ function PanelStBadge({st}){
   const MAP={
     "Completed":{bg:"#EBF8E1",text:"#276749"},
     "Processing":{bg:"#DBEAFE",text:"#1D4ED8"},
+    "Created":{bg:"#DBEAFE",text:"#1D4ED8"},
+    "Confirmed":{bg:"#DBEAFE",text:"#1D4ED8"},
+    "Reviewed":{bg:"#DBEAFE",text:"#1D4ED8"},
     "Pending":{bg:"#FFFBEB",text:"#B45309"},
     "Review":{bg:"#FEE2E2",text:"#991B1B"},
     "Frozen":{bg:"#FEE2E2",text:"#991B1B"},
+    "Mismatch":{bg:"#FEF2F2",text:"#DC2626"},
+    "Rejected":{bg:"#FEE2E2",text:"#991B1B"},
+    "Reversed":{bg:"#F3F4F6",text:"#6B7280"},
     "Failed":{bg:"#F3F4F6",text:"#6B7280"},
     "Expired":{bg:"#F3F4F6",text:"#6B7280"},
   };
@@ -486,13 +507,14 @@ function CopyBtn({text,disabled=false}){
   );
 }
 
-function OrderSidePanel({tx,onClose,isMaster=false}){
+function OrderSidePanel({tx,onClose,isMaster=false,onManualConvert}){
   if(!tx) return null;
   const isConvert=tx.type==="Convert";
   const isPayout =tx.type==="Payout";
   const isDeposit=tx.type==="Deposit";
   const isCrypto=EXPLORER_URL[tx.network]!=null;
-  const NET_GAS={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
+  const isFiatPayin=isDeposit&&!isCrypto;
+  const isPendingFiatPayin=isFiatPayin&&tx.st==="Pending";
   const rawAmt=parseFloat((tx.amt||"0").replace(/,/g,"").replace(/-/g,""))||0;
   const hashReady=tx.txHash&&tx.st!=="Pending"&&tx.st!=="Processing";
 
@@ -550,18 +572,16 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
                 <div style={{fontSize:18,fontWeight:700,color:"#4CAF2A"}}>{tx.amt} {tx.cur}</div>
               </div>
 
-              {/* 수수료 */}
+              {/* CONVERSION_FEE (환율에 내재) */}
               {(()=>{
-                const isOnRamp=["USD","HKD"].includes(tx.fromCur)&&["USDC","USDT"].includes(tx.cur);
-                const feeLabel=isOnRamp?"On-ramp Fee":"Off-ramp Fee";
-                let feeUsdStr="—";
-                if(tx.fxFee&&tx.fxFee.includes("총")){const m=tx.fxFee.match(/총 ([\d.]+)/);if(m)feeUsdStr=`$${m[1]} USD`;}
+                let feeAmt="—";
+                if(tx.fxFee&&tx.fxFee.includes("총")){const m=tx.fxFee.match(/총 ([\d.]+)/);if(m)feeAmt=`${m[1]} ${tx.fromCur}`;}
                 return(
                   <div style={{background:"#F7FBF4",border:"1px solid #E2EFD9",borderRadius:10,padding:"12px 16px"}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:8}}>수수료</div>
+                    <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:8}}>OSL Fee</div>
                     <div style={{display:"flex",justifyContent:"space-between"}}>
-                      <span style={{fontSize:11,color:"#555"}}>{feeLabel}</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"#F5A623"}}>{feeUsdStr}</span>
+                      <span style={{fontSize:11,color:"#555"}}>CONVERSION_FEE</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"#F5A623"}}>{feeAmt} (0.2% · 환율에 내재)</span>
                     </div>
                   </div>
                 );
@@ -602,31 +622,79 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
                 <div style={{fontSize:13,fontWeight:700,color:"#1A1A1A"}}>{tx.fromAmt||tx.amt.replace("-","")} {tx.fromCur||tx.cur}</div>
               </div>
 
-              {/* 송금 목적 */}
-              {tx.purpose&&(
+              {/* 송금 목적 + Pay Mode */}
+              {(tx.purpose||tx.payMode)&&(
                 <div style={{background:"#FFFFFF",border:"1px solid #E2EFD9",borderRadius:10,padding:"12px 16px"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:6}}>송금 목적</div>
-                  <span style={{fontSize:11,fontWeight:700,color:"#1A1A1A",background:"#F7FBF4",borderRadius:6,padding:"3px 8px"}}>{tx.purpose}</span>
-                </div>
-              )}
-
-              {/* 수수료 */}
-              {tx.st!=="Failed"&&(
-                <div style={{background:"#EEF6FF",border:"1px solid #BEE3F8",borderRadius:10,padding:"12px 16px"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:8}}>수수료</div>
-                  {isCrypto?(
-                    <div style={{display:"flex",justifyContent:"space-between"}}>
-                      <span style={{fontSize:11,color:"#555"}}>네트워크 수수료</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"#F5A623"}}>{NET_GAS[tx.network]||"—"} USD <span style={{fontWeight:400,color:"#999",fontSize:10}}>(OSL 실시간)</span></span>
-                    </div>
-                  ):(
-                    <div style={{display:"flex",justifyContent:"space-between"}}>
-                      <span style={{fontSize:11,color:"#555"}}>Wire Fee</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"#F5A623"}}>{rawAmt>=100000?"면제 ($100K 이상)":"$35.00 USD"}</span>
-                    </div>
+                  {tx.purpose&&(
+                    <>
+                      <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:6}}>송금 목적</div>
+                      <span style={{fontSize:11,fontWeight:700,color:"#1A1A1A",background:"#F7FBF4",borderRadius:6,padding:"3px 8px"}}>{tx.purpose}</span>
+                    </>
+                  )}
+                  {tx.payMode&&(
+                    <>
+                      <div style={{fontSize:10,fontWeight:700,color:"#999",textTransform:"uppercase",marginTop:tx.purpose?10:0,marginBottom:6}}>Pay Mode</div>
+                      <span style={{fontSize:11,fontWeight:700,borderRadius:6,padding:"3px 8px",
+                        background:tx.payMode==="PAYER_BEAR"?"#DBEAFE":"#EDE9FE",
+                        color:tx.payMode==="PAYER_BEAR"?"#1D4ED8":"#7C3AED"}}>
+                        {tx.payMode==="PAYER_BEAR"?"송금인 부담 (PAYER_BEAR)":"수취인 부담 (RECIPIENT_BEAR)"}
+                      </span>
+                    </>
                   )}
                 </div>
               )}
+
+              {/* REVIEW / REVERSED / REJECTED 추가 정보 (Payout) */}
+              {(tx.st==="Review"||tx.st==="Reversed"||tx.st==="Rejected")&&(
+                <div style={{background:tx.st==="Reversed"?"#F3F4F6":"#FEF2F2",border:`1px solid ${tx.st==="Reversed"?"#D1D5DB":"#FECACA"}`,borderRadius:10,padding:"12px 16px"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:tx.st==="Reversed"?"#6B7280":"#991B1B",textTransform:"uppercase",marginBottom:6}}>
+                    {tx.st==="Review"?"🔎 OSL AML 심사 중":tx.st==="Reversed"?"↩ 환불 완료":"❌ 거절됨"}
+                  </div>
+                  <div style={{fontSize:11,color:tx.st==="Reversed"?"#374151":"#7F1D1D",lineHeight:1.6}}>
+                    {tx.tag||(tx.st==="Review"?"통상 10분~수시간 소요됩니다.":tx.st==="Reversed"?"이 거래는 환불되어 잔액으로 복귀되었습니다.":"이 거래는 거절되었습니다.")}
+                  </div>
+                </div>
+              )}
+              {/* OSL 5종 Fee Breakdown */}
+              {tx.st!=="Failed"&&tx.st!=="Reversed"&&tx.st!=="Rejected"&&(()=>{
+                const platRate=0.0004;
+                const platFee=(rawAmt*platRate).toFixed(6);
+                const totalSubtracted=(rawAmt+parseFloat(platFee)).toFixed(6);
+                const conversionFee=(rawAmt*0.002).toFixed(2);
+                const channelFee=rawAmt>=100000?0:35;
+                return(
+                  <div style={{background:"#EEF6FF",border:"1px solid #BEE3F8",borderRadius:10,padding:"12px 16px"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:8}}>OSL Fee Breakdown</div>
+                    {isCrypto?(<>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:"#555"}}>PLAT_PAYOUT</span>
+                        <span style={{fontSize:11,fontWeight:700,color:"#F5A623"}}>{platFee} {tx.cur} (0.04% · 월결제)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:"#555"}}>CHANNEL_CRYPTO_PAYOUT</span>
+                        <span style={{fontSize:11,fontWeight:700,color:"#276749"}}>$0 (무료)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",paddingTop:6,borderTop:"1px solid #BEE3F8"}}>
+                        <span style={{fontSize:11,fontWeight:700,color:"#1A1A1A"}}>Total Subtracted</span>
+                        <span style={{fontSize:12,fontWeight:700,color:"#1A1A1A"}}>{totalSubtracted} {tx.cur}</span>
+                      </div>
+                    </>):(<>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:"#555"}}>PLAT_FIAT_PAYOUT</span>
+                        <span style={{fontSize:11,fontWeight:700,color:"#F5A623"}}>0.04% (월결제)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:"#555"}}>CONVERSION_FEE</span>
+                        <span style={{fontSize:11,fontWeight:700,color:"#F5A623"}}>{conversionFee} USD (0.2% · 환율 내재)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between"}}>
+                        <span style={{fontSize:11,color:"#555"}}>CHANNEL_FIAT_PAYOUT</span>
+                        <span style={{fontSize:11,fontWeight:700,color:channelFee===0?"#276749":"#F5A623"}}>{channelFee===0?"$0 (Local 또는 면제)":"$35 (SWIFT)"}</span>
+                      </div>
+                    </>)}
+                  </div>
+                );
+              })()}
             </>
           )}
 
@@ -664,6 +732,32 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
                 )}
                 <div style={{fontSize:13,fontWeight:700,color:"#1A1A1A"}}>{tx.fromAmt} {tx.fromCur||tx.cur}</div>
               </div>
+
+              {/* PENDING + Fiat → Manual Deposit Convert 버튼 */}
+              {isPendingFiatPayin&&onManualConvert&&(
+                <div style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:10,padding:"12px 16px"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#92400E",marginBottom:6}}>⏳ Fiat 입금 대기 중 — Convert 필요</div>
+                  <div style={{fontSize:10,color:"#92400E",marginBottom:10,lineHeight:1.5}}>
+                    Fiat 입금이 도착했습니다. USDC/USDT로 변환하면 잔액에 반영됩니다 (Quote Lock 60초).
+                  </div>
+                  <button onClick={()=>onManualConvert(tx)}
+                    style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:"#92400E",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                    💱 Convert to USDC/USDT
+                  </button>
+                </div>
+              )}
+
+              {/* MISMATCH / REJECTED / REVIEW / FROZEN 추가 정보 */}
+              {(tx.st==="Mismatch"||tx.st==="Rejected"||tx.st==="Review"||tx.st==="Frozen")&&(
+                <div style={{background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:10,padding:"12px 16px"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#991B1B",textTransform:"uppercase",marginBottom:6}}>
+                    {tx.st==="Mismatch"?"⚠ 금액 불일치":tx.st==="Rejected"?"❌ 거절됨":tx.st==="Review"?"🔎 OSL AML 심사 중":"❄ 동결 (Frozen)"}
+                  </div>
+                  <div style={{fontSize:11,color:"#7F1D1D",lineHeight:1.6}}>
+                    {tx.tag||(tx.st==="Mismatch"?"입금 금액이 예상 금액과 다릅니다. 운영팀에 문의하세요.":tx.st==="Rejected"?"이 거래는 거절되었습니다.":tx.st==="Review"?"통상 10분~수시간 소요됩니다.":"이 거래는 일시 동결 상태입니다.")}
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -729,7 +823,7 @@ function OrderSidePanel({tx,onClose,isMaster=false}){
 }
 
 // ── TX TABLE (타입별 행 레이아웃 + 클릭 → 사이드 패널) ──────────────
-function TxTable({rows,showAcct,onSelect}){
+function TxTable({rows,showAcct,onSelect,onManualConvert}){
   return(
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
       {rows.map(r=>{
@@ -806,6 +900,12 @@ function TxTable({rows,showAcct,onSelect}){
               <Badge t={r.st} color={stColor(r.st)}/>
               {showAcct&&<span style={{fontSize:10,fontWeight:700,color:G.textMid}}>{r.acct}</span>}
               <span style={{fontSize:10,color:G.textLight}}>{r.id} · {r.date}</span>
+              {isDeposit&&r.st==="Pending"&&!EXPLORER_URL[r.network]&&onManualConvert&&(
+                <button onClick={e=>{e.stopPropagation();onManualConvert(r);}}
+                  style={{marginTop:2,fontSize:10,padding:"3px 8px",borderRadius:5,border:"1px solid #92400E",background:"#FFFBEB",color:"#92400E",cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>
+                  💱 Convert
+                </button>
+              )}
             </div>
 
           </div>
@@ -913,7 +1013,6 @@ function CryptoAddressRow({address}){
 // ── 익스플로러 링크 ────────────────────────────────────────────────────
 const EXPLORER_URL={
   "ERC-20":"https://etherscan.io/tx/",
-  "Base":"https://basescan.org/tx/",
   "TRC-20":"https://tronscan.org/#/transaction/",
   "SPL":"https://solscan.io/tx/",
 };
@@ -945,7 +1044,7 @@ function ExplorerLink({txid,network}){
 }
 
 // ── Deposit Instruction 공용 컴포넌트 ────────────────────────────────
-function DepositInstruction({isMaster, acctName}){
+function DepositInstruction({isMaster, acctName, onCreateVA}){
   const [tab,setTab]=useState("Fiat");
   const [cryptoCur,setCryptoCur]=useState("USDC");
   const [fiatCur,setFiatCur]=useState("USD");
@@ -962,7 +1061,7 @@ function DepositInstruction({isMaster, acctName}){
   const activeFiat    = Array.isArray(activeFiatArr) ? activeFiatArr.find(f=>f.currency===fiatCur)||activeFiatArr[0] : activeFiatArr;
   const activeCrypto  = isMaster&&subTab!=="Master" ? SUB_DEPOSIT[subTab]?.crypto : cryptoData;
 
-  const netColors={"ERC-20":NET_COLOR["ERC-20"],"Base":NET_COLOR["Base"],"TRC-20":NET_COLOR["TRC-20"],"SPL":NET_COLOR["SPL"]};
+  const netColors={"ERC-20":NET_COLOR["ERC-20"],"TRC-20":NET_COLOR["TRC-20"],"SPL":NET_COLOR["SPL"]};
 
   return(
     <div style={{maxWidth:620}}>
@@ -991,14 +1090,20 @@ function DepositInstruction({isMaster, acctName}){
       {/* ── Fiat 탭 ── */}
       {tab==="Fiat"&&(
         <div>
-          {/* USD / HKD 통화 선택 */}
-          <div style={{display:"flex",gap:7,marginBottom:14}}>
+          {/* USD / HKD 통화 선택 + 새 VA 계좌 개설 */}
+          <div style={{display:"flex",gap:7,marginBottom:14,alignItems:"center"}}>
             {["USD","HKD"].map(c=>(
               <button key={c} onClick={()=>setFiatCur(c)}
                 style={{display:"flex",alignItems:"center",gap:6,padding:"7px 16px",borderRadius:9,border:`2px solid ${fiatCur===c?G.green:G.border}`,background:fiatCur===c?G.greenLight:G.white,cursor:"pointer",fontWeight:fiatCur===c?700:400,color:fiatCur===c?G.greenDark:G.textMid,fontSize:12}}>
                 {c==="USD"?<img src={usdIcon} alt="USD" style={{width:16,height:16,objectFit:"contain"}}/>:<img src={hkdIcon} alt="HKD" style={{width:16,height:16,objectFit:"contain"}}/>} {c}
               </button>
             ))}
+            {!isMaster&&onCreateVA&&(
+              <button onClick={onCreateVA}
+                style={{marginLeft:"auto",padding:"7px 14px",borderRadius:9,border:`1.5px solid ${G.green}`,background:G.green,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                + 새 VA 계좌 개설
+              </button>
+            )}
           </div>
           {activeFiat&&(
             <Card>
@@ -1389,6 +1494,15 @@ function SubDash({acctName,onLogout,onMaster}){
   const [poAmt,setPoAmt]=useState("");
   const [poCur,setPoCur]=useState("USD");
   const [poNet,setPoNet]=useState("");
+  const [poPayMode,setPoPayMode]=useState("RECIPIENT_BEAR");
+  const [poMemo,setPoMemo]=useState("");
+  const [poPurpose,setPoPurpose]=useState("GOODS_SERVICES");
+  const [poStep,setPoStep]=useState(3);
+  const [poQuoteSec,setPoQuoteSec]=useState(0);
+  const [manualConvertTx,setManualConvertTx]=useState(null);
+  const [manualConvertCur,setManualConvertCur]=useState("USDC");
+  const [manualConvertSec,setManualConvertSec]=useState(0);
+  const [vaWizard,setVaWizard]=useState(null);
   const [poOrig,setPoOrig]=useState({name:"",registrationNo:"",country:"",address:""});
   const [poFeeLoading,setPoFeeLoading]=useState(false);
   const [poGasFee,setPoGasFee]=useState(null);
@@ -1423,15 +1537,33 @@ function SubDash({acctName,onLogout,onMaster}){
     return()=>clearInterval(id);
   },[poCooldown]);
   useEffect(()=>{
+    if(poStep!==4||poQuoteSec<=0)return;
+    const id=setInterval(()=>setPoQuoteSec(s=>{if(s<=1){clearInterval(id);return 0;}return s-1;}),1000);
+    return()=>clearInterval(id);
+  },[poStep,poQuoteSec]);
+  useEffect(()=>{
+    if(!manualConvertTx||manualConvertSec<=0)return;
+    const id=setInterval(()=>setManualConvertSec(s=>{if(s<=1){clearInterval(id);return 0;}return s-1;}),1000);
+    return()=>clearInterval(id);
+  },[manualConvertTx,manualConvertSec]);
+  const openManualConvert=tx=>{setManualConvertTx(tx);setManualConvertCur("USDC");setManualConvertSec(60);};
+  const closeManualConvert=()=>{setManualConvertTx(null);setManualConvertSec(0);};
+  useEffect(()=>{
     if(poType!=="Crypto"||!poAmt||!poNet){setPoGasFee(null);setPoFeeLoading(false);setPoFeeError(false);return;}
     setPoFeeLoading(true);setPoGasFee(null);setPoFeeError(false);
-    const GAS_FEE={"ERC-20":"3.50","Base":"0.05","TRC-20":"1.00","SPL":"0.50"};
+    const GAS_FEE={"ERC-20":"3.50","TRC-20":"1.00","SPL":"0.50"};
     const t=setTimeout(()=>{setPoGasFee(GAS_FEE[poNet]||"0.05");setPoFeeLoading(false);},500);
     return()=>clearTimeout(t);
   },[poType,poAmt,poNet]);
   const account=ACCOUNTS[acct];
   const myTxAll=TX_DATA.filter(t=>t.acct===acct);
-  const filtTx=txF==="All"?myTxAll:myTxAll.filter(t=>t.st===txF);
+  const STATUS_GROUP={
+    "Completed":["Completed"],
+    "In Progress":["Created","Confirmed","Processing","Reviewed"],
+    "Review":["Review","Frozen","Pending"],
+    "Failed":["Failed","Rejected","Reversed","Mismatch","Expired"],
+  };
+  const filtTx=txF==="All"?myTxAll:myTxAll.filter(t=>STATUS_GROUP[txF]?.includes(t.st));
   const myTr=TR.filter(t=>t.from===acct||t.to===acct);
   const nav=[{g:"Transactions",items:["Balance","Orders","Transfers"]},{g:"Tools",items:["Deposit","Convert","Payout","Recipients"]}];
   const menuLabel={Balance:"Balance Overview",Orders:"Orders",Transfers:"Transfers",Deposit:"Deposit Instructions",Convert:"Convert",Payout:"Create Payout",Recipients:"Recipients"};
@@ -1449,6 +1581,7 @@ function SubDash({acctName,onLogout,onMaster}){
       if(code==="123456"){
         T(`✅ Payout ${Number(poAmt).toLocaleString()} ${poCur} 제출 완료`);
         setShowPoOtp(false);setPoAmt("");setPoRec("");setPoNet("");setPoOtp(["","","","","",""]);setPoOtpFail(0);setPoSubmitting(false);setPoGasFee(null);setPoFeeError(false);
+        setPoStep(3);setPoQuoteSec(0);setPoMemo("");setPoPayMode("RECIPIENT_BEAR");
       } else {
         const next=poOtpFail+1;
         setPoOtpFail(next);
@@ -1482,7 +1615,7 @@ function SubDash({acctName,onLogout,onMaster}){
             <div key={g} style={{marginBottom:10}}>
               <div style={{fontSize:9,color:G.textLight,fontWeight:700,textTransform:"uppercase",letterSpacing:0.6,marginBottom:3}}>{g}</div>
               {items.map(item=>(
-                <div key={item} onClick={()=>{setMenu(item);setShowSec(false);setShowPoOtp(false);setPoOtp(["","","","","",""]);setPoOtpFail(0);setPoCooldown(0);setPoSubmitting(false);}} style={{padding:"6px 8px",borderRadius:5,cursor:"pointer",marginBottom:2,background:menu===item&&!showSec?G.greenLight:"transparent",color:menu===item&&!showSec?G.greenDark:G.textMid,fontWeight:menu===item&&!showSec?600:400,fontSize:11,borderLeft:menu===item&&!showSec?`3px solid ${G.green}`:"3px solid transparent"}}>{menuLabel[item]}</div>
+                <div key={item} onClick={()=>{setMenu(item);setShowSec(false);setShowPoOtp(false);setPoOtp(["","","","","",""]);setPoOtpFail(0);setPoCooldown(0);setPoSubmitting(false);setPoStep(3);setPoQuoteSec(0);}} style={{padding:"6px 8px",borderRadius:5,cursor:"pointer",marginBottom:2,background:menu===item&&!showSec?G.greenLight:"transparent",color:menu===item&&!showSec?G.greenDark:G.textMid,fontWeight:menu===item&&!showSec?600:400,fontSize:11,borderLeft:menu===item&&!showSec?`3px solid ${G.green}`:"3px solid transparent"}}>{menuLabel[item]}</div>
               ))}
             </div>
           ))}
@@ -1537,8 +1670,25 @@ function SubDash({acctName,onLogout,onMaster}){
                 <div style={{fontSize:11,color:G.textLight}}>Available Balances</div>
               </div>
               <BalanceCards balances={account.balances}/>
+              {/* Fiat 잔액 안내 배너 — OSL VA Fiat 잔액 API 미지원 */}
+              <div style={{background:"#EFF6FF",border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:18}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#1D4ED8",marginBottom:6}}>💱 Fiat 잔액 (USD / HKD)</div>
+                <div style={{fontSize:11,color:G.textMid,lineHeight:1.7,marginBottom:10}}>
+                  Fiat 잔액은 SGB Bank 계좌에서 직접 확인하실 수 있습니다. 입금 후 <b>[Convert]</b> 버튼으로 USDT/USDC로 변환하면 본 대시보드에서 자동으로 잔액에 반영됩니다.
+                </div>
+                <div style={{display:"flex",gap:7}}>
+                  <button onClick={()=>T("📄 Bank Statement 다운로드는 Phase 2에서 제공됩니다.")}
+                    style={{padding:"6px 12px",borderRadius:7,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                    Bank Statement 다운로드
+                  </button>
+                  <button onClick={()=>setMenu("Deposit")}
+                    style={{padding:"6px 12px",borderRadius:7,border:"1px solid #1D4ED8",background:"#1D4ED8",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                    Deposit Instructions →
+                  </button>
+                </div>
+              </div>
               <div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Recent Transactions</div>
-              <TxTable rows={myTxAll.slice(0,4)} showAcct={false} onSelect={setSelectedTx}/>
+              <TxTable rows={myTxAll.slice(0,4)} showAcct={false} onSelect={setSelectedTx} onManualConvert={openManualConvert}/>
             </div>
           )}
 
@@ -1546,7 +1696,7 @@ function SubDash({acctName,onLogout,onMaster}){
             <div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{display:"flex",gap:5}}>
-                  {["All","Completed","Pending","Failed"].map(f=>(
+                  {["All","Completed","In Progress","Review","Failed"].map(f=>(
                     <button key={f} onClick={()=>setTxF(f)} style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${txF===f?G.green:G.border}`,background:txF===f?G.greenLight:G.white,color:txF===f?G.greenDark:G.textMid,fontWeight:txF===f?700:400,cursor:"pointer",fontSize:11}}>{f}</button>
                   ))}
                 </div>
@@ -1560,13 +1710,24 @@ function SubDash({acctName,onLogout,onMaster}){
                   exportCSV(rows,[{l:"TX ID",k:"id"},{l:"Date",k:"date"},{l:"Type",k:"type"},{l:"Recipient",k:"recipientName"},{l:"From Currency",k:"fromCur"},{l:"From Amount",k:"fromAmt"},{l:"To Currency",k:"cur"},{l:"To Amount",k:"amt"},{l:"Network",k:"network"},{l:"Fee (USD)",k:"feeUsd"},{l:"Status",k:"st"}],`orders_${acct}.csv`);
                 }}/>
               </div>
-              <TxTable rows={filtTx} showAcct={false} onSelect={setSelectedTx}/>
+              <TxTable rows={filtTx} showAcct={false} onSelect={setSelectedTx} onManualConvert={openManualConvert}/>
             </div>
           )}
 
           {!showSec&&menu==="Transfers"&&(
             <div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+              <div style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:10,padding:"18px 22px",marginBottom:18}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#92400E",marginBottom:8}}>🚧 Master ↔ Sub Internal Transfer 준비 중</div>
+                <div style={{fontSize:11,color:"#92400E",lineHeight:1.7}}>
+                  OSL이 Master ↔ Sub 양방향 Internal Transfer 기능을 정식 출시하면 본 화면이 활성화됩니다.<br/>
+                  그동안 입금/출금은 다음 방법을 활용해주세요:
+                  <ul style={{margin:"6px 0 0 18px",padding:0}}>
+                    <li>Deposit: SGB Bank 송금 또는 Crypto 입금</li>
+                    <li>Payout: 외부 송금 (Create Payout)</li>
+                  </ul>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16,opacity:0.55,pointerEvents:"none"}}>
                 <Card>
                   <div style={{fontWeight:700,fontSize:13,marginBottom:14}}>내부 이체</div>
                   <Lbl t="방향"/>
@@ -1617,7 +1778,7 @@ function SubDash({acctName,onLogout,onMaster}){
           )}
 
           {!showSec&&menu==="Deposit"&&(
-            <DepositInstruction isMaster={false} acctName={acct}/>
+            <DepositInstruction isMaster={false} acctName={acct} onCreateVA={()=>setVaWizard({step:1,currency:"USD",region:"HK",network:"RTGS",alias:"",purpose:"Treasury Management",volume:"$100K – $500K",confirmed:false})}/>
           )}
 
           {!showSec&&menu==="Convert"&&(
@@ -1652,26 +1813,21 @@ function SubDash({acctName,onLogout,onMaster}){
                   </div>
                 )}
                 <Lbl t="금액"/><Inp v={cvAmt} set={setCvAmt} ph="숫자 입력"/>
-                {/* 수수료 미리보기 */}
+                {/* 수수료 미리보기 (OSL 0.2% 환율 내재) */}
                 {cvAmt&&(()=>{
-                  const clientData=INIT_CLIENTS.find(c=>c.name===acct)||INIT_CLIENTS[0];
-                  const isOnRamp=["USD","HKD"].includes(cvFrom)&&["USDC","USDT"].includes(cvTo);
-                  const oslBase=isOnRamp?0:0.002;
-                  const mu=isOnRamp?(clientData.muOn||0):(clientData.muOff||0);
-                  const feeRate=oslBase+mu;
-                  const feePct=(feeRate*100).toFixed(2);
+                  const feeRate=0.002;
                   const amtNum=parseFloat(cvAmt||0);
                   const totalFee=(amtNum*feeRate).toFixed(2);
-                  const received=(amtNum*(1-feeRate)*0.9970).toFixed(2);
+                  const received=(amtNum*(1-feeRate)*0.9993).toFixed(2);
                   return(
                   <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
                       <span style={{fontSize:11,color:G.textMid}}>환율 미리보기</span>
-                      <span style={{fontSize:11,fontWeight:600}}>1 {cvFrom} = 0.9970 {cvTo}</span>
+                      <span style={{fontSize:11,fontWeight:600}}>1 {cvFrom} = 0.9993 {cvTo}</span>
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",paddingBottom:8,borderBottom:`1px solid ${G.border}`,marginBottom:8}}>
-                      <span style={{fontSize:11,color:G.textMid}}>수수료</span>
-                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{feePct}% (총 {totalFee} {cvFrom})</span>
+                      <span style={{fontSize:11,color:G.textMid}}>CONVERSION_FEE</span>
+                      <span style={{fontSize:11,fontWeight:700,color:G.orange}}>0.20% ({totalFee} {cvFrom}) · 환율에 내재</span>
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <span style={{fontSize:12,fontWeight:700}}>예상 수령액</span>
@@ -1681,6 +1837,7 @@ function SubDash({acctName,onLogout,onMaster}){
                         {cvToNet&&<NetBadge net={cvToNet}/>}
                       </div>
                     </div>
+                    <div style={{fontSize:10,color:G.textLight,marginTop:6}}>⏱ Quote Lock 5분 (만료 시 자동 재조회)</div>
                   </div>
                   );
                 })()}
@@ -1702,15 +1859,20 @@ function SubDash({acctName,onLogout,onMaster}){
             <div style={{maxWidth:480}}>
               <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
               <Card>
-                {/* 헤더 + 스텝 상태 */}
+                {/* 헤더 + 4-Step Stepper */}
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
                   <div style={{fontWeight:700,fontSize:13}}>Create Payout</div>
                   <div style={{display:"flex",gap:4}}>
-                    {["수취인","송금인","금액"].map((s,i)=>(
-                      <span key={i} style={{fontSize:9,padding:"2px 8px",borderRadius:10,background:stepDone[i]?G.green:G.border,color:stepDone[i]?"#fff":G.textMid,fontWeight:700,transition:"background 0.2s"}}>
-                        Step {i+1}
-                      </span>
-                    ))}
+                    {["Recipient","Originator","Amount","Review"].map((s,i)=>{
+                      const idx=i+1;
+                      const done=idx<3?stepDone[i]:(idx===3?(!!poAmt&&!!poRec):poStep===4);
+                      const active=idx===3?poStep===3:idx===4?poStep===4:!stepDone[i];
+                      return(
+                        <span key={i} style={{fontSize:9,padding:"2px 8px",borderRadius:10,background:done?G.green:active?G.greenLight:G.border,color:done?"#fff":active?G.greenDark:G.textMid,fontWeight:700,transition:"all 0.2s"}}>
+                          {done?"✓ ":""}{s}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1808,59 +1970,222 @@ function SubDash({acctName,onLogout,onMaster}){
                   <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 3 — 금액 및 통화</div>
                   <Lbl t="통화"/><Sel v={poCur} set={v=>{setPoCur(v);setPoNet("");setPoGasFee(null);}} opts={poType==="Fiat"?["USD","HKD"]:["USDC","USDT"]}/>
                   {poType==="Crypto"&&<NetSelector cur={poCur} net={poNet} setNet={v=>{setPoNet(v);setPoGasFee(null);}}/>}
-                  <Lbl t="금액"/>
+                  {/* Pay Mode 토글 */}
+                  <Lbl t="Pay Mode (수수료 부담 주체)"/>
+                  <div style={{display:"flex",gap:7,marginBottom:8}}>
+                    {[
+                      {k:"RECIPIENT_BEAR",label:"수취인 부담",desc:"You Send 입력 → 수취인이 수수료 차감 후 수령"},
+                      {k:"PAYER_BEAR",label:"송금인 부담",desc:"Payee Gets 입력 → 송금인이 수수료 추가 부담"},
+                    ].map(m=>{
+                      const active=poPayMode===m.k;
+                      const accent=m.k==="PAYER_BEAR"?"#1D4ED8":"#7C3AED";
+                      const bgActive=m.k==="PAYER_BEAR"?"#DBEAFE":"#EDE9FE";
+                      return(
+                        <button key={m.k} onClick={()=>setPoPayMode(m.k)}
+                          style={{flex:1,padding:"9px 10px",borderRadius:8,border:`1.5px solid ${active?accent:G.border}`,background:active?bgActive:G.white,color:active?accent:G.textMid,fontWeight:active?700:500,cursor:"pointer",fontSize:11,textAlign:"left"}}>
+                          <div style={{fontWeight:700,fontSize:11,marginBottom:2}}>{m.label}</div>
+                          <div style={{fontSize:9,color:active?accent:G.textLight,fontWeight:400,lineHeight:1.4}}>{m.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div style={{background:"#F0F9FF",border:"1px solid #BAE6FD",borderRadius:7,padding:"7px 10px",fontSize:10,color:"#0C4A6E",marginBottom:12,lineHeight:1.5}}>
+                    💡 {poPayMode==="RECIPIENT_BEAR"
+                      ?"You Send 입력 → 수취인이 수수료를 부담합니다 (RECIPIENT_BEAR)"
+                      :"Payee Gets 입력 → 당신이 수수료를 부담합니다 (PAYER_BEAR)"}
+                  </div>
+                  <Lbl t={poPayMode==="PAYER_BEAR"?"Payee Gets (수취 금액)":"You Send (송금 원금)"}/>
                   <Inp v={poAmt} set={v=>{setPoAmt(v);setPoGasFee(null);}} ph={poType==="Fiat"?"숫자 입력 (소수점 2자리)":"숫자 입력 (소수점 6자리)"}/>
-                  {/* Fiat 수수료 블록 */}
-                  {poType==="Fiat"&&poAmt&&(
+                  <Lbl t="Purpose (송금 목적)*"/>
+                  <select value={poPurpose} onChange={e=>setPoPurpose(e.target.value)}
+                    style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                    <option value="REFUND">환불 (REFUND)</option>
+                    <option value="GOODS_SERVICES">재화/서비스 (GOODS_SERVICES)</option>
+                    <option value="COMMISSION">수수료 (COMMISSION)</option>
+                    <option value="ROYALTY_DIVIDENDS">로열티/배당 (ROYALTY_DIVIDENDS)</option>
+                    <option value="LOAN_REPAY">대출 상환 (LOAN_REPAY)</option>
+                    <option value="TREASURY">내부 자금 (TREASURY)</option>
+                    <option value="RENT">임대료 (RENT)</option>
+                    <option value="OTHERS">기타 (OTHERS)</option>
+                  </select>
+                  {poType==="Fiat"&&(<>
+                    <Lbl t={`Memo (선택) — ${poMemo.length} / 512`}/>
+                    <textarea value={poMemo} onChange={e=>setPoMemo(e.target.value.slice(0,512))} placeholder="송금 메모 (수취인 은행에 함께 전달)"
+                      style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,boxSizing:"border-box",outline:"none",resize:"vertical",minHeight:50,fontFamily:"inherit"}}/>
+                  </>)}
+                  {/* Fiat 수수료 블록 — OSL 5종 수수료 (PLAT_FIAT_PAYOUT 0.04% / CONVERSION 0.2% 환율 내재 / CHANNEL_FIAT_PAYOUT $35 SWIFT or $0 Local) */}
+                  {poType==="Fiat"&&poAmt&&(()=>{
+                    const platFee=(poAmtNum*0.0004).toFixed(4);
+                    const fxRate=0.9993;
+                    const grossUsd=(poAmtNum*fxRate).toFixed(2);
+                    const conversionFee=(poAmtNum*0.002).toFixed(2);
+                    const channelFee=isLargeAmt?0:35;
+                    const netReceive=(parseFloat(grossUsd)-parseFloat(conversionFee)-channelFee).toFixed(2);
+                    const isNegative=parseFloat(netReceive)<0;
+                    return(
                     <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#2B6CB0",marginBottom:10}}>수수료 미리보기</div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#2B6CB0",marginBottom:10}}>수수료 미리보기 (OSL 5종)</div>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
-                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
-                          {isLargeAmt?"면제 ($100K 이상)":"$35 / 건 (예치 잔액 차감)"}
-                        </span>
+                        <span style={{fontSize:11,color:G.textMid}}>PLAT_FIAT_PAYOUT</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{platFee} {poCur} (0.04% · 월결제)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:G.textMid}}>CONVERSION_FEE</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{conversionFee} USD (0.2% · 환율 내재)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:G.textMid}}>CHANNEL_FIAT_PAYOUT</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{isLargeAmt?"면제 ($100K 이상)":"$35 (SWIFT) / $0 (Local)"}</span>
                       </div>
                       <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #BEE3F8"}}>
-                        <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
-                        <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
+                        <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상 (Payee Receives)</span>
+                        <span style={{fontSize:13,fontWeight:700,color:isNegative?G.red:G.greenDark}}>{netReceive} USD {isNegative?"⚠":""}</span>
                       </div>
-                      <div style={{fontSize:10,color:"#2B6CB0",marginTop:6}}>⏱ 환율 고정: Confirm 시점에 10분간 고정됩니다.</div>
+                      {isNegative&&(
+                        <div style={{background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:6,padding:"7px 10px",fontSize:10,color:"#991B1B",marginTop:6,lineHeight:1.5}}>
+                          ⚠ 송금액이 작아 SWIFT 채널료($35)에 의해 수취인이 음수 수령. 금액을 늘리거나 Local Network 등록 후 변경하세요.
+                        </div>
+                      )}
+                      <div style={{fontSize:10,color:"#2B6CB0",marginTop:6}}>⏱ 환율 1 USDT = {fxRate} USD (Quote Lock 5분, Confirm 시 고정)</div>
                     </div>
-                  )}
-                  {/* Crypto 수수료 블록 */}
+                    );
+                  })()}
+                  {/* Crypto 수수료 블록 — PLAT_PAYOUT 0.04% + CHANNEL_CRYPTO_PAYOUT $0 */}
                   {poType==="Crypto"&&poAmt&&poNet&&(()=>{
-                    const NET_GAS_USD={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
-                    const gasUsd=NET_GAS_USD[poNet]||"—";
+                    const platFee=(poAmtNum*0.0004).toFixed(6);
+                    const totalSubtracted=(poAmtNum+parseFloat(platFee)).toFixed(6);
                     return(
                     <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>수수료 미리보기</div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>수수료 미리보기 (OSL)</div>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
-                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{gasUsd} USD <span style={{fontWeight:400,color:G.textLight}}>(OSL 실시간 고시)</span></span>
+                        <span style={{fontSize:11,color:G.textMid}}>PLAT_PAYOUT</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{platFee} {poCur} (0.04% · 월결제)</span>
                       </div>
-                      <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A"}}>
-                        <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                        <span style={{fontSize:11,color:G.textMid}}>CHANNEL_CRYPTO_PAYOUT</span>
+                        <span style={{fontSize:11,fontWeight:700,color:G.greenDark}}>$0 (무료)</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A",marginBottom:4}}>
+                        <span style={{fontSize:11,color:G.textMid}}>Total Subtracted (잔액 차감)</span>
+                        <span style={{fontSize:12,fontWeight:700,color:G.textDark}}>{totalSubtracted} {poCur}</span>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between"}}>
+                        <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상 (Payee Receives)</span>
                         <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{poAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {poCur}</span>
                       </div>
-                      <div style={{fontSize:10,color:"#92400E",marginTop:6}}>※ 네트워크 수수료는 예치 잔액(USD)에서 차감됩니다.</div>
                     </div>
                     );
                   })()}
                 </div>
 
-                {/* Payout 실행 버튼 */}
-                <button disabled={nextDisabled}
-                  onClick={()=>{
-                    if(!poRec||!poAmt){T("⚠️ 수취인/금액을 입력하세요");return;}
-                    if(!origOk){T("⚠️ 송금인 정보를 입력하세요");return;}
-                    if(poType==="Crypto"&&!poNet){T("⚠️ 네트워크를 선택하세요");return;}
-                    setShowPoOtp(true);setPoOtp(["","","","","",""]);setPoOtpFail(0);setPoCooldown(0);setPoSubmitting(false);
-                  }}
-                  style={{width:"100%",padding:"12px",borderRadius:9,border:"none",fontWeight:700,fontSize:13,
-                    background:nextDisabled?"#ccc":G.green,color:nextDisabled?G.textLight:"#fff",
-                    cursor:nextDisabled?"not-allowed":"pointer",transition:"background 0.15s"}}>
-                  🚀 Payout 실행
-                </button>
+                {/* Step 3 → Step 4 Review 진입 버튼 */}
+                {poStep===3&&(
+                  <button disabled={nextDisabled}
+                    onClick={()=>{
+                      if(!poRec||!poAmt){T("⚠️ 수취인/금액을 입력하세요");return;}
+                      if(!origOk){T("⚠️ 송금인 정보를 입력하세요");return;}
+                      if(poType==="Crypto"&&!poNet){T("⚠️ 네트워크를 선택하세요");return;}
+                      setPoStep(4);setPoQuoteSec(300);
+                    }}
+                    style={{width:"100%",padding:"12px",borderRadius:9,border:"none",fontWeight:700,fontSize:13,
+                      background:nextDisabled?"#ccc":G.green,color:nextDisabled?G.textLight:"#fff",
+                      cursor:nextDisabled?"not-allowed":"pointer",transition:"background 0.15s"}}>
+                    Review Payout →
+                  </button>
+                )}
+
+                {/* Step 4 — Review (Quote Lock 카운트다운) */}
+                {poStep===4&&(()=>{
+                  const platRate=0.0004;
+                  const platFee=poAmtNum*platRate;
+                  const fxRate=0.9993;
+                  const conversionFee=poAmtNum*0.002;
+                  const channelFee=poType==="Fiat"?(isLargeAmt?0:35):0;
+                  const grossUsd=poAmtNum*fxRate;
+                  const fiatNet=grossUsd-conversionFee-channelFee;
+                  const totalSubtracted=poAmtNum+platFee;
+                  const fiatNegative=poType==="Fiat"&&fiatNet<0;
+                  const quoteExpired=poQuoteSec<=0;
+                  const quoteRed=poQuoteSec<=60;
+                  const mm=String(Math.floor(poQuoteSec/60)).padStart(2,"0");
+                  const ss=String(poQuoteSec%60).padStart(2,"0");
+                  const platLabel=poType==="Fiat"?"PLAT_FIAT_PAYOUT":"PLAT_PAYOUT";
+                  const channelLabel=poType==="Fiat"?"CHANNEL_FIAT_PAYOUT":"CHANNEL_CRYPTO_PAYOUT";
+                  return(
+                    <div style={{borderTop:`1px solid ${G.border}`,paddingTop:14}}>
+                      <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 4 — Review Payout</div>
+                      {/* Recipient Details */}
+                      <div style={{background:"#F8F4FF",border:"1px solid #E9D8FD",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontSize:10,fontWeight:700,color:"#6B21A8",textTransform:"uppercase",marginBottom:8}}>Recipient Details</div>
+                        <div style={{fontSize:11,lineHeight:1.7,color:G.textDark}}>
+                          <div><b>Counterparty:</b> {poRecObj?.name||"—"}</div>
+                          {poRecObj?.type==="Bank"?(<>
+                            <div><b>Bank:</b> {poRecObj?.bankName||"—"} ({poRecObj?.network||"—"})</div>
+                            <div><b>Account:</b> {poRecObj?.detail}</div>
+                          </>):(<>
+                            <div><b>Network:</b> {poRecObj?.network||"—"}</div>
+                            <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}><b>Address:</b> <span style={{fontFamily:"monospace"}}>{shortAddr(poRecObj?.detail||"")}</span> <CopyBtn text={poRecObj?.detail||""}/></div>
+                          </>)}
+                        </div>
+                      </div>
+                      {/* Your Settlement */}
+                      <div style={{background:"#F7FBF4",border:"1px solid #E2EFD9",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontSize:10,fontWeight:700,color:G.greenDark,textTransform:"uppercase",marginBottom:8}}>Your Settlement</div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>Payout from Balance</span><span style={{fontSize:11,fontWeight:700}}>{poAmtNum.toFixed(poType==="Fiat"?2:6)} {poCur}</span></div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>{platLabel}</span><span style={{fontSize:11,fontWeight:700,color:G.orange}}>{platFee.toFixed(6)} {poCur}</span></div>
+                        <div style={{display:"flex",justifyContent:"space-between",paddingTop:6,borderTop:`1px solid ${G.border}`}}><span style={{fontSize:12,fontWeight:700}}>Total Subtracted</span><span style={{fontSize:12,fontWeight:700,color:G.textDark}}>{totalSubtracted.toFixed(6)} {poCur}</span></div>
+                      </div>
+                      {/* Beneficiary Receipt */}
+                      <div style={{background:"#EEF6FF",border:"1px solid #BEE3F8",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:8}}>Beneficiary Receipt</div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>Amount to Send</span><span style={{fontSize:11,fontWeight:700}}>{poAmtNum.toFixed(poType==="Fiat"?2:6)} {poCur}</span></div>
+                        {poType==="Fiat"?(<>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>Exchange Rate</span><span style={{fontSize:11,fontWeight:700}}>1 {poCur} = {fxRate} USD</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>Gross USD</span><span style={{fontSize:11,fontWeight:700}}>{grossUsd.toFixed(2)} USD</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>CONVERSION_FEE</span><span style={{fontSize:11,fontWeight:700,color:G.orange}}>-{conversionFee.toFixed(2)} USD</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>{channelLabel}</span><span style={{fontSize:11,fontWeight:700,color:G.orange}}>-{channelFee} USD ({channelFee===0?"Local 또는 면제":"SWIFT"})</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",paddingTop:6,borderTop:"1px solid #BEE3F8"}}><span style={{fontSize:12,fontWeight:700}}>Payee Receives</span><span style={{fontSize:13,fontWeight:700,color:fiatNegative?G.red:G.greenDark}}>{fiatNet.toFixed(2)} USD {fiatNegative?"⚠":""}</span></div>
+                          {fiatNegative&&(
+                            <div style={{background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:6,padding:"7px 10px",fontSize:10,color:"#991B1B",marginTop:6,lineHeight:1.5}}>
+                              ⚠ 송금액이 작아 SWIFT 채널료에 의해 수취인이 음수 수령. 금액을 늘리거나 Local Network로 변경하세요.
+                            </div>
+                          )}
+                        </>):(<>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>{channelLabel}</span><span style={{fontSize:11,fontWeight:700,color:G.greenDark}}>$0 (무료)</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",paddingTop:6,borderTop:"1px solid #BEE3F8"}}><span style={{fontSize:12,fontWeight:700}}>Payee Receives</span><span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{poAmtNum.toFixed(6)} {poCur}</span></div>
+                        </>)}
+                      </div>
+                      {/* Quote 카운트다운 */}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:8,background:quoteExpired?"#FEE2E2":quoteRed?"#FFFBEB":G.greenLight,border:`1px solid ${quoteExpired?"#FCA5A5":quoteRed?"#FDE68A":G.border}`,marginBottom:10}}>
+                        <span style={{fontSize:11,fontWeight:600,color:quoteExpired?"#991B1B":quoteRed?"#92400E":G.greenDark}}>⏱ Quote 유효시간</span>
+                        <span style={{fontSize:14,fontWeight:700,color:quoteExpired?"#991B1B":quoteRed?G.red:G.greenDark,fontFamily:"monospace"}}>
+                          {quoteExpired?"만료됨":`${mm}:${ss}`}
+                        </span>
+                      </div>
+                      {quoteExpired&&(
+                        <div style={{background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,padding:"10px 14px",marginBottom:10}}>
+                          <div style={{fontSize:11,fontWeight:700,color:"#991B1B",marginBottom:6}}>환율이 만료되었습니다.</div>
+                          <button onClick={()=>setPoQuoteSec(300)}
+                            style={{padding:"6px 14px",borderRadius:6,border:"1px solid #991B1B",background:"#fff",color:"#991B1B",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                            🔄 환율 재조회
+                          </button>
+                        </div>
+                      )}
+                      {/* 액션 버튼 */}
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={()=>{setPoStep(3);setPoQuoteSec(0);}}
+                          style={{flex:1,padding:"11px",borderRadius:9,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                          ← Back
+                        </button>
+                        <button disabled={quoteExpired||fiatNegative}
+                          onClick={()=>{setShowPoOtp(true);setPoOtp(["","","","","",""]);setPoOtpFail(0);setPoCooldown(0);setPoSubmitting(false);}}
+                          style={{flex:2,padding:"11px",borderRadius:9,border:"none",background:(quoteExpired||fiatNegative)?"#ccc":G.green,color:"#fff",fontWeight:700,fontSize:12,cursor:(quoteExpired||fiatNegative)?"not-allowed":"pointer"}}>
+                          Confirm Payout 🚀
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </Card>
             </div>
             );
@@ -1876,7 +2201,7 @@ function SubDash({acctName,onLogout,onMaster}){
                 <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:14}}>
                   {(()=>{
                     const amtN=parseFloat((poAmt||"0").replace(/,/g,""))||0;
-                    const NET_GAS_USD_OTP={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
+                    const NET_GAS_USD_OTP={"ERC-20":"~$2.50","TRC-20":"~$1.00","SPL":"~$0.05"};
                     const fee=poType==="Fiat"?(amtN>=100000?"Wire Fee: 면제 ($100K 이상)":"Wire Fee: $35 / 건"):`네트워크 수수료: ${NET_GAS_USD_OTP[poNet]||"—"} USD (OSL 실시간 고시)`;
                     return [["수취인",poRecName],[`금액`,`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${poCur}`],["수수료",fee],["수취인 수령",`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${poCur}`],["네트워크",poNetDisplay]];
                   })().map(([k,v],i,arr)=>(
@@ -2368,7 +2693,232 @@ function SubDash({acctName,onLogout,onMaster}){
       </div>
 
       {/* 사이드 패널 */}
-      {selectedTx&&<OrderSidePanel tx={selectedTx} onClose={()=>setSelectedTx(null)}/>}
+      {selectedTx&&<OrderSidePanel tx={selectedTx} onClose={()=>setSelectedTx(null)} onManualConvert={tx=>{setSelectedTx(null);openManualConvert(tx);}}/>}
+
+      {/* SCR-09-2 — VA 계좌 개설 4-step Wizard */}
+      {vaWizard&&(()=>{
+        const NETWORKS_BY_REGION={HK:{USD:["SWIFT","RTGS"],HKD:["SWIFT","RTGS","FPS"]}};
+        const supportedNets=NETWORKS_BY_REGION[vaWizard.region]?.[vaWizard.currency]||["SWIFT"];
+        const setW=patch=>setVaWizard(w=>({...w,...patch}));
+        const close=()=>setVaWizard(null);
+        const next=()=>setW({step:vaWizard.step+1});
+        const back=()=>setW({step:vaWizard.step-1});
+        const submit=()=>{
+          T(`✅ VA 계좌 신청 완료: ${vaWizard.alias||vaWizard.currency} (${vaWizard.network}). 발급 완료 시 알림드립니다.`);
+          close();
+        };
+        const channelFeeLabel=vaWizard.network==="SWIFT"?"$35 (Global, $100K↑ 면제)":"$0 (Local, 무료)";
+        return(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={close}>
+            <div onClick={e=>e.stopPropagation()} style={{background:G.white,borderRadius:14,padding:24,width:520,maxHeight:"86vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,0.22)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                <div style={{fontWeight:700,fontSize:15}}>VA 계좌 개설</div>
+                <span style={{fontSize:11,color:G.textLight}}>Step {vaWizard.step} of 4</span>
+              </div>
+              {/* Stepper */}
+              <div style={{display:"flex",gap:5,marginBottom:18}}>
+                {[1,2,3,4].map(s=>(
+                  <div key={s} style={{flex:1,height:4,borderRadius:2,background:vaWizard.step>=s?G.green:G.border}}/>
+                ))}
+              </div>
+
+              {/* Step 1: 통화 + Region */}
+              {vaWizard.step===1&&(<>
+                <div style={{fontWeight:700,fontSize:12,marginBottom:8}}>통화 선택 *</div>
+                <div style={{display:"flex",gap:7,marginBottom:14}}>
+                  {[{c:"USD",f:"🇺🇸"},{c:"HKD",f:"🇭🇰"}].map(({c,f})=>(
+                    <button key={c} onClick={()=>setW({currency:c,network:NETWORKS_BY_REGION[vaWizard.region]?.[c]?.[0]||"SWIFT"})}
+                      style={{flex:1,padding:"10px",borderRadius:8,border:`2px solid ${vaWizard.currency===c?G.green:G.border}`,background:vaWizard.currency===c?G.greenLight:G.white,fontWeight:700,fontSize:12,cursor:"pointer",color:vaWizard.currency===c?G.greenDark:G.textMid}}>
+                      {f} {c}
+                    </button>
+                  ))}
+                  <button disabled style={{flex:1,padding:"10px",borderRadius:8,border:`1px solid ${G.border}`,background:"#F3F4F6",color:G.textLight,fontSize:11,cursor:"not-allowed"}}>🇪🇺 EUR (출시 예정)</button>
+                </div>
+                <div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Region 선택 *</div>
+                <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:14}}>
+                  {[{k:"HK",label:"Hong Kong (SGB Bank)",enabled:true},{k:"SG",label:"Singapore (출시 예정)",enabled:false},{k:"OT",label:"기타 (출시 예정)",enabled:false}].map(r=>(
+                    <button key={r.k} disabled={!r.enabled} onClick={()=>r.enabled&&setW({region:r.k})}
+                      style={{padding:"10px 14px",borderRadius:8,border:`2px solid ${vaWizard.region===r.k?G.green:G.border}`,background:vaWizard.region===r.k?G.greenLight:r.enabled?G.white:"#F3F4F6",color:vaWizard.region===r.k?G.greenDark:r.enabled?G.textDark:G.textLight,fontWeight:vaWizard.region===r.k?700:500,fontSize:12,cursor:r.enabled?"pointer":"not-allowed",textAlign:"left"}}>
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{background:"#EFF6FF",border:"1px solid #BAE6FD",borderRadius:7,padding:"8px 12px",fontSize:11,color:"#0C4A6E",marginBottom:14}}>
+                  안내: Region별 지원 Network는 Step 2에서 선택합니다.
+                </div>
+              </>)}
+
+              {/* Step 2: Network */}
+              {vaWizard.step===2&&(<>
+                <div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Preferred Network 선택 * <span style={{fontWeight:400,color:G.textLight}}>(Region: Hong Kong)</span></div>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+                  {[
+                    {k:"SWIFT",badge:"Global",desc:"국제 송금 (전 세계). $35 정액 채널 수수료 ($100K↑ 면제)",badgeBg:"#F0FDF4",badgeColor:"#166534"},
+                    {k:"RTGS", badge:"Local", desc:"홍콩 실시간 결제. 채널 수수료 무료. 즉시 정산.",badgeBg:"#EFF6FF",badgeColor:"#1D4ED8"},
+                    {k:"FPS",  badge:"Local (HKD 전용)",desc:"Faster Payment System. 채널 수수료 무료.",badgeBg:"#FDF4FF",badgeColor:"#7E22CE",hkdOnly:true},
+                  ].filter(n=>!n.hkdOnly||vaWizard.currency==="HKD").map(n=>{
+                    const active=vaWizard.network===n.k;
+                    const supported=supportedNets.includes(n.k);
+                    return(
+                      <button key={n.k} disabled={!supported} onClick={()=>setW({network:n.k})}
+                        style={{padding:"12px 14px",borderRadius:8,border:`1.5px solid ${active?G.green:G.border}`,background:active?G.greenLight:supported?G.white:"#F3F4F6",cursor:supported?"pointer":"not-allowed",textAlign:"left",opacity:supported?1:0.55}}>
+                        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}>
+                          <span style={{fontWeight:700,fontSize:12,color:active?G.greenDark:G.textDark}}>{n.k}</span>
+                          <span style={{background:n.badgeBg,color:n.badgeColor,borderRadius:10,padding:"1px 7px",fontSize:9,fontWeight:700}}>{n.badge}</span>
+                        </div>
+                        <div style={{fontSize:10,color:active?G.greenDark:G.textMid,lineHeight:1.5}}>{n.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{background:"#EFF6FF",border:"1px solid #BAE6FD",borderRadius:7,padding:"8px 12px",fontSize:11,color:"#0C4A6E",marginBottom:14}}>
+                  안내: 여러 Network 지원 시 자동으로 최적 매칭됩니다.
+                </div>
+              </>)}
+
+              {/* Step 3: 용도 + 한도 */}
+              {vaWizard.step===3&&(<>
+                <Lbl t="계좌 별칭 *"/>
+                <Inp v={vaWizard.alias} set={v=>setW({alias:v})} ph='예: "Hanpass Main USD" — 본인이 식별하기 위한 이름'/>
+                <Lbl t="거래 목적 *"/>
+                <select value={vaWizard.purpose} onChange={e=>setW({purpose:e.target.value})}
+                  style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                  <option>Treasury Management</option>
+                  <option>Goods &amp; Services Settlement</option>
+                  <option>Commission Receipt</option>
+                  <option>Royalty / Dividends</option>
+                  <option>Others</option>
+                </select>
+                <Lbl t="예상 월간 거래액 *"/>
+                <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10}}>
+                  {["< $100K","$100K – $500K","$500K – $1M","> $1M"].map(v=>(
+                    <button key={v} onClick={()=>setW({volume:v})}
+                      style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${vaWizard.volume===v?G.green:G.border}`,background:vaWizard.volume===v?G.greenLight:G.white,color:vaWizard.volume===v?G.greenDark:G.textMid,fontWeight:vaWizard.volume===v?700:500,fontSize:11,textAlign:"left",cursor:"pointer"}}>
+                      {vaWizard.volume===v?"● ":"○ "}{v}
+                    </button>
+                  ))}
+                </div>
+              </>)}
+
+              {/* Step 4: Review */}
+              {vaWizard.step===4&&(<>
+                <div style={{background:G.sidebar,border:`1px solid ${G.border}`,borderRadius:8,padding:"14px 16px",marginBottom:14,fontSize:11}}>
+                  <div style={{fontWeight:700,fontSize:12,marginBottom:10,color:G.textDark}}>신청 내역 검토</div>
+                  {[
+                    ["통화",vaWizard.currency],
+                    ["Region","Hong Kong"],
+                    ["Network",`${vaWizard.network} (${vaWizard.network==="SWIFT"?"Global":"Local"})`],
+                    ["계좌 별칭",vaWizard.alias||"—"],
+                    ["거래 목적",vaWizard.purpose],
+                    ["월간 예상액",vaWizard.volume],
+                  ].map(([k,v])=>(
+                    <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${G.border}`}}>
+                      <span style={{color:G.textMid}}>{k}</span>
+                      <span style={{fontWeight:700,color:G.textDark}}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:7,padding:"9px 12px",fontSize:11,color:"#92400E",marginBottom:12}}>
+                  <b>채널 수수료 (참고):</b> {channelFeeLabel}
+                </div>
+                <label style={{display:"flex",alignItems:"center",gap:7,fontSize:11,color:G.textDark,marginBottom:14,cursor:"pointer"}}>
+                  <input type="checkbox" checked={vaWizard.confirmed} onChange={e=>setW({confirmed:e.target.checked})} style={{width:14,height:14,cursor:"pointer"}}/>
+                  본인은 입력 정보가 정확함을 확인합니다.
+                </label>
+              </>)}
+
+              {/* Step 1~4 액션 */}
+              <div style={{display:"flex",gap:8,marginTop:6}}>
+                <button onClick={vaWizard.step===1?close:back}
+                  style={{flex:1,padding:"10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                  {vaWizard.step===1?"취소":"← 이전"}
+                </button>
+                {vaWizard.step<4?(
+                  <button onClick={next}
+                    disabled={vaWizard.step===3&&!vaWizard.alias}
+                    style={{flex:2,padding:"10px",borderRadius:8,border:"none",background:(vaWizard.step===3&&!vaWizard.alias)?"#ccc":G.green,color:"#fff",fontWeight:700,fontSize:12,cursor:(vaWizard.step===3&&!vaWizard.alias)?"not-allowed":"pointer"}}>
+                    다음 →
+                  </button>
+                ):(
+                  <button onClick={submit} disabled={!vaWizard.confirmed}
+                    style={{flex:2,padding:"10px",borderRadius:8,border:"none",background:vaWizard.confirmed?G.green:"#ccc",color:"#fff",fontWeight:700,fontSize:12,cursor:vaWizard.confirmed?"pointer":"not-allowed"}}>
+                    신청 제출
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* SCR-09-1 — Manual Deposit Convert (60초 모달) */}
+      {manualConvertTx&&(()=>{
+        const expired=manualConvertSec<=0;
+        const sec=String(manualConvertSec).padStart(2,"0");
+        const payAmt=parseFloat((manualConvertTx.amt||"0").replace(/[+,]/g,""))||0;
+        const usdcRate=1.0;
+        const usdtRate=0.99919;
+        const rate=manualConvertCur==="USDC"?usdcRate:usdtRate;
+        const receive=(payAmt*rate*0.998).toFixed(2);
+        return(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={closeManualConvert}>
+            <div onClick={e=>e.stopPropagation()} style={{background:G.white,borderRadius:14,padding:24,width:480,boxShadow:"0 8px 40px rgba(0,0,0,0.22)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                <div style={{fontWeight:700,fontSize:15}}>💱 Manual Deposit Convert</div>
+                <button onClick={closeManualConvert} style={{background:"transparent",border:"none",fontSize:18,cursor:"pointer",color:G.textLight}}>✕</button>
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:8,background:expired?"#FEE2E2":manualConvertSec<=15?"#FFFBEB":G.greenLight,border:`1px solid ${expired?"#FCA5A5":manualConvertSec<=15?"#FDE68A":G.border}`,marginBottom:14}}>
+                <span style={{fontSize:11,fontWeight:600,color:expired?"#991B1B":manualConvertSec<=15?"#92400E":G.greenDark}}>⏱ Quote 유효시간 (60초)</span>
+                <span style={{fontSize:18,fontWeight:700,color:expired?"#991B1B":manualConvertSec<=15?G.red:G.greenDark,fontFamily:"monospace"}}>00:{sec}</span>
+              </div>
+              <div style={{fontSize:11,color:G.textMid,marginBottom:12,lineHeight:1.6}}>
+                통화를 선택하고 Confirm을 눌러 입금을 USDC/USDT로 정산하세요.
+              </div>
+              <div style={{background:G.sidebar,border:`1px solid ${G.border}`,borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:11}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{color:G.textMid}}>Payment ID</span><span style={{fontFamily:"monospace",fontWeight:600}}>{manualConvertTx.id}</span></div>
+                <div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:G.textMid}}>Pay Amount</span><span style={{fontWeight:700}}>{manualConvertTx.amt} {manualConvertTx.cur}</span></div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+                {["USDC","USDT"].map(c=>{
+                  const active=manualConvertCur===c;
+                  const r=c==="USDC"?usdcRate:usdtRate;
+                  const rec=(payAmt*r*0.998).toFixed(2);
+                  return(
+                    <button key={c} onClick={()=>setManualConvertCur(c)} disabled={expired}
+                      style={{padding:"12px 14px",borderRadius:9,border:`2px solid ${active?G.green:G.border}`,background:active?G.greenLight:G.white,cursor:expired?"not-allowed":"pointer",textAlign:"left",opacity:expired?0.6:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+                        <CIcon c={c} size={18}/>
+                        <span style={{fontWeight:700,fontSize:13,color:active?G.greenDark:G.textDark}}>{c}</span>
+                      </div>
+                      <div style={{fontSize:10,color:G.textMid,marginBottom:3}}>Rate: 1 USD = {r} {c}</div>
+                      <div style={{fontSize:13,fontWeight:700,color:active?G.greenDark:G.textDark,marginBottom:3}}>Receive: {rec} {c}</div>
+                      <div style={{fontSize:9,color:G.textLight}}>Conversion Fee: 환율에 내재 (0.2%)</div>
+                    </button>
+                  );
+                })}
+              </div>
+              {expired&&(
+                <div style={{background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,padding:"10px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:11,fontWeight:700,color:"#991B1B"}}>환율 유효시간이 만료되었습니다.</span>
+                  <button onClick={()=>setManualConvertSec(60)}
+                    style={{padding:"6px 12px",borderRadius:6,border:"1px solid #991B1B",background:"#fff",color:"#991B1B",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>🔄 환율 재조회</button>
+                </div>
+              )}
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={closeManualConvert}
+                  style={{flex:1,padding:"11px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                  Cancel
+                </button>
+                <button disabled={expired}
+                  onClick={()=>{T(`✅ 정산 완료: ${receive} ${manualConvertCur} 잔액에 반영되었습니다.`);closeManualConvert();}}
+                  style={{flex:2,padding:"11px",borderRadius:8,border:"none",background:expired?"#ccc":G.green,color:"#fff",fontWeight:700,fontSize:12,cursor:expired?"not-allowed":"pointer"}}>
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {toast&&<div style={{position:"fixed",bottom:20,right:20,background:"#1A1A1A",color:"#fff",borderRadius:8,padding:"10px 18px",fontSize:12,fontWeight:600,boxShadow:"0 4px 16px rgba(0,0,0,0.15)",zIndex:9999}}>{toast}</div>}
     </div>
@@ -2380,10 +2930,8 @@ function MasterDash({onLogout,onSub}){
   const [trF,setTrF]=useState("All");
   const [selectedTx,setSelectedTx]=useState(null);
   const [clients,setClients]=useState(INIT_CLIENTS);
-  const [editMu,setEditMu]=useState(null);
-  const [editFee,setEditFee]=useState(null);
   const [showCreate,setShowCreate]=useState(false);
-  const [nc,setNc]=useState({name:"",muOn:0.10,muOff:0.10});
+  const [nc,setNc]=useState({name:"",plan:"Standard",monthlyFee:2000000,contractStart:"",contractEnd:""});
   const [inviteClientId,setInviteClientId]=useState(null);
   const [inviteEmail,setInviteEmail]=useState("");
   const [clientDeleteId,setClientDeleteId]=useState(null);
@@ -2427,6 +2975,10 @@ function MasterDash({onLogout,onSub}){
   const [mpoGasFee,setMpoGasFee]=useState(null);
   const [mpoFeeError,setMpoFeeError]=useState(false);
   const [mpoPurpose,setMpoPurpose]=useState("TREASURY");
+  const [mpoPayMode,setMpoPayMode]=useState("RECIPIENT_BEAR");
+  const [mpoMemo,setMpoMemo]=useState("");
+  const [mpoStep,setMpoStep]=useState(3);
+  const [mpoQuoteSec,setMpoQuoteSec]=useState(0);
   const [masterRecTab,setMasterRecTab]=useState(0);
   const [masterQuotas,setMasterQuotas]=useState(INIT_QUOTA);
   const [showAddMasterRec,setShowAddMasterRec]=useState(false);
@@ -2451,9 +3003,14 @@ function MasterDash({onLogout,onSub}){
     return()=>clearInterval(id);
   },[mpoCooldown]);
   useEffect(()=>{
+    if(mpoStep!==4||mpoQuoteSec<=0)return;
+    const id=setInterval(()=>setMpoQuoteSec(s=>{if(s<=1){clearInterval(id);return 0;}return s-1;}),1000);
+    return()=>clearInterval(id);
+  },[mpoStep,mpoQuoteSec]);
+  useEffect(()=>{
     if(mpoType!=="Crypto"||!mpoAmt||!mpoNet){setMpoGasFee(null);setMpoFeeLoading(false);setMpoFeeError(false);return;}
     setMpoFeeLoading(true);setMpoGasFee(null);setMpoFeeError(false);
-    const GAS_FEE={"ERC-20":"3.50","Base":"0.05","TRC-20":"1.00","SPL":"0.50"};
+    const GAS_FEE={"ERC-20":"3.50","TRC-20":"1.00","SPL":"0.50"};
     const t=setTimeout(()=>{setMpoGasFee(GAS_FEE[mpoNet]||"0.05");setMpoFeeLoading(false);},500);
     return()=>clearTimeout(t);
   },[mpoType,mpoAmt,mpoNet]);
@@ -2465,8 +3022,8 @@ function MasterDash({onLogout,onSub}){
   },[mcvAmt,mcvFrom,mcvTo]);
   const allTr=trF==="All"?TR:TR.filter(t=>t.st===trF);
   const mcvFiltered=mcvFilter==="All"?mcvHistory:mcvHistory.filter(t=>t.st===mcvFilter);
-  const nav=[{g:"Overview",items:["Overview"]},{g:"Operations",items:["Transfer","Deposit","Convert","Payout","Recipients"]},{g:"Management",items:["Clients","All Transfers","All Orders","Fee Settings","Sub KYB"]}];
-  const menuLabel={Overview:"Master Overview",Transfer:"Master Transfer",Deposit:"Deposit Instructions",Convert:"Convert",Payout:"Create Payout",Recipients:"Recipients",Clients:"Sub Accounts",["All Transfers"]:"All Transfers",["All Orders"]:"All Orders",["Fee Settings"]:"Fee Settings",["Sub KYB"]:"Sub Account KYB"};
+  const nav=[{g:"Overview",items:["Overview"]},{g:"Operations",items:["Transfer","Deposit","Convert","Payout","Recipients"]},{g:"Management",items:["Clients","All Transfers","All Orders","Sub KYB"]}];
+  const menuLabel={Overview:"Master Overview",Transfer:"Master Transfer",Deposit:"Deposit Instructions",Convert:"Convert",Payout:"Create Payout",Recipients:"Recipients",Clients:"Sub Accounts",["All Transfers"]:"All Transfers",["All Orders"]:"All Orders",["Sub KYB"]:"Sub Account KYB"};
 
   const mpoRecObj=masterRecs.find(r=>String(r.id)===String(mpoRec));
   const mpoRecName=mpoRecObj?.name||"—";
@@ -2481,6 +3038,7 @@ function MasterDash({onLogout,onSub}){
       if(code==="123456"){
         T(`✅ Payout ${Number(mpoAmt).toLocaleString()} ${mpoCur} 제출 완료`);
         setShowMpoOtp(false);setMpoAmt("");setMpoRec("");setMpoNet("");setMpoOtp(["","","","","",""]);setMpoOtpFail(0);setMpoSubmitting(false);setMpoGasFee(null);setMpoFeeError(false);
+        setMpoStep(3);setMpoQuoteSec(0);setMpoMemo("");setMpoPayMode("RECIPIENT_BEAR");
       } else {
         const next=mpoOtpFail+1;
         setMpoOtpFail(next);
@@ -2506,7 +3064,7 @@ function MasterDash({onLogout,onSub}){
             <div key={g} style={{marginBottom:10}}>
               <div style={{fontSize:9,color:"#666",fontWeight:700,textTransform:"uppercase",letterSpacing:0.6,marginBottom:3}}>{g}</div>
               {items.map(item=>(
-                <div key={item} onClick={()=>{setMenu(item);setShowMpoOtp(false);setMpoOtp(["","","","","",""]);setMpoOtpFail(0);setMpoCooldown(0);setMpoSubmitting(false);}} style={{padding:"6px 8px",borderRadius:5,cursor:"pointer",marginBottom:2,background:menu===item?"#333":"transparent",color:menu===item?"#fff":"#aaa",fontWeight:menu===item?600:400,fontSize:11,borderLeft:menu===item?`3px solid ${G.green}`:"3px solid transparent"}}>{menuLabel[item]}</div>
+                <div key={item} onClick={()=>{setMenu(item);setShowMpoOtp(false);setMpoOtp(["","","","","",""]);setMpoOtpFail(0);setMpoCooldown(0);setMpoSubmitting(false);setMpoStep(3);setMpoQuoteSec(0);}} style={{padding:"6px 8px",borderRadius:5,cursor:"pointer",marginBottom:2,background:menu===item?"#333":"transparent",color:menu===item?"#fff":"#aaa",fontWeight:menu===item?600:400,fontSize:11,borderLeft:menu===item?`3px solid ${G.green}`:"3px solid transparent"}}>{menuLabel[item]}</div>
               ))}
             </div>
           ))}
@@ -2527,29 +3085,68 @@ function MasterDash({onLogout,onSub}){
         </div>
         <div style={{flex:1,overflowY:"auto",padding:20,background:"#FAFBF8"}}>
 
-          {menu==="Overview"&&(
-            <div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
-                <MiniBalCards balances={MASTER_BAL} title="Master Balance"/>
-                <Card>
-                  <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:10}}>Sub Account Summary</div>
-                  {INIT_CLIENTS.filter(c=>c.st==="Active").map(c=>(
-                    <div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:`1px solid ${G.border}`}}>
-                      <span style={{fontWeight:600,fontSize:12}}>{c.name}</span>
-                      <Badge t={c.st} color={stColor(c.st)}/>
+          {menu==="Overview"&&(()=>{
+            const masterCryptoTotal=totalBal(MASTER_BAL.USDC)+totalBal(MASTER_BAL.USDT);
+            const activeSubCount=clients.filter(c=>c.kybStatus==="ACTIVE").length;
+            const monthVolume=TX_DATA.reduce((sum,t)=>{
+              const n=parseFloat((t.amt||"0").replace(/[+,-]/g,""))||0;
+              return sum+(t.cur==="USD"?n:t.cur==="HKD"?n*0.128:n);
+            },0);
+            const monthFeeKRW=clients.filter(c=>c.kybStatus==="ACTIVE").reduce((s,c)=>s+(c.monthlyFee||0),0);
+            const overdueCount=clients.filter(c=>c.billStatus==="OVERDUE").length;
+            const KPI=[
+              {label:"Master 잔액 (USDT+USDC)",value:`$${masterCryptoTotal.toLocaleString("en-US",{maximumFractionDigits:0})}`,sub:"실시간 OSL 조회",bg:"#EBF8E1",text:"#276749"},
+              {label:"활성 Sub Account",value:`${activeSubCount}`,sub:`KYB ACTIVE / 총 ${clients.length}개`,bg:"#EEF6FF",text:"#1D4ED8"},
+              {label:"이번 달 거래액",value:`$${monthVolume.toLocaleString("en-US",{maximumFractionDigits:0})}`,sub:"PayIn + Payout (USD 환산)",bg:"#EDE9FE",text:"#7C3AED"},
+              {label:"이번 달 IB 사용료",value:`₩${(monthFeeKRW/10000).toLocaleString()}만`,sub:overdueCount>0?`🔴 미납 ${overdueCount}건`:"전 계정 청구 정상",bg:overdueCount>0?"#FEE2E2":"#FFFBEB",text:overdueCount>0?"#991B1B":"#B45309"},
+            ];
+            return(
+              <div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:18}}>
+                  {KPI.map(k=>(
+                    <div key={k.label} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:11,padding:"14px 16px"}}>
+                      <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:8}}>{k.label}</div>
+                      <div style={{fontSize:20,fontWeight:700,color:G.textDark,marginBottom:4}}>{k.value}</div>
+                      <span style={{fontSize:10,fontWeight:700,color:k.text,background:k.bg,borderRadius:5,padding:"2px 7px"}}>{k.sub}</span>
                     </div>
                   ))}
-                </Card>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+                  <MiniBalCards balances={MASTER_BAL} title="Master Balance"/>
+                  <Card>
+                    <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:10}}>Sub Account Summary</div>
+                    {clients.filter(c=>c.st==="Active").map(c=>{
+                      const bs=c.billStatus||"NONE";
+                      const billLabel={PAID:"🟢",PENDING:"🟡",OVERDUE:"🔴",NONE:"⚪"}[bs];
+                      return(
+                        <div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:`1px solid ${G.border}`,gap:6}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0,flex:1}}>
+                            <span style={{fontWeight:600,fontSize:12}}>{c.name}</span>
+                            <span style={{fontSize:9,color:G.textLight,background:G.sidebar,borderRadius:5,padding:"1px 6px",fontWeight:600}}>{c.plan||"—"}</span>
+                          </div>
+                          <span style={{fontSize:11,whiteSpace:"nowrap"}} title={`청구 상태 (${bs})`}>{billLabel} ₩{((c.monthlyFee||0)/10000).toLocaleString()}만</span>
+                          <KYBBadge status={c.kybStatus}/>
+                        </div>
+                      );
+                    })}
+                  </Card>
+                </div>
+                <div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Recent Orders</div>
+                <TxTable rows={TX_DATA.slice(0,5)} showAcct={true} onSelect={setSelectedTx}/>
               </div>
-              <div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Recent Orders</div>
-              <TxTable rows={TX_DATA.slice(0,5)} showAcct={true} onSelect={setSelectedTx}/>
-            </div>
-          )}
+            );
+          })()}
 
           {menu==="Transfer"&&(
             <div style={{maxWidth:460}}>
-              <Card>
-                <div style={{fontWeight:700,fontSize:13,marginBottom:14}}>Master Transfer</div>
+              <div style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:10,padding:"18px 22px",marginBottom:18}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#92400E",marginBottom:8}}>🚧 Master ↔ Sub Internal Transfer 준비 중</div>
+                <div style={{fontSize:11,color:"#92400E",lineHeight:1.7}}>
+                  OSL이 Master ↔ Sub 양방향 Internal Transfer 기능을 정식 출시하면 본 화면이 활성화됩니다. 현재 화면은 미리보기입니다.
+                </div>
+              </div>
+              <Card style={{opacity:0.55,pointerEvents:"none"}}>
+                <div style={{fontWeight:700,fontSize:13,marginBottom:14}}>Master Transfer (Preview)</div>
                 <Lbl t="From"/>
                 <Sel v={mtrFrom} set={v=>{setMtrFrom(v);setMtrTo(v==="Master"?Object.keys(ACCOUNTS)[0]:"Master");}} opts={["Master",...Object.keys(ACCOUNTS)]}/>
                 <Lbl t="To"/>
@@ -2572,11 +3169,8 @@ function MasterDash({onLogout,onSub}){
             const mcvAmtNum=parseFloat((mcvAmt||"").replace(/,/g,""))||0;
             const mcvFromBal=mcvFrom==="USD"?MASTER_BAL.USD.total:mcvFrom==="USDC"?totalBal(MASTER_BAL.USDC):mcvFrom==="USDT"?totalBal(MASTER_BAL.USDT):0;
             const mcvOverBal=mcvAmtNum>0&&mcvAmtNum>mcvFromBal;
-            const isOnRamp=["USD","HKD"].includes(mcvFrom)&&["USDC","USDT"].includes(mcvTo);
-            const feeRate=isOnRamp?0:0.002;
-            const feePct=(feeRate*100).toFixed(2);
-            const feeDir=isOnRamp?"On-ramp · OSL 0%":"Off-ramp · OSL 0.2%";
-            const received=(mcvAmtNum*(1-feeRate)*0.9998).toFixed(2);
+            const feeRate=0.002;
+            const received=(mcvAmtNum*(1-feeRate)*0.9993).toFixed(2);
             const totalFeeAmt=(mcvAmtNum*feeRate).toFixed(2);
             const canSubmit=!!mcvAmt&&!mcvOverBal&&!mcvLoading&&!mcvRateError;
             return(
@@ -2625,18 +3219,18 @@ function MasterDash({onLogout,onSub}){
                   <Lbl t="금액"/><Inp v={mcvAmt} set={setMcvAmt} ph="숫자 입력"/>
                   {mcvOverBal&&<div style={{color:G.red,fontSize:11,marginBottom:8}}>⚠️ 가용 잔액을 초과했습니다.</div>}
                   {mcvRateError&&<div style={{color:G.red,fontSize:11,marginBottom:8}}>⚠️ 환율을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.</div>}
-                  {/* 수수료 미리보기 */}
+                  {/* 수수료 미리보기 (OSL 0.2% 환율 내재) */}
                   {mcvAmt&&!mcvOverBal&&(
                     <div style={{background:G.greenLight,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
                       <div style={{fontSize:10,fontWeight:700,color:G.textLight,textTransform:"uppercase",marginBottom:8}}>환율/수수료 요약</div>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,gap:8}}>
                         <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>환율</span>
-                        <span style={{fontSize:11,fontWeight:600,color:G.textDark,textAlign:"right"}}>{mcvLoading?"계산 중...":`1 ${mcvFrom} = 0.9998 ${mcvTo} (실시간 OSL fetch-rate)`}</span>
+                        <span style={{fontSize:11,fontWeight:600,color:G.textDark,textAlign:"right"}}>{mcvLoading?"계산 중...":`1 ${mcvFrom} = 0.9993 ${mcvTo} (OSL fetch-rate 실시간)`}</span>
                       </div>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,gap:8}}>
-                        <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>{isOnRamp?"On-ramp Fee":"Off-ramp Fee"}</span>
+                        <span style={{fontSize:11,color:G.textMid,flexShrink:0}}>CONVERSION_FEE</span>
                         <span style={{fontSize:11,fontWeight:700,color:G.orange,textAlign:"right"}}>
-                          {mcvLoading?"계산 중...":`${feePct}% (OSL + IB Markup 합산)`}
+                          {mcvLoading?"계산 중...":`0.20% (${totalFeeAmt} ${mcvFrom}) · 환율에 내재`}
                         </span>
                       </div>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:8,borderTop:`1px solid ${G.border}`}}>
@@ -2649,7 +3243,7 @@ function MasterDash({onLogout,onSub}){
                           </>}
                         </div>
                       </div>
-                      <div style={{fontSize:9,color:G.textLight,marginTop:4}}>금액 × (1 - 수수료율) 실시간 계산</div>
+                      <div style={{fontSize:9,color:G.textLight,marginTop:4}}>⏱ Quote Lock 5분 (만료 시 자동 재조회)</div>
                     </div>
                   )}
                   <button
@@ -2667,8 +3261,8 @@ function MasterDash({onLogout,onSub}){
                         txid:"Pending...",
                         fromName:null,fromAccount:null,fromBank:null,
                         fromAmt:mcvAmtNum.toLocaleString(),fromCur:mcvFrom,fromNet:mcvFromNet||"",
-                        fxRate:`1 ${mcvFrom} = 0.9998 ${mcvTo}`,
-                        fxFee:`${feePct}% (총 ${totalFeeAmt} ${mcvFrom})`,
+                        fxRate:`1 ${mcvFrom} = 0.9993 ${mcvTo}`,
+                        fxFee:`0.20% (총 ${totalFeeAmt} ${mcvFrom})`,
                       };
                       setMcvHistory(h=>[newTx,...h]);
                       setMcvAmt("");
@@ -2872,56 +3466,194 @@ function MasterDash({onLogout,onSub}){
                   </select>
                   <Lbl t="통화"/><Sel v={mpoCur} set={v=>{setMpoCur(v);setMpoNet("");}} opts={mpoType==="Fiat"?["USD","HKD"]:["USDC","USDT"]}/>
                   {mpoType==="Crypto"&&<NetSelector cur={mpoCur} net={mpoNet} setNet={setMpoNet}/>}
-                  <Lbl t="금액"/><Inp v={mpoAmt} set={setMpoAmt} ph={mpoType==="Fiat"?"숫자 입력 (소수점 2자리)":"숫자 입력 (소수점 6자리)"}/>
+                  <Lbl t="Pay Mode (수수료 부담 주체)"/>
+                  <div style={{display:"flex",gap:7,marginBottom:8}}>
+                    {[
+                      {k:"RECIPIENT_BEAR",label:"수취인 부담",desc:"You Send 입력 → 수취인이 수수료 차감 후 수령"},
+                      {k:"PAYER_BEAR",label:"송금인 부담",desc:"Payee Gets 입력 → 송금인이 수수료 추가 부담"},
+                    ].map(m=>{
+                      const active=mpoPayMode===m.k;
+                      const accent=m.k==="PAYER_BEAR"?"#1D4ED8":"#7C3AED";
+                      const bgActive=m.k==="PAYER_BEAR"?"#DBEAFE":"#EDE9FE";
+                      return(
+                        <button key={m.k} onClick={()=>setMpoPayMode(m.k)}
+                          style={{flex:1,padding:"9px 10px",borderRadius:8,border:`1.5px solid ${active?accent:G.border}`,background:active?bgActive:G.white,color:active?accent:G.textMid,fontWeight:active?700:500,cursor:"pointer",fontSize:11,textAlign:"left"}}>
+                          <div style={{fontWeight:700,fontSize:11,marginBottom:2}}>{m.label}</div>
+                          <div style={{fontSize:9,color:active?accent:G.textLight,fontWeight:400,lineHeight:1.4}}>{m.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div style={{background:"#F0F9FF",border:"1px solid #BAE6FD",borderRadius:7,padding:"7px 10px",fontSize:10,color:"#0C4A6E",marginBottom:12,lineHeight:1.5}}>
+                    💡 {mpoPayMode==="RECIPIENT_BEAR"
+                      ?"You Send 입력 → 수취인이 수수료를 부담합니다 (RECIPIENT_BEAR)"
+                      :"Payee Gets 입력 → 당신이 수수료를 부담합니다 (PAYER_BEAR)"}
+                  </div>
+                  <Lbl t={mpoPayMode==="PAYER_BEAR"?"Payee Gets (수취 금액)":"You Send (송금 원금)"}/>
+                  <Inp v={mpoAmt} set={setMpoAmt} ph={mpoType==="Fiat"?"숫자 입력 (소수점 2자리)":"숫자 입력 (소수점 6자리)"}/>
+                  {mpoType==="Fiat"&&(<>
+                    <Lbl t={`Memo (선택) — ${mpoMemo.length} / 512`}/>
+                    <textarea value={mpoMemo} onChange={e=>setMpoMemo(e.target.value.slice(0,512))} placeholder="송금 메모 (수취인 은행에 함께 전달)"
+                      style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,boxSizing:"border-box",outline:"none",resize:"vertical",minHeight:50,fontFamily:"inherit"}}/>
+                  </>)}
                   {(()=>{
                     const mpoAmtNum=parseFloat((mpoAmt||"0").replace(/,/g,""))||0;
                     const isLargeAmt=mpoAmtNum>=100000;
-                    const NET_GAS_USD={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
-                    if(mpoAmt){
+                    if(!mpoAmt) return null;
+                    if(mpoType==="Fiat"){
+                      const platFee=(mpoAmtNum*0.0004).toFixed(4);
+                      const fxRate=0.9993;
+                      const grossUsd=(mpoAmtNum*fxRate).toFixed(2);
+                      const conversionFee=(mpoAmtNum*0.002).toFixed(2);
+                      const channelFee=isLargeAmt?0:35;
+                      const netReceive=(parseFloat(grossUsd)-parseFloat(conversionFee)-channelFee).toFixed(2);
+                      const isNegative=parseFloat(netReceive)<0;
                       return(
-                        <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
-                          <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>수수료 미리보기</div>
-                          {mpoType==="Fiat"&&(
-                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                              <span style={{fontSize:11,color:G.textMid}}>Wire Fee</span>
-                              <span style={{fontSize:11,fontWeight:700,color:G.orange}}>
-                                {isLargeAmt?"면제 ($100K 이상)":"$35 / 건 (예치 잔액 차감)"}
-                              </span>
-                            </div>
-                          )}
-                          {mpoType==="Crypto"&&mpoNet&&(
-                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                              <span style={{fontSize:11,color:G.textMid}}>네트워크 수수료</span>
-                              <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{NET_GAS_USD[mpoNet]||"—"} USD <span style={{fontWeight:400,color:G.textLight}}>(OSL 실시간 고시)</span></span>
-                            </div>
-                          )}
-                          <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A"}}>
-                            <span style={{fontSize:12,fontWeight:700}}>수취인 수령 예상액</span>
-                            <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{mpoAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
+                        <div style={{background:G.blueLight,border:"1px solid #BEE3F8",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+                          <div style={{fontSize:12,fontWeight:700,color:"#2B6CB0",marginBottom:10}}>수수료 미리보기 (OSL 5종)</div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                            <span style={{fontSize:11,color:G.textMid}}>PLAT_FIAT_PAYOUT</span>
+                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{platFee} {mpoCur} (0.04% · 월결제)</span>
                           </div>
-                          {mpoType==="Fiat"&&<div style={{fontSize:10,color:"#92400E",marginTop:6}}>⏱ 환율 고정: Confirm 시점에 10분간 고정됩니다.</div>}
-                          {mpoType==="Crypto"&&<div style={{fontSize:10,color:"#92400E",marginTop:6}}>※ 네트워크 수수료는 예치 잔액(USD)에서 차감됩니다.</div>}
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                            <span style={{fontSize:11,color:G.textMid}}>CONVERSION_FEE</span>
+                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{conversionFee} USD (0.2% · 환율 내재)</span>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                            <span style={{fontSize:11,color:G.textMid}}>CHANNEL_FIAT_PAYOUT</span>
+                            <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{isLargeAmt?"면제 ($100K 이상)":"$35 (SWIFT) / $0 (Local)"}</span>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #BEE3F8"}}>
+                            <span style={{fontSize:12,fontWeight:700}}>Payee Receives</span>
+                            <span style={{fontSize:13,fontWeight:700,color:isNegative?G.red:G.greenDark}}>{netReceive} USD {isNegative?"⚠":""}</span>
+                          </div>
+                          <div style={{fontSize:10,color:"#2B6CB0",marginTop:6}}>⏱ Quote Lock 5분 (Confirm 시 고정)</div>
                         </div>
                       );
                     }
-                    return null;
+                    const platFee=(mpoAmtNum*0.0004).toFixed(6);
+                    const totalSubtracted=(mpoAmtNum+parseFloat(platFee)).toFixed(6);
+                    return(
+                      <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"14px 16px",marginBottom:12}}>
+                        <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>수수료 미리보기 (OSL)</div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                          <span style={{fontSize:11,color:G.textMid}}>PLAT_PAYOUT</span>
+                          <span style={{fontSize:11,fontWeight:700,color:G.orange}}>{platFee} {mpoCur} (0.04% · 월결제)</span>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                          <span style={{fontSize:11,color:G.textMid}}>CHANNEL_CRYPTO_PAYOUT</span>
+                          <span style={{fontSize:11,fontWeight:700,color:G.greenDark}}>$0 (무료)</span>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #FDE68A",marginBottom:4}}>
+                          <span style={{fontSize:11,color:G.textMid}}>Total Subtracted</span>
+                          <span style={{fontSize:12,fontWeight:700,color:G.textDark}}>{totalSubtracted} {mpoCur}</span>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between"}}>
+                          <span style={{fontSize:12,fontWeight:700}}>Payee Receives</span>
+                          <span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{mpoAmtNum.toLocaleString("en-US",{minimumFractionDigits:2})} {mpoCur}</span>
+                        </div>
+                      </div>
+                    );
                   })()}
                 </div>
 
-                {/* 실행 버튼 */}
-                <button disabled={!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet)}
-                  onClick={()=>{
-                    if(!mpoRec||!mpoAmt){T("⚠️ 수취인/금액 입력");return;}
-                    if(mpoType==="Crypto"&&!mpoNet){T("⚠️ 네트워크를 선택하세요");return;}
-                    setShowMpoOtp(true);setMpoOtp(["","","","","",""]);setMpoOtpFail(0);setMpoCooldown(0);setMpoSubmitting(false);
-                  }}
-                  style={{width:"100%",padding:"12px",borderRadius:9,border:"none",fontWeight:700,fontSize:13,
-                    background:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"#ccc":G.green,
-                    color:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?G.textLight:"#fff",
-                    cursor:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"not-allowed":"pointer",
-                    transition:"background 0.15s"}}>
-                  🚀 Payout 실행
-                </button>
+                {/* Step 3 → Step 4 Review 진입 */}
+                {mpoStep===3&&(
+                  <button disabled={!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet)}
+                    onClick={()=>{
+                      if(!mpoRec||!mpoAmt){T("⚠️ 수취인/금액 입력");return;}
+                      if(mpoType==="Crypto"&&!mpoNet){T("⚠️ 네트워크를 선택하세요");return;}
+                      setMpoStep(4);setMpoQuoteSec(300);
+                    }}
+                    style={{width:"100%",padding:"12px",borderRadius:9,border:"none",fontWeight:700,fontSize:13,
+                      background:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"#ccc":G.green,
+                      color:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?G.textLight:"#fff",
+                      cursor:(!mpoRec||!mpoAmt||(mpoType==="Crypto"&&!mpoNet))?"not-allowed":"pointer",
+                      transition:"background 0.15s"}}>
+                    Review Payout →
+                  </button>
+                )}
+
+                {/* Step 4 — Master Payout Review */}
+                {mpoStep===4&&(()=>{
+                  const mpoAmtNum=parseFloat((mpoAmt||"0").replace(/,/g,""))||0;
+                  const isLargeAmt=mpoAmtNum>=100000;
+                  const platRate=0.0004;
+                  const platFee=mpoAmtNum*platRate;
+                  const fxRate=0.9993;
+                  const conversionFee=mpoAmtNum*0.002;
+                  const channelFee=mpoType==="Fiat"?(isLargeAmt?0:35):0;
+                  const grossUsd=mpoAmtNum*fxRate;
+                  const fiatNet=grossUsd-conversionFee-channelFee;
+                  const totalSubtracted=mpoAmtNum+platFee;
+                  const fiatNegative=mpoType==="Fiat"&&fiatNet<0;
+                  const quoteExpired=mpoQuoteSec<=0;
+                  const quoteRed=mpoQuoteSec<=60;
+                  const mm=String(Math.floor(mpoQuoteSec/60)).padStart(2,"0");
+                  const ss=String(mpoQuoteSec%60).padStart(2,"0");
+                  const platLabel=mpoType==="Fiat"?"PLAT_FIAT_PAYOUT":"PLAT_PAYOUT";
+                  const channelLabel=mpoType==="Fiat"?"CHANNEL_FIAT_PAYOUT":"CHANNEL_CRYPTO_PAYOUT";
+                  return(
+                    <div style={{borderTop:`1px solid ${G.border}`,paddingTop:14}}>
+                      <div style={{fontSize:10,fontWeight:700,color:G.green,marginBottom:12,textTransform:"uppercase",letterSpacing:0.5}}>Step 4 — Review Payout</div>
+                      <div style={{background:"#F8F4FF",border:"1px solid #E9D8FD",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontSize:10,fontWeight:700,color:"#6B21A8",textTransform:"uppercase",marginBottom:8}}>Recipient Details</div>
+                        <div style={{fontSize:11,lineHeight:1.7,color:G.textDark}}>
+                          <div><b>Counterparty:</b> {mpoRecObj?.name||"—"}</div>
+                          {mpoRecObj?.type==="Bank"?(<>
+                            <div><b>Bank:</b> {mpoRecObj?.bankName||"—"} ({mpoRecObj?.network||"—"})</div>
+                            <div><b>Account:</b> {mpoRecObj?.detail}</div>
+                          </>):(<>
+                            <div><b>Network:</b> {mpoRecObj?.network||"—"}</div>
+                            <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}><b>Address:</b> <span style={{fontFamily:"monospace"}}>{shortAddr(mpoRecObj?.detail||"")}</span> <CopyBtn text={mpoRecObj?.detail||""}/></div>
+                          </>)}
+                        </div>
+                      </div>
+                      <div style={{background:"#F7FBF4",border:"1px solid #E2EFD9",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontSize:10,fontWeight:700,color:G.greenDark,textTransform:"uppercase",marginBottom:8}}>Your Settlement</div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>Payout from Balance</span><span style={{fontSize:11,fontWeight:700}}>{mpoAmtNum.toFixed(mpoType==="Fiat"?2:6)} {mpoCur}</span></div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>{platLabel}</span><span style={{fontSize:11,fontWeight:700,color:G.orange}}>{platFee.toFixed(6)} {mpoCur}</span></div>
+                        <div style={{display:"flex",justifyContent:"space-between",paddingTop:6,borderTop:`1px solid ${G.border}`}}><span style={{fontSize:12,fontWeight:700}}>Total Subtracted</span><span style={{fontSize:12,fontWeight:700}}>{totalSubtracted.toFixed(6)} {mpoCur}</span></div>
+                      </div>
+                      <div style={{background:"#EEF6FF",border:"1px solid #BEE3F8",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontSize:10,fontWeight:700,color:"#1D4ED8",textTransform:"uppercase",marginBottom:8}}>Beneficiary Receipt</div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>Amount to Send</span><span style={{fontSize:11,fontWeight:700}}>{mpoAmtNum.toFixed(mpoType==="Fiat"?2:6)} {mpoCur}</span></div>
+                        {mpoType==="Fiat"?(<>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>Exchange Rate</span><span style={{fontSize:11,fontWeight:700}}>1 {mpoCur} = {fxRate} USD</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>Gross USD</span><span style={{fontSize:11,fontWeight:700}}>{grossUsd.toFixed(2)} USD</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>CONVERSION_FEE</span><span style={{fontSize:11,fontWeight:700,color:G.orange}}>-{conversionFee.toFixed(2)} USD</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>{channelLabel}</span><span style={{fontSize:11,fontWeight:700,color:G.orange}}>-{channelFee} USD</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",paddingTop:6,borderTop:"1px solid #BEE3F8"}}><span style={{fontSize:12,fontWeight:700}}>Payee Receives</span><span style={{fontSize:13,fontWeight:700,color:fiatNegative?G.red:G.greenDark}}>{fiatNet.toFixed(2)} USD {fiatNegative?"⚠":""}</span></div>
+                        </>):(<>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,color:G.textMid}}>{channelLabel}</span><span style={{fontSize:11,fontWeight:700,color:G.greenDark}}>$0 (무료)</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",paddingTop:6,borderTop:"1px solid #BEE3F8"}}><span style={{fontSize:12,fontWeight:700}}>Payee Receives</span><span style={{fontSize:13,fontWeight:700,color:G.greenDark}}>{mpoAmtNum.toFixed(6)} {mpoCur}</span></div>
+                        </>)}
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:8,background:quoteExpired?"#FEE2E2":quoteRed?"#FFFBEB":G.greenLight,border:`1px solid ${quoteExpired?"#FCA5A5":quoteRed?"#FDE68A":G.border}`,marginBottom:10}}>
+                        <span style={{fontSize:11,fontWeight:600,color:quoteExpired?"#991B1B":quoteRed?"#92400E":G.greenDark}}>⏱ Quote 유효시간</span>
+                        <span style={{fontSize:14,fontWeight:700,color:quoteExpired?"#991B1B":quoteRed?G.red:G.greenDark,fontFamily:"monospace"}}>{quoteExpired?"만료됨":`${mm}:${ss}`}</span>
+                      </div>
+                      {quoteExpired&&(
+                        <div style={{background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,padding:"10px 14px",marginBottom:10}}>
+                          <div style={{fontSize:11,fontWeight:700,color:"#991B1B",marginBottom:6}}>환율이 만료되었습니다.</div>
+                          <button onClick={()=>setMpoQuoteSec(300)}
+                            style={{padding:"6px 14px",borderRadius:6,border:"1px solid #991B1B",background:"#fff",color:"#991B1B",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔄 환율 재조회</button>
+                        </div>
+                      )}
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={()=>{setMpoStep(3);setMpoQuoteSec(0);}}
+                          style={{flex:1,padding:"11px",borderRadius:9,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                          ← Back
+                        </button>
+                        <button disabled={quoteExpired||fiatNegative}
+                          onClick={()=>{setShowMpoOtp(true);setMpoOtp(["","","","","",""]);setMpoOtpFail(0);setMpoCooldown(0);setMpoSubmitting(false);}}
+                          style={{flex:2,padding:"11px",borderRadius:9,border:"none",background:(quoteExpired||fiatNegative)?"#ccc":G.green,color:"#fff",fontWeight:700,fontSize:12,cursor:(quoteExpired||fiatNegative)?"not-allowed":"pointer"}}>
+                          Confirm Payout 🚀
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </Card>
             </div>
           )}
@@ -2934,7 +3666,7 @@ function MasterDash({onLogout,onSub}){
                 <div style={{background:"#F8FAFF",border:`1px solid ${G.border}`,borderRadius:10,padding:"14px 16px",marginBottom:14}}>
                   {(()=>{
                     const amtN=parseFloat((mpoAmt||"0").replace(/,/g,""))||0;
-                    const NET_GAS_USD_OTP={"ERC-20":"~$2.50","Base":"~$0.10","TRC-20":"~$1.00","SPL":"~$0.05"};
+                    const NET_GAS_USD_OTP={"ERC-20":"~$2.50","TRC-20":"~$1.00","SPL":"~$0.05"};
                     const fee=mpoType==="Fiat"?(amtN>=100000?"Wire Fee: 면제 ($100K 이상)":"Wire Fee: $35 / 건"):`네트워크 수수료: ${NET_GAS_USD_OTP[mpoNet]||"—"} USD (OSL 실시간 고시)`;
                     return [["수취인",mpoRecName],[`금액`,`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${mpoCur}`],["수수료",fee],["수취인 수령",`${amtN.toLocaleString("en-US",{minimumFractionDigits:2})} ${mpoCur}`],["네트워크",mpoNetDisplay]].map(([k,v])=>(
                       <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${G.border}`}}>
@@ -3440,26 +4172,41 @@ function MasterDash({onLogout,onSub}){
               {showCreate&&(
                 <Card style={{marginBottom:14,border:`1.5px solid ${G.green}`}}>
                   <div style={{fontWeight:700,fontSize:12,marginBottom:12,color:G.greenDark}}>New Client — 1단계: 계정 생성 (KYB 전)</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                     <div style={{gridColumn:"1/-1"}}><Lbl t="Company Name *"/><Inp v={nc.name} set={v=>setNc(c=>({...c,name:v}))} ph="e.g. GlobalPay"/></div>
                     <div>
-                      <Lbl t="On-ramp Markup (%)"/>
-                      <input type="number" value={(nc.muOn*100).toFixed(2)} onChange={e=>setNc(c=>({...c,muOn:parseFloat(e.target.value)/100}))} step="0.01"
-                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,boxSizing:"border-box",marginBottom:10}}/>
+                      <Lbl t="IB 플랜 *"/>
+                      <select value={nc.plan} onChange={e=>{const p=e.target.value;setNc(c=>({...c,plan:p,monthlyFee:PLAN_PRICE[p]}));}}
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,background:G.white,boxSizing:"border-box"}}>
+                        <option value="Starter">Starter (월 거래 5억↓)</option>
+                        <option value="Standard">Standard (월 거래 5~30억)</option>
+                        <option value="Enterprise">Enterprise (월 거래 30억↑)</option>
+                      </select>
                     </div>
                     <div>
-                      <Lbl t="Off-ramp Markup (%)"/>
-                      <input type="number" value={(nc.muOff*100).toFixed(2)} onChange={e=>setNc(c=>({...c,muOff:parseFloat(e.target.value)/100}))} step="0.01"
-                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,boxSizing:"border-box",marginBottom:10}}/>
+                      <Lbl t="월 사용료 (KRW) *"/>
+                      <input type="number" value={nc.monthlyFee} onChange={e=>setNc(c=>({...c,monthlyFee:parseInt(e.target.value)||0}))}
+                        style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,boxSizing:"border-box",outline:"none"}}/>
+                    </div>
+                    <div>
+                      <Lbl t="계약 시작일 *"/>
+                      <input type="date" value={nc.contractStart} onChange={e=>setNc(c=>({...c,contractStart:e.target.value}))}
+                        style={{width:"100%",padding:"7px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,boxSizing:"border-box",outline:"none"}}/>
+                    </div>
+                    <div>
+                      <Lbl t="계약 종료일"/>
+                      <input type="date" value={nc.contractEnd} onChange={e=>setNc(c=>({...c,contractEnd:e.target.value}))}
+                        style={{width:"100%",padding:"7px 11px",borderRadius:7,border:`1px solid ${G.border}`,fontSize:12,marginBottom:10,boxSizing:"border-box",outline:"none"}}/>
                     </div>
                   </div>
                   <div style={{background:"#EBF4FF",border:"1px solid #BEE3F8",borderRadius:7,padding:"9px 12px",fontSize:10,color:"#2B6CB0",marginBottom:10}}>
-                    📋 계정 생성 후 KYB를 진행하세요. KYB 승인 완료 후 이메일 초대가 발송됩니다.
+                    📋 계정 생성 후 KYB를 진행하세요. KYB 승인 완료 후 이메일 초대가 발송됩니다. 월 정액 SaaS 사용료는 매월 1일 인보이스로 자동 청구됩니다.
                   </div>
                   <Btn t="계정 생성" sm onClick={()=>{
                     if(!nc.name){T("⚠️ Company Name 입력");return;}
-                    setClients(cs=>[...cs,{id:"SUB-00"+(cs.length+1),name:nc.name,email:"",st:"Active",created:new Date().toISOString().split("T")[0],mu:nc.muOn,muOn:nc.muOn,muOff:nc.muOff,otpReq:false,locked:false,kybStatus:"INACTIVE"}]);
-                    setNc({name:"",muOn:0.10,muOff:0.10});setShowCreate(false);
+                    if(!nc.contractStart){T("⚠️ 계약 시작일을 선택하세요");return;}
+                    setClients(cs=>[...cs,{id:"SUB-00"+(cs.length+1),name:nc.name,email:"",st:"Active",created:new Date().toISOString().split("T")[0],otpReq:false,locked:false,kybStatus:"INACTIVE",plan:nc.plan,monthlyFee:nc.monthlyFee,billStatus:"NONE",contractStart:nc.contractStart,contractEnd:nc.contractEnd}]);
+                    setNc({name:"",plan:"Standard",monthlyFee:PLAN_PRICE.Standard,contractStart:"",contractEnd:""});setShowCreate(false);
                     T(`✅ "${nc.name}" 계정 생성 완료. KYB 등록 후 이메일 초대를 발송하세요.`);
                   }}/>
                 </Card>
@@ -3468,7 +4215,7 @@ function MasterDash({onLogout,onSub}){
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                   <thead>
                     <tr style={{background:G.sidebar}}>
-                      {["ID","Company","Email","Status","KYB","Created","On-ramp Markup","Off-ramp Markup","Actions"].map(h=>(
+                      {["ID","Company","Email","Status","KYB","IB 플랜","월 사용료","이번 달 청구","Created","Actions"].map(h=>(
                         <th key={h} style={{padding:"9px 11px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`,whiteSpace:"nowrap"}}>{h}</th>
                       ))}
                     </tr>
@@ -3485,51 +4232,45 @@ function MasterDash({onLogout,onSub}){
                         <td style={{padding:"10px 11px",color:G.textMid,fontSize:10}}>{c.email}</td>
                         <td style={{padding:"10px 11px"}}><Badge t={c.st} color={stColor(c.st)}/></td>
                         <td style={{padding:"10px 11px"}}><KYBBadge status={c.kybStatus}/></td>
+                        <td style={{padding:"10px 11px",whiteSpace:"nowrap"}}>
+                          <select value={c.plan||"Standard"} onChange={e=>{const p=e.target.value;setClients(cs=>cs.map(x=>x.id===c.id?{...x,plan:p,monthlyFee:PLAN_PRICE[p]}:x));T(`✅ ${c.name} 플랜 → ${p} (₩${PLAN_PRICE[p].toLocaleString()})`);}}
+                            style={{padding:"3px 6px",borderRadius:5,border:`1px solid ${G.border}`,fontSize:10,background:G.white,fontWeight:600,outline:"none",cursor:"pointer"}}>
+                            <option value="Starter">Starter</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Enterprise">Enterprise</option>
+                          </select>
+                        </td>
+                        <td style={{padding:"10px 11px",whiteSpace:"nowrap"}}>
+                          <input type="number" value={c.monthlyFee||0} onChange={e=>{const v=parseInt(e.target.value)||0;setClients(cs=>cs.map(x=>x.id===c.id?{...x,monthlyFee:v}:x));}}
+                            style={{width:90,padding:"3px 6px",borderRadius:5,border:`1px solid ${G.border}`,fontSize:10,fontWeight:700,outline:"none",textAlign:"right"}}/>
+                          <span style={{fontSize:9,color:G.textLight,marginLeft:3}}>KRW</span>
+                        </td>
+                        <td style={{padding:"10px 11px",whiteSpace:"nowrap"}}>
+                          {(()=>{
+                            const bs=c.billStatus||"NONE";
+                            const MAP={
+                              PAID:{bg:"#EBF8E1",text:"#276749",label:"🟢 결제완료"},
+                              PENDING:{bg:"#FFFBEB",text:"#B45309",label:"🟡 청구서 발송"},
+                              OVERDUE:{bg:"#FEE2E2",text:"#991B1B",label:"🔴 미납"},
+                              NONE:{bg:"#F3F4F6",text:"#6B7280",label:"—"},
+                            };
+                            const s=MAP[bs];
+                            return(
+                              <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                                <span style={{background:s.bg,color:s.text,borderRadius:6,padding:"3px 8px",fontWeight:700,fontSize:10,whiteSpace:"nowrap"}}>{s.label}</span>
+                                {bs==="NONE"&&c.kybStatus==="ACTIVE"&&(
+                                  <button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,billStatus:"PENDING"}:x));T(`📧 ${c.name}에 청구서 발송 완료`);}}
+                                    style={{fontSize:9,padding:"3px 6px",borderRadius:4,border:"1px solid #0EA5E9",background:"#F0F9FF",color:"#0EA5E9",cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>청구서 발송</button>
+                                )}
+                                {bs==="PENDING"&&(
+                                  <button onClick={()=>{setClients(cs=>cs.map(x=>x.id===c.id?{...x,billStatus:"PAID"}:x));T(`✅ ${c.name} 결제 확인 완료`);}}
+                                    style={{fontSize:9,padding:"3px 6px",borderRadius:4,border:"1px solid #4CAF2A",background:G.greenLight,color:G.greenDark,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>결제 확인</button>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </td>
                         <td style={{padding:"10px 11px",color:G.textLight,whiteSpace:"nowrap"}}>{c.created}</td>
-                        <td style={{padding:"10px 11px"}}>
-                          {editFee?.id===c.id&&editFee?.dir==='on'?(
-                            <div style={{display:"flex",alignItems:"center",gap:4}}>
-                              <input type="number" defaultValue={(c.muOn*100).toFixed(2)} id={`muOn-${c.id}`} step="0.01"
-                                style={{width:58,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
-                              <span style={{fontSize:10,color:G.textMid}}>%</span>
-                              <Btn t="저장" sm color={G.green} onClick={()=>{
-                                const val=parseFloat(document.getElementById(`muOn-${c.id}`).value)/100;
-                                setClients(cs=>cs.map(x=>x.id===c.id?{...x,muOn:val,mu:val}:x));setEditFee(null);T(`✅ ${c.name} On-ramp markup updated`);
-                              }}/>
-                              <Btn t="취소" sm color={G.textLight} onClick={()=>setEditFee(null)}/>
-                            </div>
-                          ):(
-                            <div style={{display:"flex",alignItems:"center",gap:6}}>
-                              <span style={{background:G.greenLight,color:G.greenDark,borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11,cursor:"default"}}
-                                title={`OSL Base 0% + IB Markup = 고객사 최종 On-ramp 수수료`}>
-                                +{(c.muOn*100).toFixed(2)}%
-                              </span>
-                              <button onClick={()=>setEditFee({id:c.id,dir:'on'})} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
-                            </div>
-                          )}
-                        </td>
-                        <td style={{padding:"10px 11px"}}>
-                          {editFee?.id===c.id&&editFee?.dir==='off'?(
-                            <div style={{display:"flex",alignItems:"center",gap:4}}>
-                              <input type="number" defaultValue={(c.muOff*100).toFixed(2)} id={`muOff-${c.id}`} step="0.01"
-                                style={{width:58,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
-                              <span style={{fontSize:10,color:G.textMid}}>%</span>
-                              <Btn t="저장" sm color={G.green} onClick={()=>{
-                                const val=parseFloat(document.getElementById(`muOff-${c.id}`).value)/100;
-                                setClients(cs=>cs.map(x=>x.id===c.id?{...x,muOff:val}:x));setEditFee(null);T(`✅ ${c.name} Off-ramp markup updated`);
-                              }}/>
-                              <Btn t="취소" sm color={G.textLight} onClick={()=>setEditFee(null)}/>
-                            </div>
-                          ):(
-                            <div style={{display:"flex",alignItems:"center",gap:6}}>
-                              <span style={{background:"#DBEAFE",color:"#1D4ED8",borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11,cursor:"default"}}
-                                title={`OSL Base 0.2% + IB Markup = 고객사 최종 Off-ramp 수수료`}>
-                                +{(c.muOff*100).toFixed(2)}%
-                              </span>
-                              <button onClick={()=>setEditFee({id:c.id,dir:'off'})} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
-                            </div>
-                          )}
-                        </td>
                         <td style={{padding:"10px 11px"}}>
                           <div style={{display:"flex",gap:4,flexWrap:"wrap",minWidth:180}}>
                             {/* KYB 등록 (INACTIVE만) */}
@@ -3623,17 +4364,29 @@ function MasterDash({onLogout,onSub}){
 
           {menu==="All Transfers"&&(
             <div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:10,padding:"14px 18px",marginBottom:14}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#92400E",marginBottom:6}}>🚧 Internal Transfer 정식 출시 후 활성화</div>
+                <div style={{fontSize:11,color:"#92400E",lineHeight:1.6}}>
+                  OSL이 Master ↔ Sub 양방향 Internal Transfer 기능을 정식 출시하면 본 화면이 활성화됩니다. 아래는 미리보기입니다.
+                </div>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,opacity:0.6}}>
                 <div style={{display:"flex",gap:5}}>{["All","Completed","Pending"].map(f=><button key={f} onClick={()=>setTrF(f)} style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${trF===f?G.green:G.border}`,background:trF===f?G.greenLight:G.white,color:trF===f?G.greenDark:G.textMid,fontWeight:trF===f?700:400,cursor:"pointer",fontSize:11}}>{f}</button>)}</div>
                 <Btn t="📥 Export" sm onClick={()=>exportCSV(allTr,[{l:"TR ID",k:"id"},{l:"Date",k:"date"},{l:"From",k:"from"},{l:"To",k:"to"},{l:"Amount",k:"amt"},{l:"Currency",k:"cur"},{l:"Network",k:"network"},{l:"Note",k:"note"},{l:"Status",k:"st"}],"all_transfers.csv")}/>
               </div>
-              <TrTable rows={allTr}/>
+              <div style={{opacity:0.6,pointerEvents:"none"}}><TrTable rows={allTr}/></div>
             </div>
           )}
 
           {menu==="All Orders"&&(()=>{
+            const ORDER_ST_GROUP={
+              "Completed":["Completed"],
+              "In Progress":["Created","Confirmed","Processing","Reviewed"],
+              "Review":["Review","Frozen","Pending"],
+              "Failed":["Failed","Rejected","Reversed","Mismatch","Expired"],
+            };
             const masterOrderFiltered=TX_DATA
-              .filter(r=>masterOrderStF==="All"||r.st===masterOrderStF)
+              .filter(r=>masterOrderStF==="All"||ORDER_ST_GROUP[masterOrderStF]?.includes(r.st))
               .filter(r=>masterOrderTypeF==="All"||r.type===masterOrderTypeF);
             const handleMasterExport=()=>{
               let rows=TX_DATA;
@@ -3655,7 +4408,7 @@ function MasterDash({onLogout,onSub}){
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",marginBottom:10}}>
                   {/* 상태 필터 */}
                   <div style={{display:"flex",gap:4}}>
-                    {["All","Completed","Pending","Failed"].map(f=>(
+                    {["All","Completed","In Progress","Review","Failed"].map(f=>(
                       <button key={f} onClick={()=>setMasterOrderStF(f)}
                         style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${masterOrderStF===f?G.green:G.border}`,background:masterOrderStF===f?G.greenLight:G.white,color:masterOrderStF===f?G.greenDark:G.textMid,fontWeight:masterOrderStF===f?700:400,cursor:"pointer",fontSize:11,whiteSpace:"nowrap"}}>
                         {f}
@@ -4057,133 +4810,6 @@ function MasterDash({onLogout,onSub}){
               </div>
             );
           })()}
-
-          {menu==="Fee Settings"&&(
-            <div style={{maxWidth:720}}>
-              <div style={{fontWeight:700,fontSize:14,marginBottom:14}}>Fee Markup Settings</div>
-
-              {/* OSL 기본 수수료 정보 박스 (읽기 전용) */}
-              <div style={{background:"#EBF8E1",border:"1px solid #C3E6CB",borderRadius:10,padding:"14px 18px",marginBottom:18}}>
-                <div style={{fontWeight:700,fontSize:12,marginBottom:10,color:"#276749"}}>OSL 기본 수수료 (읽기 전용)</div>
-                <div style={{background:"white",borderRadius:7,overflow:"hidden",border:"1px solid #C3E6CB"}}>
-                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-                    <thead><tr style={{background:"rgba(39,103,73,0.08)"}}>
-                      {["항목","수수료","비고"].map(h=><th key={h} style={{padding:"7px 12px",textAlign:"left",fontWeight:700,color:"#276749"}}>{h}</th>)}
-                    </tr></thead>
-                    <tbody>
-                      {[
-                        ["On-ramp Base Fee","0%","USD → USDC/USDT (OSL 고정)"],
-                        ["Off-ramp Base Fee","0.2%","USDC/USDT → USD (OSL 고정)"],
-                        ["Wire Fee","$35 / 건","$100K 이상 면제"],
-                        ["네트워크 수수료","없음","OSL 내부 처리"],
-                      ].map(([a,b,c])=>(
-                        <tr key={a}>
-                          <td style={{padding:"7px 12px",borderTop:"1px solid #C3E6CB",color:"#276749",fontWeight:600}}>{a}</td>
-                          <td style={{padding:"7px 12px",borderTop:"1px solid #C3E6CB",color:"#276749",fontWeight:700}}>{b}</td>
-                          <td style={{padding:"7px 12px",borderTop:"1px solid #C3E6CB",color:"#276749"}}>{c}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* 고객사별 Markup 테이블 */}
-              <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>고객사별 Markup 설정</div>
-              <div style={{fontSize:11,color:G.textLight,marginBottom:12}}>KYB ACTIVE + 이메일 초대 완료 · Active 계정만 표시. Sub Account에는 합산 수수료만 노출됩니다.</div>
-              <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,overflow:"hidden"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-                  <thead>
-                    <tr style={{background:"#F7F7F5"}}>
-                      <th style={{padding:"10px 14px",textAlign:"left",fontWeight:700,color:G.textMid,borderBottom:`1px solid ${G.border}`}}>고객사명</th>
-                      <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:G.textDark,borderBottom:`1px solid ${G.border}`}}>On-ramp Markup (%)<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>Fiat → Crypto</span></th>
-                      <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:"#276749",borderBottom:`1px solid ${G.border}`}}>On-ramp 최종<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>OSL 0% + Markup</span></th>
-                      <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:G.textDark,borderBottom:`1px solid ${G.border}`}}>Off-ramp Markup (%)<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>Crypto → Fiat</span></th>
-                      <th style={{padding:"10px 14px",textAlign:"center",fontWeight:700,color:"#1D4ED8",borderBottom:`1px solid ${G.border}`}}>Off-ramp 최종<br/><span style={{fontSize:9,fontWeight:400,color:G.textMid}}>OSL 0.2% + Markup</span></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clients.filter(c=>c.kybStatus==="ACTIVE"&&c.email&&c.st!=="Suspended").length===0&&(
-                      <tr><td colSpan={5} style={{padding:"20px",textAlign:"center",color:G.textLight}}>KYB 승인 및 이메일 초대 완료 계정이 없습니다.</td></tr>
-                    )}
-                    {clients.filter(c=>c.kybStatus==="ACTIVE"&&c.email&&c.st!=="Suspended").map((c,i,arr)=>{
-                      const isEditOn=editFee?.id===c.id&&editFee?.dir==="on";
-                      const isEditOff=editFee?.id===c.id&&editFee?.dir==="off";
-                      const onFinal=(c.muOn*100).toFixed(2);
-                      const offFinal=(0.20+c.muOff*100).toFixed(2);
-                      return(
-                        <tr key={c.id} style={{background:i%2===0?G.white:"#FAFBF8",borderBottom:i<arr.length-1?`1px solid ${G.border}`:"none"}}>
-                          <td style={{padding:"11px 14px",fontWeight:700,color:G.textDark}}>{c.name}</td>
-                          {/* On-ramp Markup */}
-                          <td style={{padding:"11px 14px",textAlign:"center"}}>
-                            {isEditOn?(
-                              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-                                <input type="number" defaultValue={(c.muOn*100).toFixed(2)} id={`fs-muOn-${c.id}`} step="0.01"
-                                  style={{width:60,padding:"4px 6px",borderRadius:6,border:`1.5px solid ${G.green}`,fontSize:11,outline:"none",textAlign:"right"}}/>
-                                <span style={{fontSize:10,color:G.textMid}}>%</span>
-                                <button onClick={()=>{
-                                  const val=parseFloat(document.getElementById(`fs-muOn-${c.id}`).value)/100;
-                                  setClients(cs=>cs.map(x=>x.id===c.id?{...x,muOn:val,mu:val}:x));
-                                  setEditFee(null);T(`✅ ${c.name} On-ramp markup updated`);
-                                }} style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:`1px solid ${G.green}`,background:G.greenLight,color:G.greenDark,cursor:"pointer",fontWeight:700}}>저장</button>
-                                <button onClick={()=>setEditFee(null)} style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer"}}>취소</button>
-                              </div>
-                            ):(
-                              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                                <span style={{background:G.greenLight,color:G.greenDark,borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}
-                                  title="OSL Base 0% + IB Markup = 고객사 최종 On-ramp 수수료">
-                                  +{(c.muOn*100).toFixed(2)}%
-                                </span>
-                                <button onClick={()=>setEditFee({id:c.id,dir:"on"})} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
-                              </div>
-                            )}
-                          </td>
-                          {/* On-ramp 최종 */}
-                          <td style={{padding:"11px 14px",textAlign:"center"}}>
-                            <span style={{background:"#EBF8E1",color:"#276749",borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}>
-                              {isEditOn
-                                ? `${(parseFloat((document.getElementById(`fs-muOn-${c.id}`)?.value||c.muOn*100))).toFixed(2)}%`
-                                : `${onFinal}%`}
-                            </span>
-                          </td>
-                          {/* Off-ramp Markup */}
-                          <td style={{padding:"11px 14px",textAlign:"center"}}>
-                            {isEditOff?(
-                              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-                                <input type="number" defaultValue={(c.muOff*100).toFixed(2)} id={`fs-muOff-${c.id}`} step="0.01"
-                                  style={{width:60,padding:"4px 6px",borderRadius:6,border:`1.5px solid #1D4ED8`,fontSize:11,outline:"none",textAlign:"right"}}/>
-                                <span style={{fontSize:10,color:G.textMid}}>%</span>
-                                <button onClick={()=>{
-                                  const val=parseFloat(document.getElementById(`fs-muOff-${c.id}`).value)/100;
-                                  setClients(cs=>cs.map(x=>x.id===c.id?{...x,muOff:val}:x));
-                                  setEditFee(null);T(`✅ ${c.name} Off-ramp markup updated`);
-                                }} style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:"1px solid #1D4ED8",background:"#DBEAFE",color:"#1D4ED8",cursor:"pointer",fontWeight:700}}>저장</button>
-                                <button onClick={()=>setEditFee(null)} style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,color:G.textMid,cursor:"pointer"}}>취소</button>
-                              </div>
-                            ):(
-                              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                                <span style={{background:"#DBEAFE",color:"#1D4ED8",borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}
-                                  title="OSL Base 0.2% + IB Markup = 고객사 최종 Off-ramp 수수료">
-                                  +{(c.muOff*100).toFixed(2)}%
-                                </span>
-                                <button onClick={()=>setEditFee({id:c.id,dir:"off"})} style={{fontSize:10,padding:"3px 9px",borderRadius:5,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",color:G.textMid,fontWeight:600}}>수정</button>
-                              </div>
-                            )}
-                          </td>
-                          {/* Off-ramp 최종 */}
-                          <td style={{padding:"11px 14px",textAlign:"center"}}>
-                            <span style={{background:"#DBEAFE",color:"#1D4ED8",borderRadius:6,padding:"3px 10px",fontWeight:700,fontSize:11}}>
-                              {offFinal}%
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
 
         </div>
       </div>
